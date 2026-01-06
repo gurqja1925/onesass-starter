@@ -2,10 +2,10 @@
   "$schema": "https://onesaas.kr/schema/onesaas.json",
   "schemaVersion": "1.0.0",
   "project": {
-    "id": "ghpu5nfhvvixgfi6jtq96gegvwmgp",
-    "name": "ghpu5nfhvvixgfi6jtq96gegvwmgp",
-    "slug": "ghpu5nfhvvixgfi6jtq96gegvwmgp",
-    "createdAt": "2026-01-06T00:53:51.096Z",
+    "id": "afgasdfadfadf",
+    "name": "afgasdfadfadf",
+    "slug": "afgasdfadfadf",
+    "createdAt": "2026-01-06T01:16:01.865Z",
     "generatedBy": "onesaas-wizard"
   },
   "template": {
@@ -15,15 +15,15 @@
   },
   "theme": {
     "id": "neon",
-    "appliedAt": "2026-01-06T00:53:51.096Z"
+    "appliedAt": "2026-01-06T01:16:01.865Z"
   },
   "features": {
     "auth": {
       "enabled": true,
       "providers": [
         "email",
-        "google",
         "github",
+        "google",
         "kakao"
       ]
     },
@@ -44,7 +44,9 @@
     "vercel": {
       "options": [
         "ai-gateway",
-        "blob"
+        "blob",
+        "postgres",
+        "kv"
       ]
     }
   },
