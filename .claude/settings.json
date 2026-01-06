@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm:*)",
+      "Bash(npm:*)",
+      "Bash(node:*)",
+      "Bash(git:*)",
+      "Bash(prisma:*)",
+      "Read",
+      "Write",
+      "Edit"
+    ],
+    "deny": []
+  },
+  "includeCoauthoredBy": true,
+  "model": "sonnet"
+}
