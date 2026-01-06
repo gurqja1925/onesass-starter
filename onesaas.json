@@ -2,21 +2,30 @@
   "$schema": "https://onesaas.kr/schema/onesaas.json",
   "schemaVersion": "1.0.0",
   "project": {
-    "id": "",
-    "name": "OneSaaS App",
-    "slug": "onesaas-app",
-    "createdAt": "",
-    "generatedBy": "onesaas-starter"
+    "id": "ghpu5nfhvvixgfi6jtq96gegvwmgp",
+    "name": "ghpu5nfhvvixgfi6jtq96gegvwmgp",
+    "slug": "ghpu5nfhvvixgfi6jtq96gegvwmgp",
+    "createdAt": "2026-01-06T00:53:51.096Z",
+    "generatedBy": "onesaas-wizard"
   },
   "template": {
-    "id": "onesass-starter",
+    "id": "basic",
     "version": "1.0.0",
     "source": "https://github.com/johunsang/onesass-starter"
+  },
+  "theme": {
+    "id": "neon",
+    "appliedAt": "2026-01-06T00:53:51.096Z"
   },
   "features": {
     "auth": {
       "enabled": true,
-      "providers": ["email", "google", "kakao"]
+      "providers": [
+        "email",
+        "google",
+        "github",
+        "kakao"
+      ]
     },
     "payment": {
       "enabled": true,
@@ -27,11 +36,16 @@
     },
     "legalPages": {
       "enabled": true,
-      "pages": ["terms", "privacy"]
+      "pages": [
+        "terms",
+        "privacy"
+      ]
     },
-    "ai": {
-      "enabled": true,
-      "providers": ["openai", "anthropic", "google"]
+    "vercel": {
+      "options": [
+        "ai-gateway",
+        "blob"
+      ]
     }
   },
   "environment": {
@@ -41,16 +55,5 @@
     "hosting": {
       "provider": "vercel"
     }
-  },
-  "patchPolicy": {
-    "managed": "auto-update",
-    "custom": "never-overwrite",
-    "bridge": "merge-conflict-resolve"
-  },
-  "neverOverwrite": [
-    ".env",
-    ".env.local",
-    "README.md",
-    "src/onesaas-custom/**/*"
-  ]
+  }
 }
