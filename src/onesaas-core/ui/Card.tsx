@@ -19,17 +19,18 @@ export function Card({
 }: CardProps) {
   const paddings = {
     none: '',
-    sm: 'p-4',
-    md: 'p-6',
-    lg: 'p-8',
+    sm: 'px-6 py-5',
+    md: 'px-8 py-6',
+    lg: 'px-10 py-8',
   }
 
   return (
     <div
-      className={`rounded-xl ${paddings[padding]} ${hover ? 'hover:scale-[1.02] transition-transform cursor-pointer' : ''} ${className}`}
+      className={`rounded-2xl ${paddings[padding]} ${hover ? 'hover:scale-[1.02] transition-transform cursor-pointer' : ''} ${className}`}
       style={{
         background: 'var(--color-bg-secondary)',
         border: '1px solid var(--color-border)',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
       }}
     >
       {children}
@@ -44,7 +45,7 @@ interface CardHeaderProps {
 
 export function CardHeader({ children, className = '' }: CardHeaderProps) {
   return (
-    <div className={`mb-4 ${className}`}>
+    <div className={`mb-6 ${className}`}>
       {children}
     </div>
   )
@@ -83,7 +84,7 @@ interface CardFooterProps {
 export function CardFooter({ children, className = '' }: CardFooterProps) {
   return (
     <div
-      className={`mt-4 pt-4 ${className}`}
+      className={`mt-6 pt-6 ${className}`}
       style={{ borderTop: '1px solid var(--color-border)' }}
     >
       {children}

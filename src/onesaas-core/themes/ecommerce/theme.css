@@ -1,0 +1,170 @@
+/**
+ * E-commerce Theme
+ * 이커머스 테마 - 구매 전환에 최적화된 디자인, 쇼핑몰에 적합
+ */
+
+/* ===================================
+ * Light Mode
+ * =================================== */
+[data-theme="ecommerce"][data-mode="light"] {
+  --color-bg: #ffffff;
+  --color-bg-secondary: #fef2f2;
+  --color-text: #1c1917;
+  --color-text-secondary: #78716c;
+  --color-accent: #e11d48;
+  --color-accent-hover: #be123c;
+  --color-border: #fecdd3;
+
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #3b82f6;
+
+  /* 할인/세일 색상 */
+  --color-sale: #dc2626;
+  --color-new: #16a34a;
+  --color-hot: #ea580c;
+
+  --font-display: 'Poppins', 'Pretendard', sans-serif;
+  --font-body: 'Pretendard', -apple-system, sans-serif;
+
+  --radius: 8px;
+  --radius-sm: 4px;
+  --radius-lg: 16px;
+}
+
+/* ===================================
+ * Dark Mode
+ * =================================== */
+[data-theme="ecommerce"][data-mode="dark"] {
+  --color-bg: #0c0a09;
+  --color-bg-secondary: #1c1917;
+  --color-text: #fafaf9;
+  --color-text-secondary: #a8a29e;
+  --color-accent: #fb7185;
+  --color-accent-hover: #fda4af;
+  --color-border: #292524;
+
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #3b82f6;
+
+  /* 할인/세일 색상 */
+  --color-sale: #f87171;
+  --color-new: #4ade80;
+  --color-hot: #fb923c;
+
+  --font-display: 'Poppins', 'Pretendard', sans-serif;
+  --font-body: 'Pretendard', -apple-system, sans-serif;
+
+  --radius: 8px;
+  --radius-sm: 4px;
+  --radius-lg: 16px;
+}
+
+/* ===================================
+ * Theme-specific styles
+ * =================================== */
+[data-theme="ecommerce"] h1,
+[data-theme="ecommerce"] h2,
+[data-theme="ecommerce"] h3 {
+  font-weight: 600;
+}
+
+/* 가격 스타일 */
+[data-theme="ecommerce"] .price {
+  font-weight: 700;
+  font-size: 1.25rem;
+}
+
+[data-theme="ecommerce"] .price-original {
+  text-decoration: line-through;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+}
+
+[data-theme="ecommerce"] .price-sale {
+  color: var(--color-sale);
+  font-weight: 700;
+}
+
+/* 상품 카드 */
+[data-theme="ecommerce"] .product-card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+[data-theme="ecommerce"] .product-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+}
+
+/* 배지 */
+[data-theme="ecommerce"] .badge-sale {
+  background: var(--color-sale);
+  color: white;
+  font-weight: 700;
+}
+
+[data-theme="ecommerce"] .badge-new {
+  background: var(--color-new);
+  color: white;
+  font-weight: 700;
+}
+
+[data-theme="ecommerce"] .badge-hot {
+  background: var(--color-hot);
+  color: white;
+  font-weight: 700;
+}
+
+/* 장바구니 버튼 */
+[data-theme="ecommerce"] .btn-add-cart {
+  background: var(--color-accent);
+  color: white;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+}
+
+[data-theme="ecommerce"] .btn-add-cart:hover {
+  background: var(--color-accent-hover);
+  transform: scale(1.02);
+}
+
+/* 구매 버튼 */
+[data-theme="ecommerce"] .btn-buy-now {
+  background: var(--color-text);
+  color: var(--color-bg);
+  font-weight: 600;
+}
+
+/* 별점 */
+[data-theme="ecommerce"] .rating {
+  color: #fbbf24;
+}
+
+/* 리뷰 수 */
+[data-theme="ecommerce"] .review-count {
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+}
+
+/* 품절 오버레이 */
+[data-theme="ecommerce"] .sold-out-overlay {
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+/* 한국 원화 포맷 */
+[data-theme="ecommerce"] .currency-krw {
+  font-variant-numeric: tabular-nums;
+}
+
+[data-theme="ecommerce"] .currency-krw::before {
+  content: '₩';
+}

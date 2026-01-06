@@ -1,0 +1,127 @@
+/**
+ * Brutalist Theme
+ * 브루탈리스트 테마 - 거칠고 강렬한 디자인, 개발자 도구에 적합
+ */
+
+/* ===================================
+ * Light Mode
+ * =================================== */
+[data-theme="brutalist"][data-mode="light"] {
+  --color-bg: #ffffff;
+  --color-bg-secondary: #f5f5f5;
+  --color-text: #000000;
+  --color-text-secondary: #525252;
+  --color-accent: #000000;
+  --color-accent-hover: #262626;
+  --color-border: #000000;
+
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #3b82f6;
+
+  --font-display: 'JetBrains Mono', monospace;
+  --font-body: 'JetBrains Mono', monospace;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --radius: 0;
+  --radius-sm: 0;
+  --radius-lg: 0;
+}
+
+/* ===================================
+ * Dark Mode
+ * =================================== */
+[data-theme="brutalist"][data-mode="dark"] {
+  --color-bg: #000000;
+  --color-bg-secondary: #0a0a0a;
+  --color-text: #ffffff;
+  --color-text-secondary: #a3a3a3;
+  --color-accent: #ffffff;
+  --color-accent-hover: #e5e5e5;
+  --color-border: #ffffff;
+
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #3b82f6;
+
+  --font-display: 'JetBrains Mono', monospace;
+  --font-body: 'JetBrains Mono', monospace;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --radius: 0;
+  --radius-sm: 0;
+  --radius-lg: 0;
+}
+
+/* ===================================
+ * Theme Effects - Shadow
+ * =================================== */
+[data-theme="brutalist"].theme-effect-shadow {
+  --shadow-brutal: 4px 4px 0 var(--color-border);
+  --shadow-brutal-lg: 8px 8px 0 var(--color-border);
+}
+
+[data-theme="brutalist"] .btn-primary {
+  border: 2px solid var(--color-border);
+  box-shadow: 4px 4px 0 var(--color-border);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+[data-theme="brutalist"] .btn-primary:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--color-border);
+}
+
+[data-theme="brutalist"] .btn-primary:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 var(--color-border);
+}
+
+/* ===================================
+ * Theme-specific styles
+ * =================================== */
+[data-theme="brutalist"] * {
+  font-family: var(--font-mono);
+}
+
+[data-theme="brutalist"] h1,
+[data-theme="brutalist"] h2,
+[data-theme="brutalist"] h3 {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+[data-theme="brutalist"] .card {
+  border: 2px solid var(--color-border);
+  box-shadow: 4px 4px 0 var(--color-border);
+}
+
+[data-theme="brutalist"] .card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--color-border);
+}
+
+[data-theme="brutalist"] input,
+[data-theme="brutalist"] textarea,
+[data-theme="brutalist"] select {
+  border: 2px solid var(--color-border);
+  border-radius: 0;
+}
+
+[data-theme="brutalist"] .badge {
+  border: 2px solid currentColor;
+  border-radius: 0;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+/* ASCII 스타일 구분선 */
+[data-theme="brutalist"] .divider::before {
+  content: '═══════════════════════════════════';
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+}

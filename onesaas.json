@@ -1,20 +1,39 @@
 {
   "$schema": "https://onesaas.kr/schema/onesaas.json",
-  "schemaVersion": "1.0.0",
+  "schemaVersion": "1.1.0",
   "project": {
-    "id": "afgasdfadfadf",
-    "name": "afgasdfadfadf",
-    "slug": "afgasdfadfadf",
+    "id": "onesaas",
+    "name": "onesaas",
+    "slug": "onesaas",
     "createdAt": "2026-01-06T01:16:01.865Z",
+    "updatedAt": "2026-01-06T12:00:00.000Z",
     "generatedBy": "onesaas-wizard"
   },
   "template": {
     "id": "basic",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "source": "https://github.com/johunsang/onesass-starter"
+  },
+  "landingTemplates": {
+    "available": [
+      "saas",
+      "startup",
+      "real-estate",
+      "education",
+      "fitness",
+      "restaurant",
+      "healthcare",
+      "travel",
+      "finance",
+      "agency",
+      "ecommerce",
+      "event"
+    ],
+    "active": "saas"
   },
   "theme": {
     "id": "neon",
+    "mode": "dark",
     "appliedAt": "2026-01-06T01:16:01.865Z"
   },
   "features": {
@@ -48,6 +67,11 @@
         "postgres",
         "kv"
       ]
+    },
+    "ui": {
+      "componentsCount": 400,
+      "themesCount": 10,
+      "landingTemplatesCount": 12
     }
   },
   "environment": {

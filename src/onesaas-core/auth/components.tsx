@@ -27,11 +27,15 @@ export function SocialLoginButton({ provider }: { provider: AuthProviderType }) 
     <button
       onClick={handleClick}
       disabled={loading}
-      className="w-full py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-3 disabled:opacity-50"
-      style={{ backgroundColor: meta.bgColor, color: meta.color }}
+      className="w-full py-3.5 rounded-xl font-semibold transition-all flex items-center justify-center gap-3 disabled:opacity-50 hover:scale-[1.02] hover:shadow-md active:scale-[0.98]"
+      style={{
+        backgroundColor: meta.bgColor,
+        color: meta.color,
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+      }}
     >
       {loading ? (
-        <span className="animate-spin">⏳</span>
+        <span className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
       ) : (
         <>
           {provider === 'google' && (
@@ -119,23 +123,33 @@ export function EmailLoginForm({ onSuccess }: { onSuccess?: () => void }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-5">
       {error && (
-        <div className="p-3 rounded-lg text-sm" style={{ background: '#fee2e2', color: '#dc2626' }}>
+        <div
+          className="p-4 rounded-xl text-sm font-medium flex items-center gap-2"
+          style={{
+            background: 'var(--color-error)',
+            color: 'white',
+          }}
+        >
+          <span>⚠️</span>
           {error}
         </div>
       )}
       <div>
-        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text-secondary)' }}>
+        <label
+          className="block text-sm font-semibold mb-2"
+          style={{ color: 'var(--color-text)' }}
+        >
           이메일
         </label>
         <input
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full px-4 py-3 rounded-lg transition-colors"
+          className="w-full px-4 py-3.5 rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
           style={{
-            background: 'var(--color-bg-secondary)',
+            background: 'var(--color-bg)',
             border: '1px solid var(--color-border)',
             color: 'var(--color-text)',
           }}
@@ -144,16 +158,28 @@ export function EmailLoginForm({ onSuccess }: { onSuccess?: () => void }) {
         />
       </div>
       <div>
-        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text-secondary)' }}>
-          비밀번호
-        </label>
+        <div className="flex justify-between items-center mb-2">
+          <label
+            className="block text-sm font-semibold"
+            style={{ color: 'var(--color-text)' }}
+          >
+            비밀번호
+          </label>
+          <a
+            href="/forgot-password"
+            className="text-sm transition-opacity hover:opacity-80"
+            style={{ color: 'var(--color-accent)' }}
+          >
+            비밀번호 찾기
+          </a>
+        </div>
         <input
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full px-4 py-3 rounded-lg transition-colors"
+          className="w-full px-4 py-3.5 rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
           style={{
-            background: 'var(--color-bg-secondary)',
+            background: 'var(--color-bg)',
             border: '1px solid var(--color-border)',
             color: 'var(--color-text)',
           }}
@@ -164,10 +190,20 @@ export function EmailLoginForm({ onSuccess }: { onSuccess?: () => void }) {
       <button
         type="submit"
         disabled={loading}
-        className="w-full py-3 rounded-lg font-semibold transition-colors disabled:opacity-50"
-        style={{ background: 'var(--color-accent)', color: 'var(--color-bg)' }}
+        className="w-full py-4 rounded-xl font-bold text-lg transition-all disabled:opacity-50 hover:opacity-90 active:scale-[0.98]"
+        style={{
+          background: 'var(--color-accent)',
+          color: 'var(--color-bg)',
+        }}
       >
-        {loading ? '로그인 중...' : '로그인'}
+        {loading ? (
+          <span className="flex items-center justify-center gap-2">
+            <span className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+            로그인 중...
+          </span>
+        ) : (
+          '로그인'
+        )}
       </button>
     </form>
   )
@@ -204,23 +240,33 @@ export function SignUpForm({ onSuccess }: { onSuccess?: () => void }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-5">
       {error && (
-        <div className="p-3 rounded-lg text-sm" style={{ background: '#fee2e2', color: '#dc2626' }}>
+        <div
+          className="p-4 rounded-xl text-sm font-medium flex items-center gap-2"
+          style={{
+            background: 'var(--color-error)',
+            color: 'white',
+          }}
+        >
+          <span>⚠️</span>
           {error}
         </div>
       )}
       <div>
-        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text-secondary)' }}>
+        <label
+          className="block text-sm font-semibold mb-2"
+          style={{ color: 'var(--color-text)' }}
+        >
           이메일
         </label>
         <input
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full px-4 py-3 rounded-lg transition-colors"
+          className="w-full px-4 py-3.5 rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
           style={{
-            background: 'var(--color-bg-secondary)',
+            background: 'var(--color-bg)',
             border: '1px solid var(--color-border)',
             color: 'var(--color-text)',
           }}
@@ -229,16 +275,19 @@ export function SignUpForm({ onSuccess }: { onSuccess?: () => void }) {
         />
       </div>
       <div>
-        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text-secondary)' }}>
+        <label
+          className="block text-sm font-semibold mb-2"
+          style={{ color: 'var(--color-text)' }}
+        >
           비밀번호
         </label>
         <input
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full px-4 py-3 rounded-lg transition-colors"
+          className="w-full px-4 py-3.5 rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
           style={{
-            background: 'var(--color-bg-secondary)',
+            background: 'var(--color-bg)',
             border: '1px solid var(--color-border)',
             color: 'var(--color-text)',
           }}
@@ -246,18 +295,24 @@ export function SignUpForm({ onSuccess }: { onSuccess?: () => void }) {
           minLength={8}
           required
         />
+        <p className="mt-1.5 text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+          영문, 숫자를 포함한 8자 이상
+        </p>
       </div>
       <div>
-        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text-secondary)' }}>
+        <label
+          className="block text-sm font-semibold mb-2"
+          style={{ color: 'var(--color-text)' }}
+        >
           비밀번호 확인
         </label>
         <input
           type="password"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
-          className="w-full px-4 py-3 rounded-lg transition-colors"
+          className="w-full px-4 py-3.5 rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
           style={{
-            background: 'var(--color-bg-secondary)',
+            background: 'var(--color-bg)',
             border: '1px solid var(--color-border)',
             color: 'var(--color-text)',
           }}
@@ -268,11 +323,28 @@ export function SignUpForm({ onSuccess }: { onSuccess?: () => void }) {
       <button
         type="submit"
         disabled={loading}
-        className="w-full py-3 rounded-lg font-semibold transition-colors disabled:opacity-50"
-        style={{ background: 'var(--color-accent)', color: 'var(--color-bg)' }}
+        className="w-full py-4 rounded-xl font-bold text-lg transition-all disabled:opacity-50 hover:opacity-90 active:scale-[0.98]"
+        style={{
+          background: 'var(--color-accent)',
+          color: 'var(--color-bg)',
+        }}
       >
-        {loading ? '가입 중...' : '회원가입'}
+        {loading ? (
+          <span className="flex items-center justify-center gap-2">
+            <span className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+            가입 중...
+          </span>
+        ) : (
+          '무료로 시작하기'
+        )}
       </button>
+      <p className="text-center text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+        가입하면{' '}
+        <a href="/terms" className="underline hover:opacity-80">이용약관</a>
+        {' '}및{' '}
+        <a href="/privacy" className="underline hover:opacity-80">개인정보처리방침</a>
+        에 동의하게 됩니다.
+      </p>
     </form>
   )
 }

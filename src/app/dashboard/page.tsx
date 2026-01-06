@@ -32,19 +32,31 @@ export default function DashboardPage() {
           {stats.map((stat, index) => (
             <div
               key={index}
-              className="rounded-xl p-6"
+              className="rounded-2xl p-6 transition-all hover:scale-[1.02] cursor-pointer"
               style={{
                 background: 'var(--color-bg-secondary)',
-                border: '1px solid var(--color-border)'
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
               }}
             >
               <div className="flex items-center justify-between mb-4">
-                <span className="text-2xl">{stat.icon}</span>
-                <span className="text-sm font-medium" style={{ color: 'var(--color-accent)' }}>
+                <span className="text-3xl">{stat.icon}</span>
+                <span
+                  className="text-sm font-bold px-2 py-1 rounded-full"
+                  style={{
+                    color: 'var(--color-accent)',
+                    background: 'rgba(0, 255, 136, 0.1)',
+                  }}
+                >
                   {stat.change}
                 </span>
               </div>
-              <p className="text-2xl font-bold mb-1">{stat.value}</p>
+              <p
+                className="text-3xl font-bold mb-1"
+                style={{ fontFamily: 'var(--font-display)' }}
+              >
+                {stat.value}
+              </p>
               <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
                 {stat.label}
               </p>
@@ -56,17 +68,18 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Recent Users */}
           <div
-            className="rounded-xl"
+            className="rounded-2xl overflow-hidden"
             style={{
               background: 'var(--color-bg-secondary)',
-              border: '1px solid var(--color-border)'
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
             }}
           >
             <div
               className="p-6"
-              style={{ borderBottom: '1px solid var(--color-border)' }}
+              style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}
             >
-              <h2 className="text-lg font-semibold">최근 가입자</h2>
+              <h2 className="text-lg font-bold" style={{ fontFamily: 'var(--font-display)' }}>최근 가입자</h2>
             </div>
             <div className="p-6">
               <div className="space-y-4">
@@ -112,17 +125,18 @@ export default function DashboardPage() {
 
           {/* Quick Actions */}
           <div
-            className="rounded-xl"
+            className="rounded-2xl overflow-hidden"
             style={{
               background: 'var(--color-bg-secondary)',
-              border: '1px solid var(--color-border)'
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
             }}
           >
             <div
               className="p-6"
-              style={{ borderBottom: '1px solid var(--color-border)' }}
+              style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}
             >
-              <h2 className="text-lg font-semibold">빠른 작업</h2>
+              <h2 className="text-lg font-bold" style={{ fontFamily: 'var(--font-display)' }}>빠른 작업</h2>
             </div>
             <div className="p-6">
               <div className="grid grid-cols-2 gap-4">
@@ -135,11 +149,15 @@ export default function DashboardPage() {
                   <Link
                     key={index}
                     href={action.href}
-                    className="p-4 rounded-lg transition-all hover:opacity-80 text-left"
-                    style={{ background: 'var(--color-bg)', border: '1px solid var(--color-border)' }}
+                    className="p-4 rounded-xl transition-all hover:scale-[1.02] hover:shadow-lg text-left"
+                    style={{
+                      background: 'var(--color-bg)',
+                      border: '1px solid rgba(255, 255, 255, 0.05)',
+                      boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.05)',
+                    }}
                   >
                     <span className="text-2xl mb-2 block">{action.icon}</span>
-                    <p className="font-medium">{action.title}</p>
+                    <p className="font-semibold">{action.title}</p>
                     <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
                       {action.desc}
                     </p>

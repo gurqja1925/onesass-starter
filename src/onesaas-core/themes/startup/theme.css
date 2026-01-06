@@ -1,0 +1,126 @@
+/**
+ * Startup Theme
+ * 스타트업 테마 - 현대적이고 역동적인 디자인, 스타트업에 적합
+ */
+
+/* ===================================
+ * Light Mode
+ * =================================== */
+[data-theme="startup"][data-mode="light"] {
+  --color-bg: #ffffff;
+  --color-bg-secondary: #faf5ff;
+  --color-text: #1e1b4b;
+  --color-text-secondary: #6b7280;
+  --color-accent: #8b5cf6;
+  --color-accent-hover: #7c3aed;
+  --color-border: #e9d5ff;
+
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #3b82f6;
+
+  --font-display: 'Plus Jakarta Sans', 'Pretendard', sans-serif;
+  --font-body: 'Pretendard', -apple-system, sans-serif;
+
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-lg: 20px;
+}
+
+/* ===================================
+ * Dark Mode
+ * =================================== */
+[data-theme="startup"][data-mode="dark"] {
+  --color-bg: #0f0d1a;
+  --color-bg-secondary: #1e1b2e;
+  --color-text: #faf5ff;
+  --color-text-secondary: #a78bfa;
+  --color-accent: #a855f7;
+  --color-accent-hover: #c084fc;
+  --color-border: #3b2d5a;
+
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #3b82f6;
+
+  --font-display: 'Plus Jakarta Sans', 'Pretendard', sans-serif;
+  --font-body: 'Pretendard', -apple-system, sans-serif;
+
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-lg: 20px;
+}
+
+/* ===================================
+ * Theme Effects - Gradient & Blur
+ * =================================== */
+[data-theme="startup"].theme-effect-gradient {
+  --gradient-primary: linear-gradient(135deg, #8b5cf6 0%, #ec4899 50%, #f97316 100%);
+  --gradient-secondary: linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%);
+}
+
+[data-theme="startup"].theme-effect-blur {
+  --blur-bg: blur(100px);
+}
+
+/* 배경 블롭 효과 */
+[data-theme="startup"][data-mode="dark"] .hero-section::before {
+  content: '';
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.3) 0%, transparent 70%);
+  top: -200px;
+  right: -200px;
+  pointer-events: none;
+}
+
+[data-theme="startup"][data-mode="dark"] .hero-section::after {
+  content: '';
+  position: absolute;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(236, 72, 153, 0.2) 0%, transparent 70%);
+  bottom: -100px;
+  left: -100px;
+  pointer-events: none;
+}
+
+/* ===================================
+ * Theme-specific styles
+ * =================================== */
+[data-theme="startup"] h1,
+[data-theme="startup"] h2,
+[data-theme="startup"] h3 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+[data-theme="startup"] .btn-primary {
+  background: var(--gradient-primary);
+  border: none;
+  font-weight: 600;
+}
+
+[data-theme="startup"] .btn-primary:hover {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+}
+
+[data-theme="startup"] .card {
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-secondary);
+  backdrop-filter: blur(10px);
+}
+
+[data-theme="startup"] .badge-accent {
+  background: var(--gradient-primary);
+  color: white;
+}
+
+/* 글로우 텍스트 */
+[data-theme="startup"][data-mode="dark"] .text-glow {
+  text-shadow: 0 0 20px rgba(168, 85, 247, 0.5);
+}

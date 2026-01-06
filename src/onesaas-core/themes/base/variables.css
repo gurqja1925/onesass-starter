@@ -1,0 +1,170 @@
+/**
+ * OneSaaS Base CSS Variables
+ * 기본 CSS 변수 정의 - 모든 테마에서 공통으로 사용
+ */
+
+:root {
+  /* ===================================
+   * 색상 변수 (테마에서 오버라이드)
+   * =================================== */
+  --color-bg: #09090b;
+  --color-bg-secondary: #18181b;
+  --color-text: #fafafa;
+  --color-text-secondary: #a1a1aa;
+  --color-accent: #00ff88;
+  --color-accent-hover: #00cc6a;
+  --color-border: #27272a;
+
+  /* 시맨틱 색상 */
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #3b82f6;
+
+  /* 반투명 색상 */
+  --color-overlay: rgba(0, 0, 0, 0.5);
+  --color-backdrop: rgba(0, 0, 0, 0.8);
+
+  /* ===================================
+   * 타이포그래피
+   * =================================== */
+  --font-display: 'Space Grotesk', 'Pretendard', -apple-system, sans-serif;
+  --font-body: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* 폰트 크기 */
+  --text-xs: 0.75rem;      /* 12px */
+  --text-sm: 0.875rem;     /* 14px */
+  --text-base: 1rem;       /* 16px */
+  --text-lg: 1.125rem;     /* 18px */
+  --text-xl: 1.25rem;      /* 20px */
+  --text-2xl: 1.5rem;      /* 24px */
+  --text-3xl: 1.875rem;    /* 30px */
+  --text-4xl: 2.25rem;     /* 36px */
+  --text-5xl: 3rem;        /* 48px */
+  --text-6xl: 3.75rem;     /* 60px */
+
+  /* 줄 높이 */
+  --leading-none: 1;
+  --leading-tight: 1.25;
+  --leading-snug: 1.375;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.625;
+  --leading-loose: 2;
+
+  /* 폰트 두께 */
+  --font-thin: 100;
+  --font-light: 300;
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+  --font-extrabold: 800;
+  --font-black: 900;
+
+  /* ===================================
+   * 간격
+   * =================================== */
+  --space-0: 0;
+  --space-1: 0.25rem;      /* 4px */
+  --space-2: 0.5rem;       /* 8px */
+  --space-3: 0.75rem;      /* 12px */
+  --space-4: 1rem;         /* 16px */
+  --space-5: 1.25rem;      /* 20px */
+  --space-6: 1.5rem;       /* 24px */
+  --space-8: 2rem;         /* 32px */
+  --space-10: 2.5rem;      /* 40px */
+  --space-12: 3rem;        /* 48px */
+  --space-16: 4rem;        /* 64px */
+  --space-20: 5rem;        /* 80px */
+  --space-24: 6rem;        /* 96px */
+
+  /* ===================================
+   * Border Radius
+   * =================================== */
+  --radius: 8px;
+  --radius-sm: 4px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-2xl: 32px;
+  --radius-full: 9999px;
+
+  /* ===================================
+   * 그림자
+   * =================================== */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+
+  /* 글로우 효과 */
+  --shadow-glow: 0 0 20px var(--color-accent);
+  --shadow-glow-sm: 0 0 10px var(--color-accent);
+  --shadow-glow-lg: 0 0 40px var(--color-accent);
+
+  /* ===================================
+   * 레이아웃
+   * =================================== */
+  --layout-max-width: 1400px;
+  --layout-max-width-sm: 640px;
+  --layout-max-width-md: 768px;
+  --layout-max-width-lg: 1024px;
+  --layout-max-width-xl: 1280px;
+  --layout-max-width-2xl: 1536px;
+
+  /* 사이드바 */
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 80px;
+
+  /* 상단바 */
+  --topbar-height: 64px;
+
+  /* ===================================
+   * z-index 스케일
+   * =================================== */
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-fixed: 300;
+  --z-modal-backdrop: 400;
+  --z-modal: 500;
+  --z-popover: 600;
+  --z-tooltip: 700;
+  --z-toast: 800;
+
+  /* ===================================
+   * 트랜지션
+   * =================================== */
+  --transition-fast: 150ms ease;
+  --transition-normal: 250ms ease;
+  --transition-slow: 350ms ease;
+
+  /* ===================================
+   * 텍스트 방향 (RTL 지원)
+   * =================================== */
+  --direction: ltr;
+  --start: left;
+  --end: right;
+}
+
+/* ===================================
+ * 다크 모드 기본값
+ * =================================== */
+[data-mode="dark"] {
+  color-scheme: dark;
+}
+
+[data-mode="light"] {
+  color-scheme: light;
+}
+
+/* ===================================
+ * 시스템 폰트 스택
+ * =================================== */
+@font-face {
+  font-family: 'Pretendard';
+  font-display: swap;
+  src: local('Pretendard'),
+       url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css');
+}

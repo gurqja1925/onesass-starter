@@ -1,0 +1,99 @@
+/**
+ * Neon Theme
+ * 네온 테마 - 레트로 퓨처리스틱, AI/테크 스타트업에 적합
+ */
+
+/* ===================================
+ * Light Mode
+ * =================================== */
+[data-theme="neon"][data-mode="light"] {
+  --color-bg: #fafafa;
+  --color-bg-secondary: #f0fdf4;
+  --color-text: #09090b;
+  --color-text-secondary: #71717a;
+  --color-accent: #00cc6a;
+  --color-accent-hover: #00aa58;
+  --color-border: #d1fae5;
+
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #3b82f6;
+
+  --font-display: 'Space Grotesk', 'Pretendard', sans-serif;
+  --font-body: 'Pretendard', -apple-system, sans-serif;
+
+  --radius: 8px;
+  --radius-sm: 4px;
+  --radius-lg: 16px;
+}
+
+/* ===================================
+ * Dark Mode
+ * =================================== */
+[data-theme="neon"][data-mode="dark"] {
+  --color-bg: #09090b;
+  --color-bg-secondary: #18181b;
+  --color-text: #fafafa;
+  --color-text-secondary: #a1a1aa;
+  --color-accent: #00ff88;
+  --color-accent-hover: #00cc6a;
+  --color-border: #27272a;
+
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #3b82f6;
+
+  --font-display: 'Space Grotesk', 'Pretendard', sans-serif;
+  --font-body: 'Pretendard', -apple-system, sans-serif;
+
+  --radius: 8px;
+  --radius-sm: 4px;
+  --radius-lg: 16px;
+}
+
+/* ===================================
+ * Theme Effects - Glow
+ * =================================== */
+[data-theme="neon"] .theme-effect-glow {
+  --shadow-glow: 0 0 20px rgba(0, 255, 136, 0.3);
+  --shadow-glow-sm: 0 0 10px rgba(0, 255, 136, 0.2);
+  --shadow-glow-lg: 0 0 40px rgba(0, 255, 136, 0.4);
+}
+
+[data-theme="neon"][data-mode="dark"] .btn-primary {
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+}
+
+[data-theme="neon"][data-mode="dark"] .btn-primary:hover {
+  box-shadow: 0 0 30px rgba(0, 255, 136, 0.5);
+}
+
+/* ===================================
+ * Theme Effects - Grid
+ * =================================== */
+[data-theme="neon"].theme-effect-grid {
+  background-image:
+    linear-gradient(rgba(0, 255, 136, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 136, 0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+/* ===================================
+ * Theme-specific styles
+ * =================================== */
+[data-theme="neon"] .card {
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-secondary);
+}
+
+[data-theme="neon"][data-mode="dark"] .card:hover {
+  border-color: rgba(0, 255, 136, 0.3);
+}
+
+[data-theme="neon"] .badge-accent {
+  background: var(--color-accent);
+  color: var(--color-bg);
+  text-shadow: none;
+}

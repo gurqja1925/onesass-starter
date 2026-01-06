@@ -1,0 +1,111 @@
+/**
+ * Playful Theme
+ * 플레이풀 테마 - 재미있고 친근한 디자인, 교육/소셜 앱에 적합
+ */
+
+/* ===================================
+ * Light Mode
+ * =================================== */
+[data-theme="playful"][data-mode="light"] {
+  --color-bg: #fffbeb;
+  --color-bg-secondary: #fef3c7;
+  --color-text: #1c1917;
+  --color-text-secondary: #78716c;
+  --color-accent: #f97316;
+  --color-accent-hover: #ea580c;
+  --color-border: #fde68a;
+
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #3b82f6;
+
+  --font-display: 'Nunito', 'Pretendard', sans-serif;
+  --font-body: 'Pretendard', -apple-system, sans-serif;
+
+  --radius: 16px;
+  --radius-sm: 8px;
+  --radius-lg: 24px;
+}
+
+/* ===================================
+ * Dark Mode
+ * =================================== */
+[data-theme="playful"][data-mode="dark"] {
+  --color-bg: #1c1917;
+  --color-bg-secondary: #292524;
+  --color-text: #fafaf9;
+  --color-text-secondary: #a8a29e;
+  --color-accent: #f97316;
+  --color-accent-hover: #fb923c;
+  --color-border: #44403c;
+
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #3b82f6;
+
+  --font-display: 'Nunito', 'Pretendard', sans-serif;
+  --font-body: 'Pretendard', -apple-system, sans-serif;
+
+  --radius: 16px;
+  --radius-sm: 8px;
+  --radius-lg: 24px;
+}
+
+/* ===================================
+ * Theme Effects - Gradient
+ * =================================== */
+[data-theme="playful"].theme-effect-gradient {
+  --gradient-primary: linear-gradient(135deg, #f97316 0%, #ec4899 100%);
+  --gradient-secondary: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%);
+}
+
+[data-theme="playful"] .btn-primary {
+  background: var(--gradient-primary);
+  border: none;
+}
+
+[data-theme="playful"] .btn-primary:hover {
+  filter: brightness(1.1);
+  transform: scale(1.02);
+}
+
+/* ===================================
+ * Theme-specific styles
+ * =================================== */
+[data-theme="playful"] h1,
+[data-theme="playful"] h2,
+[data-theme="playful"] h3 {
+  font-weight: 800;
+}
+
+[data-theme="playful"] .card {
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+[data-theme="playful"] .card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="playful"] .badge {
+  border-radius: var(--radius-lg);
+  font-weight: 700;
+}
+
+/* 바운스 효과 */
+[data-theme="playful"] .animate-bounce {
+  animation: playfulBounce 0.6s ease infinite;
+}
+
+@keyframes playfulBounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}

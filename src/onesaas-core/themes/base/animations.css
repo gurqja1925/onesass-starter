@@ -1,0 +1,356 @@
+/**
+ * OneSaaS Animations
+ * 애니메이션 및 트랜지션 정의
+ */
+
+/* ===================================
+ * 기본 애니메이션
+ * =================================== */
+
+/* 페이드 인 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 페이드 인 업 */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 페이드 인 다운 */
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 페이드 인 레프트 */
+@keyframes fadeInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* 페이드 인 라이트 */
+@keyframes fadeInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* 스케일 인 */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* 슬라이드 인 업 */
+@keyframes slideInUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* 슬라이드 인 다운 */
+@keyframes slideInDown {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* ===================================
+ * 루프 애니메이션
+ * =================================== */
+
+/* 펄스 */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* 바운스 */
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(-5%);
+    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+  }
+  50% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  }
+}
+
+/* 스핀 */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 핑 */
+@keyframes ping {
+  75%, 100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+/* 플로트 */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* 쉐이크 */
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-5px);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translateX(5px);
+  }
+}
+
+/* 글로우 펄스 */
+@keyframes glowPulse {
+  0%, 100% {
+    box-shadow: 0 0 20px var(--color-accent);
+  }
+  50% {
+    box-shadow: 0 0 40px var(--color-accent);
+  }
+}
+
+/* ===================================
+ * 스켈레톤 애니메이션
+ * =================================== */
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* ===================================
+ * 프로그레스 애니메이션
+ * =================================== */
+
+@keyframes progressIndeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
+
+/* ===================================
+ * 숫자 카운터 애니메이션
+ * =================================== */
+
+@keyframes countUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===================================
+ * 유틸리티 클래스
+ * =================================== */
+
+.animate-fadeIn {
+  animation: fadeIn var(--transition-normal) ease-out forwards;
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp var(--transition-normal) ease-out forwards;
+}
+
+.animate-fadeInDown {
+  animation: fadeInDown var(--transition-normal) ease-out forwards;
+}
+
+.animate-fadeInLeft {
+  animation: fadeInLeft var(--transition-normal) ease-out forwards;
+}
+
+.animate-fadeInRight {
+  animation: fadeInRight var(--transition-normal) ease-out forwards;
+}
+
+.animate-scaleIn {
+  animation: scaleIn var(--transition-normal) ease-out forwards;
+}
+
+.animate-slideInUp {
+  animation: slideInUp var(--transition-normal) ease-out forwards;
+}
+
+.animate-slideInDown {
+  animation: slideInDown var(--transition-normal) ease-out forwards;
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-bounce {
+  animation: bounce 1s infinite;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+.animate-ping {
+  animation: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+.animate-glow {
+  animation: glowPulse 2s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--color-bg-secondary) 0%,
+    var(--color-border) 50%,
+    var(--color-bg-secondary) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* ===================================
+ * 순차 애니메이션 딜레이
+ * =================================== */
+
+.animate-delay-100 { animation-delay: 100ms; }
+.animate-delay-200 { animation-delay: 200ms; }
+.animate-delay-300 { animation-delay: 300ms; }
+.animate-delay-400 { animation-delay: 400ms; }
+.animate-delay-500 { animation-delay: 500ms; }
+.animate-delay-600 { animation-delay: 600ms; }
+.animate-delay-700 { animation-delay: 700ms; }
+.animate-delay-800 { animation-delay: 800ms; }
+.animate-delay-900 { animation-delay: 900ms; }
+.animate-delay-1000 { animation-delay: 1000ms; }
+
+/* ===================================
+ * 스크롤 트리거 애니메이션
+ * =================================== */
+
+[data-animate] {
+  opacity: 0;
+}
+
+[data-animate].is-visible {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+[data-animate="fade"].is-visible {
+  animation: fadeIn 0.6s ease-out forwards;
+}
+
+[data-animate="slide-up"].is-visible {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+[data-animate="slide-down"].is-visible {
+  animation: fadeInDown 0.6s ease-out forwards;
+}
+
+[data-animate="slide-left"].is-visible {
+  animation: fadeInLeft 0.6s ease-out forwards;
+}
+
+[data-animate="slide-right"].is-visible {
+  animation: fadeInRight 0.6s ease-out forwards;
+}
+
+[data-animate="scale"].is-visible {
+  animation: scaleIn 0.6s ease-out forwards;
+}
+
+/* ===================================
+ * 감소된 모션 지원
+ * =================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

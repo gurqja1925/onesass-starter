@@ -1,0 +1,95 @@
+/**
+ * Corporate Theme
+ * 코퍼레이트 테마 - 전문적이고 신뢰감 있는 디자인, B2B에 적합
+ */
+
+/* ===================================
+ * Light Mode
+ * =================================== */
+[data-theme="corporate"][data-mode="light"] {
+  --color-bg: #ffffff;
+  --color-bg-secondary: #f8fafc;
+  --color-text: #0f172a;
+  --color-text-secondary: #64748b;
+  --color-accent: #2563eb;
+  --color-accent-hover: #1d4ed8;
+  --color-border: #e2e8f0;
+
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #3b82f6;
+
+  --font-display: 'Inter', 'Pretendard', sans-serif;
+  --font-body: 'Pretendard', -apple-system, sans-serif;
+
+  --radius: 6px;
+  --radius-sm: 4px;
+  --radius-lg: 8px;
+}
+
+/* ===================================
+ * Dark Mode
+ * =================================== */
+[data-theme="corporate"][data-mode="dark"] {
+  --color-bg: #0f172a;
+  --color-bg-secondary: #1e293b;
+  --color-text: #f8fafc;
+  --color-text-secondary: #94a3b8;
+  --color-accent: #3b82f6;
+  --color-accent-hover: #60a5fa;
+  --color-border: #334155;
+
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #3b82f6;
+
+  --font-display: 'Inter', 'Pretendard', sans-serif;
+  --font-body: 'Pretendard', -apple-system, sans-serif;
+
+  --radius: 6px;
+  --radius-sm: 4px;
+  --radius-lg: 8px;
+}
+
+/* ===================================
+ * Theme-specific styles
+ * =================================== */
+[data-theme="corporate"] h1,
+[data-theme="corporate"] h2,
+[data-theme="corporate"] h3 {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+[data-theme="corporate"] .btn-primary {
+  font-weight: 500;
+}
+
+[data-theme="corporate"] .card {
+  border: 1px solid var(--color-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="corporate"] .card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="corporate"] table th {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+}
+
+[data-theme="corporate"] .badge {
+  font-weight: 500;
+  font-size: 0.75rem;
+}
+
+/* 전문적인 호버 효과 */
+[data-theme="corporate"] a:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}

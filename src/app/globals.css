@@ -1,11 +1,17 @@
+/* 기본 테마 폰트 */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700&family=Nunito:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@400;500;600;700&display=swap');
+
+/* 특이한 테마 폰트 (레트로웨이브, 사이버펑크, 오로라, 도쿄, 포레스트, 오션, 선셋, 스페이스, 캔디, 터미널) */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Audiowide&family=Exo+2:wght@400;500;600;700&family=Fira+Code:wght@400;500;600;700&family=Quicksand:wght@400;500;600;700&family=Nunito+Sans:wght@400;500;600;700&family=M+PLUS+Rounded+1c:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700&family=Source+Code+Pro:wght@400;500;600;700&family=Fraunces:wght@400;500;600;700&family=Source+Sans+Pro:wght@400;600;700&family=Josefin+Sans:wght@400;500;600;700&family=Lato:wght@400;700&family=Righteous&family=Rubik:wght@400;500;600;700&family=Oxanium:wght@400;500;600;700&family=Space+Mono:wght@400;700&family=Fredoka+One&family=VT323&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* THEME START */
-/* Applied theme: neon */
-/* Neon Theme */
+/* Default theme: neon */
 :root {
+  /* Colors */
   --color-bg: #09090b;
   --color-bg-secondary: #18181b;
   --color-text: #fafafa;
@@ -13,10 +19,180 @@
   --color-accent: #00ff88;
   --color-accent-hover: #00cc6a;
   --color-border: #27272a;
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #3b82f6;
+
+  /* RGB versions for rgba() usage */
+  --color-bg-rgb: 9, 9, 11;
+  --color-bg-secondary-rgb: 24, 24, 27;
+  --color-text-rgb: 250, 250, 250;
+  --color-accent-rgb: 0, 255, 136;
+
+  /* Fonts - Default (Neon theme) */
+  --font-display: 'Space Grotesk', 'Noto Sans KR', sans-serif;
+  --font-body: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Border Radius */
+  --radius: 8px;
+  --radius-sm: 4px;
+  --radius-lg: 16px;
+  --radius-full: 9999px;
+
+  /* Direction */
+  --direction: ltr;
+  --start: left;
+  --end: right;
 }
 /* THEME END */
 
+/* Base Styles */
 body {
   background: var(--color-bg);
   color: var(--color-text);
+  font-family: var(--font-body);
+  line-height: 1.6;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Headings use display font */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+/* Code uses mono font */
+code, pre, kbd, samp {
+  font-family: var(--font-mono);
+}
+
+/* Smooth transitions for theme changes */
+*, *::before, *::after {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-secondary);
+}
+
+/* Selection color */
+::selection {
+  background: var(--color-accent);
+  color: var(--color-bg);
+}
+
+/* Focus ring for accessibility */
+*:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* Theme effect classes */
+.theme-effect-glow {
+  --glow-color: var(--color-accent);
+}
+
+.theme-effect-glow .accent-glow {
+  box-shadow: 0 0 20px var(--glow-color), 0 0 40px var(--glow-color);
+}
+
+.theme-effect-grain::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  z-index: 9999;
+}
+
+.theme-effect-shadow .card-shadow {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.theme-effect-gradient .gradient-bg {
+  background: linear-gradient(135deg, var(--color-bg) 0%, var(--color-bg-secondary) 100%);
+}
+
+/* RTL Support */
+[dir="rtl"] {
+  text-align: right;
+}
+
+[dir="rtl"] .rtl-flip {
+  transform: scaleX(-1);
+}
+
+/* Utility classes for themes */
+.text-display {
+  font-family: var(--font-display);
+}
+
+.text-body {
+  font-family: var(--font-body);
+}
+
+.text-mono {
+  font-family: var(--font-mono);
+}
+
+.rounded-theme {
+  border-radius: var(--radius);
+}
+
+.rounded-theme-sm {
+  border-radius: var(--radius-sm);
+}
+
+.rounded-theme-lg {
+  border-radius: var(--radius-lg);
+}
+
+/* Animation utilities */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.6s ease-out forwards;
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }

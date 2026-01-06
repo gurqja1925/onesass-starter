@@ -1,0 +1,118 @@
+/**
+ * Fintech Theme
+ * 핀테크 테마 - 신뢰감과 전문성을 주는 디자인, 금융 서비스에 적합
+ */
+
+/* ===================================
+ * Light Mode
+ * =================================== */
+[data-theme="fintech"][data-mode="light"] {
+  --color-bg: #ffffff;
+  --color-bg-secondary: #f0fdfa;
+  --color-text: #042f2e;
+  --color-text-secondary: #5f7470;
+  --color-accent: #0d9488;
+  --color-accent-hover: #0f766e;
+  --color-border: #ccfbf1;
+
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #3b82f6;
+
+  --font-display: 'DM Sans', 'Pretendard', sans-serif;
+  --font-body: 'Pretendard', -apple-system, sans-serif;
+
+  --radius: 6px;
+  --radius-sm: 4px;
+  --radius-lg: 12px;
+}
+
+/* ===================================
+ * Dark Mode
+ * =================================== */
+[data-theme="fintech"][data-mode="dark"] {
+  --color-bg: #042f2e;
+  --color-bg-secondary: #134e4a;
+  --color-text: #f0fdfa;
+  --color-text-secondary: #99f6e4;
+  --color-accent: #2dd4bf;
+  --color-accent-hover: #5eead4;
+  --color-border: #115e59;
+
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #3b82f6;
+
+  --font-display: 'DM Sans', 'Pretendard', sans-serif;
+  --font-body: 'Pretendard', -apple-system, sans-serif;
+
+  --radius: 6px;
+  --radius-sm: 4px;
+  --radius-lg: 12px;
+}
+
+/* ===================================
+ * Theme-specific styles
+ * =================================== */
+[data-theme="fintech"] h1,
+[data-theme="fintech"] h2,
+[data-theme="fintech"] h3 {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+[data-theme="fintech"] .btn-primary {
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(13, 148, 136, 0.2);
+}
+
+[data-theme="fintech"] .btn-primary:hover {
+  box-shadow: 0 4px 8px rgba(13, 148, 136, 0.3);
+}
+
+[data-theme="fintech"] .card {
+  border: 1px solid var(--color-border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+/* 숫자 표시 스타일 */
+[data-theme="fintech"] .stat-value {
+  font-family: 'DM Sans', monospace;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+[data-theme="fintech"] .currency {
+  font-family: 'DM Sans', sans-serif;
+}
+
+/* 상승/하락 표시 */
+[data-theme="fintech"] .trend-up {
+  color: var(--color-success);
+}
+
+[data-theme="fintech"] .trend-down {
+  color: var(--color-error);
+}
+
+/* 차트 영역 스타일 */
+[data-theme="fintech"] .chart-container {
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+}
+
+/* 테이블 스타일 */
+[data-theme="fintech"] table {
+  font-variant-numeric: tabular-nums;
+}
+
+[data-theme="fintech"] table th {
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-secondary);
+}

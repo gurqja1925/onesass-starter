@@ -2,16 +2,26 @@ import Link from 'next/link'
 
 export default function Footer() {
   return (
-    <footer className="bg-gray-900 border-t border-gray-800">
+    <footer style={{ background: 'var(--color-bg-secondary)', borderTop: '1px solid var(--color-border)' }}>
       <div className="max-w-6xl mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Logo & Description */}
           <div className="md:col-span-2">
             <Link href="/" className="flex items-center gap-2 mb-4">
-              <span className="text-2xl">🚀</span>
-              <span className="font-bold text-white text-lg">OneSaaS</span>
+              <span
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold"
+                style={{ background: 'var(--color-accent)', color: 'var(--color-bg)' }}
+              >
+                O
+              </span>
+              <span
+                className="font-bold text-lg"
+                style={{ color: 'var(--color-text)', fontFamily: 'var(--font-display)' }}
+              >
+                OneSaaS
+              </span>
             </Link>
-            <p className="text-gray-400 text-sm max-w-xs">
+            <p className="text-sm max-w-xs" style={{ color: 'var(--color-text-secondary)' }}>
               클릭 몇 번으로 완성하는 SaaS.
               결제, 인증, 관리자 페이지까지 모두 포함.
             </p>
@@ -19,21 +29,47 @@ export default function Footer() {
 
           {/* Links */}
           <div>
-            <h3 className="font-semibold text-white mb-4">서비스</h3>
+            <h3
+              className="font-semibold mb-4"
+              style={{ color: 'var(--color-text)', fontFamily: 'var(--font-display)' }}
+            >
+              서비스
+            </h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/#features" className="text-gray-400 hover:text-white text-sm transition-colors">
-                  기능
+                <Link
+                  href="/showcase"
+                  className="text-sm transition-colors hover:opacity-80"
+                  style={{ color: 'var(--color-text-secondary)' }}
+                >
+                  쇼케이스
                 </Link>
               </li>
               <li>
-                <Link href="/#pricing" className="text-gray-400 hover:text-white text-sm transition-colors">
-                  가격
+                <Link
+                  href="/notes"
+                  className="text-sm transition-colors hover:opacity-80"
+                  style={{ color: 'var(--color-text-secondary)' }}
+                >
+                  노트
                 </Link>
               </li>
               <li>
-                <Link href="/docs" className="text-gray-400 hover:text-white text-sm transition-colors">
+                <Link
+                  href="/docs"
+                  className="text-sm transition-colors hover:opacity-80"
+                  style={{ color: 'var(--color-text-secondary)' }}
+                >
                   문서
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/dashboard"
+                  className="text-sm transition-colors hover:opacity-80"
+                  style={{ color: 'var(--color-text-secondary)' }}
+                >
+                  대시보드
                 </Link>
               </li>
             </ul>
@@ -41,15 +77,28 @@ export default function Footer() {
 
           {/* Legal */}
           <div>
-            <h3 className="font-semibold text-white mb-4">법적 고지</h3>
+            <h3
+              className="font-semibold mb-4"
+              style={{ color: 'var(--color-text)', fontFamily: 'var(--font-display)' }}
+            >
+              법적 고지
+            </h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/terms" className="text-gray-400 hover:text-white text-sm transition-colors">
+                <Link
+                  href="/terms"
+                  className="text-sm transition-colors hover:opacity-80"
+                  style={{ color: 'var(--color-text-secondary)' }}
+                >
                   이용약관
                 </Link>
               </li>
               <li>
-                <Link href="/privacy" className="text-gray-400 hover:text-white text-sm transition-colors">
+                <Link
+                  href="/privacy"
+                  className="text-sm transition-colors hover:opacity-80"
+                  style={{ color: 'var(--color-text-secondary)' }}
+                >
                   개인정보처리방침
                 </Link>
               </li>
@@ -58,8 +107,8 @@ export default function Footer() {
         </div>
 
         {/* Copyright */}
-        <div className="mt-12 pt-8 border-t border-gray-800">
-          <p className="text-gray-500 text-sm text-center">
+        <div className="mt-12 pt-8" style={{ borderTop: '1px solid var(--color-border)' }}>
+          <p className="text-sm text-center" style={{ color: 'var(--color-text-secondary)' }}>
             © {new Date().getFullYear()} OneSaaS. All rights reserved.
           </p>
         </div>
