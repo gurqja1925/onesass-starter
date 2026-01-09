@@ -18,9 +18,12 @@ interface DashboardLayoutProps {
 
 const defaultMenuItems: MenuItem[] = [
   { href: '/dashboard', label: '홈', icon: '🏠' },
-  { href: '/dashboard/ai', label: 'AI 도구', icon: '🤖' },
-  { href: '/dashboard/analytics', label: '통계', icon: '📊' },
-  { href: '/dashboard/content', label: '콘텐츠', icon: '📝' },
+  { href: '/dashboard/ai-chat', label: 'AI 채팅', icon: '💬' },
+  { href: '/dashboard/image-gen', label: '이미지 생성', icon: '🎨' },
+  { href: '/dashboard/video-gen', label: '영상 생성', icon: '🎬' },
+  { href: '/dashboard/notes', label: '노트', icon: '📝' },
+  { href: '/dashboard/analytics', label: '분석 도구', icon: '📊' },
+  { href: '/dashboard/templates', label: '템플릿', icon: '📋' },
   { href: '/dashboard/settings', label: '설정', icon: '⚙️' },
 ]
 
