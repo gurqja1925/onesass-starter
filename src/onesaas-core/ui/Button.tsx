@@ -7,7 +7,7 @@
 import { ReactNode, ButtonHTMLAttributes } from 'react'
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger'
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger'
   size?: 'sm' | 'md' | 'lg'
   loading?: boolean
   children: ReactNode
@@ -33,6 +33,11 @@ export function Button({
       background: 'var(--color-bg-secondary)',
       color: 'var(--color-text)',
       border: '1px solid var(--color-border)',
+    },
+    outline: {
+      background: 'transparent',
+      color: 'var(--color-accent)',
+      border: '1px solid var(--color-accent)',
     },
     ghost: {
       background: 'transparent',
