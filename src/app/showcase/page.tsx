@@ -260,7 +260,7 @@ export default function ShowcasePage() {
                   <Badge>Default</Badge>
                   <Badge variant="success">Success</Badge>
                   <Badge variant="warning">Warning</Badge>
-                  <Badge variant="danger">Error</Badge>
+                  <Badge variant="error">Error</Badge>
                 </div>
               </div>
             </section>

@@ -5,14 +5,14 @@
  */
 
 // 기존 컴포넌트 (레거시 호환)
-export * from './Button'
-export * from './Card'
-export * from './Input'
+// Button, Input → primitives에서 export
+// Card → layout에서 export
+// Badge → data-display에서 export
 export * from './Modal'
-export * from './Badge'
-export * from './Loading'
+// Loading에서 Skeleton은 feedback/Skeleton과 중복되므로 명시적 export
+export { Loading, PageLoading } from './Loading'
 
-// Primitives - 기본 UI 컴포넌트
+// Primitives - 기본 UI 컴포넌트 (Button, Input 포함)
 export * from './primitives'
 
 // Layout - 레이아웃 컴포넌트
