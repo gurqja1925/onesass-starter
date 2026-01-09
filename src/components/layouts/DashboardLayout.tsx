@@ -19,6 +19,7 @@ interface DashboardLayoutProps {
 const defaultMenuItems: MenuItem[] = [
   { href: '/dashboard', label: '홈', icon: '🏠' },
   { href: '/dashboard/ai-chat', label: 'AI 채팅', icon: '💬' },
+  { href: '/dashboard/ai-agent', label: 'AI Agent', icon: '🤖' },
   { href: '/dashboard/image-gen', label: '이미지 생성', icon: '🎨' },
   { href: '/dashboard/video-gen', label: '영상 생성', icon: '🎬' },
   { href: '/dashboard/notes', label: '노트', icon: '📝' },
