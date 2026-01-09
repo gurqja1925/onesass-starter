@@ -1,12 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent } from '@/onesaas-core/ui/Card'
 import { Button } from '@/onesaas-core/ui/Button'
+import { Loading } from '@/onesaas-core/ui/Loading'
 
-export default function PaymentSuccessPage() {
+function PaymentSuccessContent() {
   const searchParams = useSearchParams()
   const [verifying, setVerifying] = useState(true)
   const [verified, setVerified] = useState(false)
@@ -53,63 +54,71 @@ export default function PaymentSuccessPage() {
   }, [impUid, merchantUid, amount])
 
   return (
+    <Card className="max-w-md w-full">
+      <CardContent className="text-center py-12">
+        {verifying ? (
+          <>
+            <div className="text-6xl mb-6 animate-pulse">⏳</div>
+            <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--color-text)' }}>
+              결제 확인 중...
+            </h1>
+            <p style={{ color: 'var(--color-text-secondary)' }}>
+              잠시만 기다려주세요
+            </p>
+          </>
+        ) : verified ? (
+          <>
+            <div className="text-6xl mb-6">🎉</div>
+            <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--color-text)' }}>
+              결제 완료!
+            </h1>
+            <p className="mb-6" style={{ color: 'var(--color-text-secondary)' }}>
+              결제가 성공적으로 처리되었습니다.
+              <br />
+              감사합니다!
+            </p>
+            <div className="space-y-3">
+              <Link href="/dashboard">
+                <Button className="w-full">대시보드로 이동</Button>
+              </Link>
+              <Link href="/">
+                <Button variant="secondary" className="w-full">홈으로</Button>
+              </Link>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="text-6xl mb-6">❌</div>
+            <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--color-text)' }}>
+              결제 확인 실패
+            </h1>
+            <p className="mb-6" style={{ color: '#ef4444' }}>
+              {error}
+            </p>
+            <div className="space-y-3">
+              <Link href="/pricing">
+                <Button className="w-full">다시 시도</Button>
+              </Link>
+              <Link href="/support">
+                <Button variant="secondary" className="w-full">고객지원 문의</Button>
+              </Link>
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+export default function PaymentSuccessPage() {
+  return (
     <div
       className="min-h-screen flex items-center justify-center p-4"
       style={{ background: 'var(--color-bg)' }}
     >
-      <Card className="max-w-md w-full">
-        <CardContent className="text-center py-12">
-          {verifying ? (
-            <>
-              <div className="text-6xl mb-6 animate-pulse">⏳</div>
-              <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--color-text)' }}>
-                결제 확인 중...
-              </h1>
-              <p style={{ color: 'var(--color-text-secondary)' }}>
-                잠시만 기다려주세요
-              </p>
-            </>
-          ) : verified ? (
-            <>
-              <div className="text-6xl mb-6">🎉</div>
-              <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--color-text)' }}>
-                결제 완료!
-              </h1>
-              <p className="mb-6" style={{ color: 'var(--color-text-secondary)' }}>
-                결제가 성공적으로 처리되었습니다.
-                <br />
-                감사합니다!
-              </p>
-              <div className="space-y-3">
-                <Link href="/dashboard">
-                  <Button className="w-full">대시보드로 이동</Button>
-                </Link>
-                <Link href="/">
-                  <Button variant="secondary" className="w-full">홈으로</Button>
-                </Link>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="text-6xl mb-6">❌</div>
-              <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--color-text)' }}>
-                결제 확인 실패
-              </h1>
-              <p className="mb-6" style={{ color: '#ef4444' }}>
-                {error}
-              </p>
-              <div className="space-y-3">
-                <Link href="/pricing">
-                  <Button className="w-full">다시 시도</Button>
-                </Link>
-                <Link href="/support">
-                  <Button variant="secondary" className="w-full">고객지원 문의</Button>
-                </Link>
-              </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
+      <Suspense fallback={<Loading size="lg" text="로딩 중..." />}>
+        <PaymentSuccessContent />
+      </Suspense>
     </div>
   )
 }
