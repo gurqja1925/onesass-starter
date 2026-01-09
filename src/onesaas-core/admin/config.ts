@@ -149,5 +149,12 @@ export function getAdminMenuItems(): AdminMenuItem[] {
       href: '/admin/setup',
       enabled: config.enabled,
     },
+    {
+      id: 'guides',
+      label: '운영 가이드',
+      icon: '📚',
+      href: '/admin/guides',
+      enabled: config.enabled,
+    },
   ].filter((item) => item.enabled)
 }
