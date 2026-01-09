@@ -32,6 +32,33 @@ export default function DeploymentGuidePage() {
           </div>
         </div>
 
+        {/* 이미 배포됨 안내 */}
+        <Card style={{ background: '#dcfce7', border: '2px solid #10b981' }}>
+          <CardContent>
+            <div className="flex items-start gap-4">
+              <span className="text-4xl">✅</span>
+              <div>
+                <h3 className="font-bold text-lg mb-2" style={{ color: '#166534' }}>
+                  이미 배포되어 있어요!
+                </h3>
+                <p style={{ color: '#166534' }}>
+                  축하해요! 이 서비스는 <strong>이미 Vercel에 배포</strong>되어 있어요.
+                  <br />
+                  초기 설정도 완료된 상태라서 바로 사용할 수 있어요! 🎉
+                </p>
+                <div className="mt-3 p-3 rounded-lg" style={{ background: 'rgba(255,255,255,0.7)' }}>
+                  <p className="font-mono text-sm" style={{ color: '#166534' }}>
+                    <strong>현재 주소:</strong> https://onesass-starter.vercel.app
+                  </p>
+                </div>
+                <p className="mt-3 text-sm" style={{ color: '#166534' }}>
+                  아래 내용은 코드를 수정한 후 <strong>다시 배포할 때</strong> 참고하세요!
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* 배포가 뭐예요? */}
         <Card>
           <CardHeader>
