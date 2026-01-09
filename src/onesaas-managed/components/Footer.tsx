@@ -47,15 +47,6 @@ export default function Footer() {
               </li>
               <li>
                 <Link
-                  href="/notes"
-                  className="text-sm transition-colors hover:opacity-80"
-                  style={{ color: 'var(--color-text-secondary)' }}
-                >
-                  노트
-                </Link>
-              </li>
-              <li>
-                <Link
                   href="/docs"
                   className="text-sm transition-colors hover:opacity-80"
                   style={{ color: 'var(--color-text-secondary)' }}

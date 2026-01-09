@@ -27,9 +27,7 @@ const THEMES: { id: ThemeId; name: string; colors: string[] }[] = [
 
 // 메뉴 아이템
 const NAV_ITEMS = [
-  { href: '/', label: '홈' },
   { href: '/showcase', label: '쇼케이스' },
-  { href: '/dashboard', label: '대시보드' },
 ]
 
 interface GlobalHeaderProps {

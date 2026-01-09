@@ -8,7 +8,7 @@ import { ReactNode } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { getAdminMenuItems } from './config'
-import { useAdminAuth, useAdminStats } from './hooks'
+import { useAdminAuth, useAdminStats, useAppMode } from './hooks'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card'
 import { Loading } from '../ui/Loading'
 
@@ -17,6 +17,7 @@ import { Loading } from '../ui/Loading'
  */
 export function AdminLayout({ children }: { children: ReactNode }) {
   const { isAdmin, loading } = useAdminAuth()
+  const { isDemoMode, mounted } = useAppMode()
   const pathname = usePathname()
   const menuItems = getAdminMenuItems()
 
@@ -69,7 +70,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
     >
       {/* 사이드바 */}
       <aside
-        className="w-64 border-r flex-shrink-0"
+        className="w-64 border-r flex-shrink-0 flex flex-col"
         style={{ borderColor: 'var(--color-border)', background: 'var(--color-bg-secondary)' }}
       >
         <div className="p-6">
@@ -82,6 +83,15 @@ export function AdminLayout({ children }: { children: ReactNode }) {
               관리자
             </span>
           </Link>
+          {mounted && isDemoMode && (
+            <div
+              className="mt-3 px-3 py-2 rounded-lg text-xs font-medium flex items-center gap-2"
+              style={{ background: '#fef3c7', color: '#92400e' }}
+            >
+              <span>🎮</span>
+              <span>데모 모드</span>
+            </div>
+          )}
         </div>
 
         <nav className="px-4 py-2">
@@ -339,9 +349,9 @@ export function UserTable({ users, loading }: UserTableProps) {
 /**
  * 최근 활동 리스트
  */
-interface Activity {
+export interface Activity {
   id: string
-  type: 'signup' | 'payment' | 'login'
+  type: 'signup' | 'payment' | 'login' | 'ai_usage'
   user: string
   timestamp: string
   detail?: string
@@ -356,6 +366,8 @@ export function RecentActivity({ activities }: { activities: Activity[] }) {
         return '💳'
       case 'login':
         return '👋'
+      case 'ai_usage':
+        return '🤖'
       default:
         return '📌'
     }
@@ -369,6 +381,8 @@ export function RecentActivity({ activities }: { activities: Activity[] }) {
         return '결제 완료'
       case 'login':
         return '로그인'
+      case 'ai_usage':
+        return 'AI 사용'
       default:
         return '활동'
     }

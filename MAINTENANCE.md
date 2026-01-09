@@ -6,7 +6,7 @@
 
 ## 0단계: Claude Code 설치 (AI 도우미)
 
-> Claude Code를 설치하면 AI가 코드 수정을 도와줍니다!
+> Clde Code를 설치하면 AI가 코드 수정을 도와줍니다!
 
 ### Claude Code 설치
 

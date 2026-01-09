@@ -2,13 +2,15 @@
  * 카드 컴포넌트
  */
 
-import { ReactNode } from 'react'
+import { ReactNode, CSSProperties, MouseEventHandler } from 'react'
 
-interface CardProps {
+export interface CardProps {
   children: ReactNode
   className?: string
   padding?: 'sm' | 'md' | 'lg' | 'none'
   hover?: boolean
+  style?: CSSProperties
+  onClick?: MouseEventHandler<HTMLDivElement>
 }
 
 export function Card({
@@ -16,6 +18,8 @@ export function Card({
   className = '',
   padding = 'md',
   hover = false,
+  style,
+  onClick,
 }: CardProps) {
   const paddings = {
     none: '',
@@ -31,7 +35,9 @@ export function Card({
         background: 'var(--color-bg-secondary)',
         border: '1px solid var(--color-border)',
         boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+        ...style,
       }}
+      onClick={onClick}
     >
       {children}
     </div>
@@ -67,13 +73,14 @@ export function CardTitle({ children, className = '' }: CardTitleProps) {
   )
 }
 
-interface CardContentProps {
+export interface CardContentProps {
   children: ReactNode
   className?: string
+  style?: CSSProperties
 }
 
-export function CardContent({ children, className = '' }: CardContentProps) {
-  return <div className={className}>{children}</div>
+export function CardContent({ children, className = '', style }: CardContentProps) {
+  return <div className={className} style={style}>{children}</div>
 }
 
 interface CardFooterProps {

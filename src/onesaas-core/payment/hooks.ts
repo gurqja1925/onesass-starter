@@ -88,6 +88,44 @@ export function usePayment(): UsePaymentResult {
         }
 
         const result = await requestPortOnePayment(portoneParams)
+
+        // 결제 성공 시 서버에서 검증
+        if (result.success && result.imp_uid) {
+          try {
+            const verifyRes = await fetch('/api/payment/verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                impUid: result.imp_uid,
+                merchantUid: result.merchant_uid,
+                amount: params.amount,
+                description: params.orderName,
+              }),
+            })
+            const verifyData = await verifyRes.json()
+
+            if (!verifyData.verified) {
+              return {
+                success: false,
+                error: verifyData.error || '결제 검증 실패',
+              }
+            }
+
+            return {
+              success: true,
+              paymentId: verifyData.paymentId || result.imp_uid,
+              orderId: result.merchant_uid,
+            }
+          } catch {
+            // 검증 실패해도 결제 자체는 성공한 것으로 처리
+            return {
+              success: true,
+              paymentId: result.imp_uid,
+              orderId: result.merchant_uid,
+            }
+          }
+        }
+
         return {
           success: true,
           paymentId: result.imp_uid,

@@ -9,37 +9,37 @@
 @tailwind utilities;
 
 /* THEME START */
-/* Default theme: neon */
+/* Default theme: brutalist */
 :root {
-  /* Colors */
-  --color-bg: #09090b;
-  --color-bg-secondary: #18181b;
-  --color-text: #fafafa;
-  --color-text-secondary: #a1a1aa;
-  --color-accent: #00ff88;
-  --color-accent-hover: #00cc6a;
-  --color-border: #27272a;
+  /* Colors - Brutalist Dark */
+  --color-bg: #000000;
+  --color-bg-secondary: #0a0a0a;
+  --color-text: #ffffff;
+  --color-text-secondary: #a3a3a3;
+  --color-accent: #ffffff;
+  --color-accent-hover: #e5e5e5;
+  --color-border: #ffffff;
   --color-success: #22c55e;
   --color-warning: #f59e0b;
   --color-error: #ef4444;
   --color-info: #3b82f6;
 
   /* RGB versions for rgba() usage */
-  --color-bg-rgb: 9, 9, 11;
-  --color-bg-secondary-rgb: 24, 24, 27;
-  --color-text-rgb: 250, 250, 250;
-  --color-accent-rgb: 0, 255, 136;
+  --color-bg-rgb: 0, 0, 0;
+  --color-bg-secondary-rgb: 10, 10, 10;
+  --color-text-rgb: 255, 255, 255;
+  --color-accent-rgb: 255, 255, 255;
 
-  /* Fonts - Default (Neon theme) */
-  --font-display: 'Space Grotesk', 'Noto Sans KR', sans-serif;
-  --font-body: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+  /* Fonts - Brutalist (Monospace) */
+  --font-display: 'JetBrains Mono', monospace;
+  --font-body: 'JetBrains Mono', monospace;
   --font-mono: 'JetBrains Mono', monospace;
 
-  /* Border Radius */
-  --radius: 8px;
-  --radius-sm: 4px;
-  --radius-lg: 16px;
-  --radius-full: 9999px;
+  /* Border Radius - Brutalist (No rounded corners) */
+  --radius: 0;
+  --radius-sm: 0;
+  --radius-lg: 0;
+  --radius-full: 0;
 
   /* Direction */
   --direction: ltr;

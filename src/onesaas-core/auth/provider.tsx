@@ -64,6 +64,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const supabase = createClient()
     if (!supabase) return { error: new Error('Supabase not configured') }
     const { error } = await supabase.auth.signInWithPassword({ email, password })
+
+    // 로그인 성공 시 이벤트 기록 및 사용자 동기화
+    if (!error) {
+      try {
+        await fetch('/api/auth/event', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ event: 'login' }),
+        })
+        await fetch('/api/auth/sync', { method: 'POST' })
+      } catch (e) {
+        console.error('Event recording failed:', e)
+      }
+    }
+
     return { error }
   }
 
@@ -71,12 +86,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const supabase = createClient()
     if (!supabase) return { error: new Error('Supabase not configured') }
     const { error } = await supabase.auth.signUp({ email, password })
+
+    // 회원가입 성공 시 이벤트 기록 (사용자 생성은 이벤트 API에서 처리)
+    if (!error) {
+      try {
+        await fetch('/api/auth/event', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ event: 'signup' }),
+        })
+      } catch (e) {
+        console.error('Event recording failed:', e)
+      }
+    }
+
     return { error }
   }
 
   const signOut = async () => {
     const supabase = createClient()
     if (!supabase) return
+
+    // 로그아웃 이벤트 기록
+    try {
+      await fetch('/api/auth/event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ event: 'logout' }),
+      })
+    } catch (e) {
+      console.error('Event recording failed:', e)
+    }
+
     await supabase.auth.signOut()
   }
 

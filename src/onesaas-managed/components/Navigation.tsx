@@ -78,9 +78,8 @@ export default function Navigation() {
 
   // 메뉴 아이템
   const menuItems = [
-    { href: '/templates', label: '템플릿' },
     { href: '/showcase', label: '쇼케이스' },
-    { href: '/notes', label: '노트' },
+    { href: '/admin', label: '관리자' },
     { href: '/docs', label: '문서' },
   ]
 
@@ -228,13 +227,6 @@ export default function Navigation() {
             <div className="hidden md:flex items-center gap-2 ml-2">
               {isLoggedIn ? (
                 <>
-                  <Link
-                    href="/dashboard"
-                    className="px-4 py-2 rounded-lg text-sm font-medium"
-                    style={{ color: 'var(--color-text-secondary)' }}
-                  >
-                    대시보드
-                  </Link>
                   <button
                     onClick={() => setIsLoggedIn(false)}
                     className="px-4 py-2 text-sm"
@@ -359,14 +351,6 @@ export default function Navigation() {
 
               {isLoggedIn ? (
                 <>
-                  <Link
-                    href="/dashboard"
-                    onClick={() => setIsMenuOpen(false)}
-                    className="px-4 py-3 rounded-lg"
-                    style={{ color: 'var(--color-text)' }}
-                  >
-                    대시보드
-                  </Link>
                   <button
                     onClick={() => { setIsLoggedIn(false); setIsMenuOpen(false) }}
                     className="px-4 py-3 rounded-lg text-left"
