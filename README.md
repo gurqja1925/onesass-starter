@@ -36,39 +36,7 @@ http://localhost:3000 에서 확인
 | **결제** | PortOne, TossPayments 연동 (한국형) |
 | **관리자** | 대시보드, 사용자 관리, 통계, Chart.js |
 | **AI 기능** | AI 글쓰기, 이미지 생성 샘플 |
-| **12개 랜딩 템플릿** | 업종별 최적화 페이지 |
-| **11개 테마** | 다크/라이트 모드 지원 |
-
-## 랜딩 템플릿 (12종)
-
-| 템플릿 | 업종 |
-|-------|------|
-| SaaS | 소프트웨어 서비스 |
-| Startup | 스타트업/테크 기업 |
-| Real Estate | 부동산 중개, 분양 |
-| Education | 온라인 강의, 학원 |
-| Fitness | 헬스장, PT, 요가 |
-| Restaurant | 카페, 다이닝 |
-| Healthcare | 클리닉, 병원 |
-| Travel | 여행사, 투어 |
-| Finance | 은행, 핀테크 |
-| Agency | 디자인, 마케팅 에이전시 |
-| Ecommerce | 온라인 쇼핑몰 |
-| Event | 웨딩홀, 이벤트 |
-
-## 테마 (11종)
-
-- Base (기본)
-- Minimal (미니멀)
-- Startup (스타트업)
-- Corporate (기업)
-- Luxury (럭셔리)
-- Playful (캐주얼)
-- Brutalist (브루탈리스트)
-- Neon (네온)
-- Healthcare (헬스케어)
-- Fintech (핀테크)
-- Ecommerce (이커머스)
+| **테마** | 11개 테마 + 다크/라이트 모드 |
 
 ## 샘플 페이지
 
@@ -84,7 +52,6 @@ http://localhost:3000 에서 확인
 | 결제 관리 | `/admin/payments` | 결제 내역 |
 | 통계 | `/admin/analytics` | 통계 차트 |
 | 쇼케이스 | `/showcase` | UI 컴포넌트 |
-| 문서 | `/docs` | 사용 가이드 |
 
 ## 환경 변수
 
@@ -116,8 +83,6 @@ pnpm dev          # 개발 서버
 pnpm build        # 프로덕션 빌드
 pnpm db:push      # DB 스키마 적용
 pnpm db:studio    # Prisma Studio (DB GUI)
-pnpm theme:list   # 테마 목록
-pnpm theme:apply  # 테마 적용
 ```
 
 ## 폴더 구조
@@ -129,9 +94,7 @@ src/
 │   ├── admin/              # 관리자 기능
 │   ├── auth/               # 인증
 │   ├── payment/            # 결제
-│   ├── templates/          # 랜딩 템플릿 (12개)
-│   │   └── landing/
-│   ├── themes/             # 테마 (11개)
+│   ├── themes/             # 테마
 │   └── ui/                 # UI 컴포넌트
 ├── onesaas-custom/         # 커스텀 코드 (수정 가능)
 ├── onesaas-managed/        # 관리 코드
@@ -176,19 +139,13 @@ pnpm build
 
 ## 기술 스택
 
-- **프레임워크**: Next.js 16 (App Router, Turbopack)
+- **프레임워크**: Next.js 16 (App Router)
 - **스타일**: Tailwind CSS
 - **데이터베이스**: Prisma + Supabase (PostgreSQL)
 - **인증**: Supabase Auth
 - **결제**: PortOne / TossPayments
 - **차트**: Chart.js
 - **AI**: Vercel AI SDK (OpenAI, Anthropic, Google)
-- **아이콘**: Lucide React
-
-## 문서
-
-- [CLAUDE.md](./CLAUDE.md) - Claude Code 사용 가이드
-- [onesaas-core/README.md](./src/onesaas-core/README.md) - 핵심 모듈 문서
 
 ## 링크
 
