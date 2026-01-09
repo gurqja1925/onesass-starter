@@ -177,7 +177,7 @@ export default function Navigation() {
                           style={{
                             background: 'var(--color-bg)',
                             border: '1px solid var(--color-border)',
-                            ringColor: currentTheme === theme.id ? 'var(--color-accent)' : undefined,
+                            ['--tw-ring-color' as string]: currentTheme === theme.id ? 'var(--color-accent)' : undefined,
                           }}
                           title={theme.name}
                         >
@@ -204,7 +204,7 @@ export default function Navigation() {
                           style={{
                             background: 'var(--color-bg)',
                             border: '1px solid var(--color-border)',
-                            ringColor: currentTheme === theme.id ? 'var(--color-accent)' : undefined,
+                            ['--tw-ring-color' as string]: currentTheme === theme.id ? 'var(--color-accent)' : undefined,
                           }}
                           title={theme.name}
                         >
@@ -320,7 +320,7 @@ export default function Navigation() {
                       className={`p-1.5 rounded-lg text-center ${currentTheme === theme.id ? 'ring-2' : ''}`}
                       style={{
                         background: 'var(--color-bg-secondary)',
-                        ringColor: currentTheme === theme.id ? 'var(--color-accent)' : undefined,
+                        ['--tw-ring-color' as string]: currentTheme === theme.id ? 'var(--color-accent)' : undefined,
                       }}
                     >
                       <div className="flex justify-center gap-0.5 mb-0.5">
@@ -341,7 +341,7 @@ export default function Navigation() {
                       className={`p-1.5 rounded-lg text-center ${currentTheme === theme.id ? 'ring-2' : ''}`}
                       style={{
                         background: 'var(--color-bg-secondary)',
-                        ringColor: currentTheme === theme.id ? 'var(--color-accent)' : undefined,
+                        ['--tw-ring-color' as string]: currentTheme === theme.id ? 'var(--color-accent)' : undefined,
                       }}
                     >
                       <div className="flex justify-center gap-0.5 mb-0.5">
