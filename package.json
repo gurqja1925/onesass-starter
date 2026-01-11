@@ -2,6 +2,10 @@
   "name": "onesass-starter",
   "version": "1.1.0",
   "private": true,
+  "bin": {
+    "kcode": "./cli-dist/cli.mjs",
+    "onesaas-ai": "./cli-dist/cli.mjs"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
@@ -12,23 +16,32 @@
     "db:seed": "npx tsx prisma/seed.ts",
     "db:reset": "prisma db push --force-reset && npx tsx prisma/seed.ts",
     "db:studio": "prisma studio",
+    "db:migrate": "prisma migrate dev",
     "theme": "node scripts/theme.mjs",
     "theme:list": "node scripts/theme.mjs list",
     "theme:apply": "node scripts/theme.mjs apply",
     "template": "node scripts/template.mjs",
     "template:list": "node scripts/template.mjs list",
-    "template:apply": "node scripts/template.mjs apply"
+    "template:apply": "node scripts/template.mjs apply",
+    "cli:build": "tsup",
+    "kcode": "node cli-dist/cli.mjs",
+    "ai": "node cli-dist/cli.mjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^0.0.40",
     "@ai-sdk/google": "^3.0.6",
     "@ai-sdk/openai": "^0.0.40",
+    "@anthropic-ai/sdk": "^0.24.0",
     "@prisma/client": "^5.22.0",
     "@supabase/ssr": "^0.5.0",
     "@supabase/supabase-js": "^2.45.0",
     "ai": "^3.0.0",
     "chart.js": "^4.5.1",
     "clsx": "^2.1.0",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "ink": "^6.6.0",
+    "ink-text-input": "^6.0.0",
     "lucide-react": "^0.460.0",
     "next": "^16.1.1",
     "react": "^19.2.3",
@@ -38,6 +51,7 @@
     "zod": "^3.23.0"
   },
   "devDependencies": {
+    "@types/express": "^5.0.6",
     "@types/node": "^22.0.0",
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
@@ -46,8 +60,12 @@
     "postcss": "^8.4.0",
     "prisma": "^5.22.0",
     "tailwindcss": "^3.4.0",
+    "tsup": "^8.0.0",
     "tsx": "^4.19.0",
     "typescript": "^5.6.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
   },
   "packageManager": "pnpm@9.14.2"
 }

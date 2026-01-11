@@ -9,10 +9,12 @@ out
 # Production
 build
 dist
+cli-dist
 
 # Environment
 .env
 .env.local
+.npmrc
 .env.development.local
 .env.test.local
 .env.production.local
