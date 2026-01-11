@@ -48,7 +48,7 @@ const guides = [
   {
     id: 'ai',
     title: 'AI 설정 가이드',
-    description: 'AI 기능 설정 및 K-Code 사용법',
+    description: 'K-Code CLI로 저렴한 AI 코딩',
     icon: '🤖',
     color: '#ec4899',
   },

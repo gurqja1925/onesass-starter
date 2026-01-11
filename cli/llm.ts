@@ -66,6 +66,13 @@ export class LLM {
       case 'openai':
         return this.callOpenAI(messages);
       case 'deepseek':
+        return this.callDeepSeek(messages);
+      case 'minimax':
+      case 'qwen':
+      case 'groq':
+        return this.callOpenAICompatible(messages);
+      case 'google':
+        return this.callGoogle(messages);
       default:
         return this.callDeepSeek(messages);
     }
@@ -82,6 +89,13 @@ export class LLM {
       case 'openai':
         return this.callOpenAIWithTools(messages, tools, toolChoice);
       case 'deepseek':
+        return this.callDeepSeekWithTools(messages, tools, toolChoice);
+      case 'minimax':
+      case 'qwen':
+      case 'groq':
+        return this.callOpenAICompatibleWithTools(messages, tools, toolChoice);
+      case 'google':
+        return this.callGoogleWithTools(messages, tools, toolChoice);
       default:
         return this.callDeepSeekWithTools(messages, tools, toolChoice);
     }
@@ -146,6 +160,8 @@ export class LLM {
         tool_choice: toolChoice,
         max_tokens: this.config.maxTokens,
         temperature: this.config.temperature,
+        // DeepSeek Thinking Mode 활성화 (사용자 의도 파악)
+        reasoning_effort: 'high',
       }),
     });
 
@@ -485,6 +501,7 @@ export class LLM {
     choices: Array<{
       message: {
         content: string | null;
+        reasoning_content?: string | null;
         tool_calls?: Array<{
           id: string;
           type: string;
@@ -511,12 +528,213 @@ export class LLM {
       content: message.content,
       toolCalls,
       finishReason: choice.finish_reason,
+      reasoningContent: message.reasoning_content || null, // DeepSeek 사고 과정
       usage: data.usage ? {
         promptTokens: data.usage.prompt_tokens,
         completionTokens: data.usage.completion_tokens,
         totalTokens: data.usage.total_tokens,
       } : undefined,
     };
+  }
+
+  // ============================================================
+  // OpenAI Compatible API (MiniMax, Qwen, Groq)
+  // ============================================================
+
+  private async callOpenAICompatible(messages: Message[]): Promise<LLMResponse> {
+    const response = await fetch(`${this.config.baseUrl}/v1/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.config.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: this.config.model,
+        messages: this.toOpenAIMessages(messages),
+        max_tokens: this.config.maxTokens,
+        temperature: this.config.temperature,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json() as { error?: { message?: string } };
+      throw new Error(error.error?.message || `API Error: ${response.status}`);
+    }
+
+    const data = await response.json() as {
+      choices: Array<{ message: { content: string | null }; finish_reason: string }>;
+      usage?: { prompt_tokens: number; completion_tokens: number; total_tokens: number };
+    };
+    const choice = data.choices[0];
+
+    return {
+      content: choice.message.content,
+      finishReason: choice.finish_reason,
+      usage: data.usage ? {
+        promptTokens: data.usage.prompt_tokens,
+        completionTokens: data.usage.completion_tokens,
+        totalTokens: data.usage.total_tokens,
+      } : undefined,
+    };
+  }
+
+  private async callOpenAICompatibleWithTools(
+    messages: Message[],
+    tools: ToolSchema[],
+    toolChoice: ToolChoice
+  ): Promise<LLMResponse> {
+    const response = await fetch(`${this.config.baseUrl}/v1/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.config.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: this.config.model,
+        messages: this.toOpenAIMessages(messages),
+        tools: tools,
+        tool_choice: toolChoice,
+        max_tokens: this.config.maxTokens,
+        temperature: this.config.temperature,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json() as { error?: { message?: string } };
+      throw new Error(error.error?.message || `API Error: ${response.status}`);
+    }
+
+    const data = await response.json() as Parameters<typeof this.parseOpenAIResponse>[0];
+    return this.parseOpenAIResponse(data);
+  }
+
+  // ============================================================
+  // Google Gemini API
+  // ============================================================
+
+  private async callGoogle(messages: Message[]): Promise<LLMResponse> {
+    const { systemPrompt, userMessages } = this.extractSystemMessage(messages);
+    const contents = this.toGeminiMessages(userMessages);
+
+    const response = await fetch(
+      `${this.config.baseUrl}/v1beta/models/${this.config.model}:generateContent?key=${this.config.apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents,
+          systemInstruction: systemPrompt ? { parts: [{ text: systemPrompt }] } : undefined,
+          generationConfig: {
+            maxOutputTokens: this.config.maxTokens,
+            temperature: this.config.temperature,
+          },
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json() as { error?: { message?: string } };
+      throw new Error(error.error?.message || `Google API Error: ${response.status}`);
+    }
+
+    const data = await response.json() as {
+      candidates: Array<{ content: { parts: Array<{ text?: string }> } }>;
+      usageMetadata?: { promptTokenCount: number; candidatesTokenCount: number; totalTokenCount: number };
+    };
+
+    const text = data.candidates[0]?.content?.parts[0]?.text || null;
+
+    return {
+      content: text,
+      finishReason: 'stop',
+      usage: data.usageMetadata ? {
+        promptTokens: data.usageMetadata.promptTokenCount,
+        completionTokens: data.usageMetadata.candidatesTokenCount,
+        totalTokens: data.usageMetadata.totalTokenCount,
+      } : undefined,
+    };
+  }
+
+  private async callGoogleWithTools(
+    messages: Message[],
+    tools: ToolSchema[],
+    toolChoice: ToolChoice
+  ): Promise<LLMResponse> {
+    const { systemPrompt, userMessages } = this.extractSystemMessage(messages);
+    const contents = this.toGeminiMessages(userMessages);
+
+    // Gemini tool format
+    const geminiTools = tools.map(t => ({
+      functionDeclarations: [{
+        name: t.function.name,
+        description: t.function.description,
+        parameters: t.function.parameters,
+      }],
+    }));
+
+    const response = await fetch(
+      `${this.config.baseUrl}/v1beta/models/${this.config.model}:generateContent?key=${this.config.apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents,
+          tools: geminiTools,
+          systemInstruction: systemPrompt ? { parts: [{ text: systemPrompt }] } : undefined,
+          generationConfig: {
+            maxOutputTokens: this.config.maxTokens,
+            temperature: this.config.temperature,
+          },
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json() as { error?: { message?: string } };
+      throw new Error(error.error?.message || `Google API Error: ${response.status}`);
+    }
+
+    const data = await response.json() as {
+      candidates: Array<{
+        content: {
+          parts: Array<{ text?: string; functionCall?: { name: string; args: Record<string, unknown> } }>;
+        };
+      }>;
+      usageMetadata?: { promptTokenCount: number; candidatesTokenCount: number; totalTokenCount: number };
+    };
+
+    const parts = data.candidates[0]?.content?.parts || [];
+    const textPart = parts.find(p => p.text);
+    const functionCalls = parts.filter(p => p.functionCall);
+
+    const toolCalls: ToolCall[] | undefined = functionCalls.length > 0
+      ? functionCalls.map((fc, i) => ({
+          id: `call_${i}`,
+          type: 'function' as const,
+          function: {
+            name: fc.functionCall!.name,
+            arguments: JSON.stringify(fc.functionCall!.args),
+          },
+        }))
+      : undefined;
+
+    return {
+      content: textPart?.text || null,
+      toolCalls,
+      finishReason: 'stop',
+      usage: data.usageMetadata ? {
+        promptTokens: data.usageMetadata.promptTokenCount,
+        completionTokens: data.usageMetadata.candidatesTokenCount,
+        totalTokens: data.usageMetadata.totalTokenCount,
+      } : undefined,
+    };
+  }
+
+  private toGeminiMessages(messages: Message[]): Array<{ role: string; parts: Array<{ text: string }> }> {
+    return messages.map(m => ({
+      role: m.role === Role.ASSISTANT ? 'model' : 'user',
+      parts: [{ text: m.content || '' }],
+    }));
   }
 }
 
@@ -534,12 +752,16 @@ export function getDefaultLLM(): LLM {
     const apiKey = getApiKey(model.provider);
 
     if (!apiKey) {
-      const envVar = {
+      const envVar: Record<string, string> = {
         deepseek: 'DEEPSEEK_API_KEY',
         openai: 'OPENAI_API_KEY',
         anthropic: 'ANTHROPIC_API_KEY',
-      }[model.provider];
-      throw new Error(`${envVar}가 필요합니다`);
+        minimax: 'MINIMAX_API_KEY',
+        qwen: 'QWEN_API_KEY',
+        google: 'GOOGLE_API_KEY',
+        groq: 'GROQ_API_KEY',
+      };
+      throw new Error(`${envVar[model.provider]}가 필요합니다`);
     }
 
     defaultLLM = new LLM({
@@ -563,6 +785,10 @@ export function switchModel(modelId: string): ModelInfo | null {
         deepseek: 'DEEPSEEK_API_KEY',
         openai: 'OPENAI_API_KEY',
         anthropic: 'ANTHROPIC_API_KEY',
+        minimax: 'MINIMAX_API_KEY',
+        qwen: 'QWEN_API_KEY',
+        google: 'GOOGLE_API_KEY',
+        groq: 'GROQ_API_KEY',
       };
       const envVar = envVars[model.provider];
       console.warn(`${envVar}가 없습니다.`);

@@ -60,12 +60,12 @@ export class AIAgent {
 
     switch (provider) {
       case 'openai':
-        return openai(modelName)
+        return openai(modelName) as any
       case 'anthropic':
-        return anthropic(modelName)
+        return anthropic(modelName) as any
       case 'google':
       default:
-        return google(modelName)
+        return google(modelName) as any
     }
   }
 
@@ -171,7 +171,7 @@ ${structureText}
 JSON만 응답해주세요.`
 
     const result = await generateText({
-      model: this.getModel(),
+      model: this.getModel() as any,
       prompt,
     })
 
@@ -232,7 +232,7 @@ ${plan.steps.map((s, i) => `${i + 1}. ${s.description}`).join('\n')}
       this.log('info', `에이전트 단계 ${stepCount}/${maxSteps}`)
 
       const result = await generateText({
-        model: this.getModel(),
+        model: this.getModel() as any,
         system: systemPrompt,
         messages,
         tools: Object.fromEntries(

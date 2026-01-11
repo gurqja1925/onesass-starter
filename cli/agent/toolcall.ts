@@ -107,6 +107,7 @@ export class ToolCallAgent extends BaseAgent {
       return {
         success: true,
         message: thinkResult.content || undefined,
+        shouldFinish: true,
       };
     }
 
@@ -151,6 +152,12 @@ export class ToolCallAgent extends BaseAgent {
         this.tokenUsage.totalTokens += response.usage.totalTokens;
 
         this.log('info', `토큰: ${response.usage.promptTokens} → ${response.usage.completionTokens} (총 ${response.usage.totalTokens})`);
+      }
+
+      // DeepSeek 사고 과정 로그 출력 (요약)
+      if (response.reasoningContent) {
+        const summary = response.reasoningContent.slice(0, 200);
+        this.log('info', `🧠 사고: ${summary}${response.reasoningContent.length > 200 ? '...' : ''}`);
       }
 
       if (response.toolCalls && response.toolCalls.length > 0) {

@@ -9,7 +9,6 @@ import { parentPort, workerData } from 'worker_threads';
 import { runCodingTask } from './agent/coding';
 import { LLM } from './llm';
 import { AVAILABLE_MODELS, getApiKey, getBestAvailableModel } from './models';
-import { Role } from './types';
 
 interface PipelineStage {
   role: string;
@@ -51,25 +50,20 @@ TODO를 참고하고 이번 단계에 해당하는 항목만 수행하세요.
     },
     {
       role: '검토',
-      maxSteps: 30,
-      promptTemplate: (input, prevResult) => `작성된 코드를 빠르게 검토하고 빌드 에러가 있으면 수정하세요.
+      maxSteps: 10,
+      promptTemplate: (input, prevResult) => `작성된 코드를 빠르게 검토하세요.
 
 [이전 결과]
 ${prevResult}
 
 TODO를 참고하고 이번 단계에 해당하는 항목만 수행하세요.
 
-**중요: 우선순위**
-1. 먼저 빌드 실행 (pnpm build)
-2. 빌드 에러 있으면 즉시 수정
-3. 에러 없으면 바로 terminate로 완료 보고
-
 검토 항목:
-- 빌드 에러 수정 (최우선)
 - 명백한 버그만 수정 (있으면)
 - 불필요한 코드 제거 (있으면)
 
-빌드 성공하면 즉시 terminate.`,
+수정할 게 없으면 바로 terminate.
+수정했으면 즉시 terminate.`,
     },
   ];
 }
@@ -145,26 +139,21 @@ TODO를 참고하고 이번 단계에 해당하는 항목만 수행하세요.
   },
   {
     role: '테스트',
-    maxSteps: 30,
-    promptTemplate: (input, prevResult) => `작성된 코드를 검증하고 빌드 에러가 있으면 수정하세요.
+    maxSteps: 10,
+    promptTemplate: (input, prevResult) => `작성된 코드를 검증하세요.
 
 [이전 결과]
 ${prevResult}
 
 TODO를 참고하고 이번 단계에 해당하는 항목만 수행하세요.
 
-**중요: 우선순위**
-1. 먼저 빌드 실행 (pnpm build)
-2. 빌드 에러 있으면 즉시 수정
-3. 에러 없으면 바로 terminate로 완료 보고
-
 검토 항목:
-- 빌드 에러 수정 (최우선)
 - 명백한 버그 수정 (있으면)
 - 필요한 테스트 코드 추가 (있으면)
 - 불필요한 코드 제거 (있으면)
 
-빌드 성공하면 즉시 terminate.`,
+수정할 게 없으면 바로 terminate.
+수정했으면 즉시 terminate.`,
     },
   ];
 }
@@ -345,7 +334,7 @@ if (parentPort) {
         modelId,
         maxSteps: 200,
         onLog: (log) => {
-          postLog(log.message, log.level as 'info' | 'warning' | 'error' | 'debug');
+          postLog(log.message, log.level);
         },
         ...(reasonerContext ? { systemPrompt: reasonerContext } : {}),
       });

@@ -117,13 +117,14 @@ export interface LLMConfig {
   baseUrl?: string;
   maxTokens?: number;
   temperature?: number;
-  provider?: 'openai' | 'anthropic' | 'google' | 'deepseek';
+  provider?: 'openai' | 'anthropic' | 'google' | 'deepseek' | 'minimax' | 'qwen' | 'groq';
 }
 
 export interface LLMResponse {
   content: string | null;
   toolCalls?: ToolCall[];
   finishReason?: string;
+  reasoningContent?: string | null; // DeepSeek 사고 과정
   usage?: {
     promptTokens: number;
     completionTokens: number;

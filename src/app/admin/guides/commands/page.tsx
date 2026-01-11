@@ -322,6 +322,79 @@ export default function CommandsGuidePage() {
           </CardContent>
         </Card>
 
+        {/* K-Code AI 명령어 */}
+        <Card>
+          <CardHeader>
+            <CardTitle>🤖 K-Code AI 명령어</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p style={{ color: 'var(--color-text-secondary)' }}>
+              AI에게 코딩을 시킬 때 사용해요:
+            </p>
+
+            {/* 기본 실행 */}
+            <div className="p-4 rounded-lg" style={{ background: 'var(--color-bg)' }}>
+              <div className="flex items-center justify-between mb-2">
+                <p className="font-bold" style={{ color: 'var(--color-text)' }}>AI에게 코딩 시키기</p>
+                <span className="text-xs px-2 py-1 rounded" style={{ background: '#dcfce7', color: '#166534' }}>자주 사용</span>
+              </div>
+              <div className="p-3 rounded font-mono text-sm" style={{ background: '#1e1e1e', color: '#d4d4d4' }}>
+                pnpm kcode &quot;로그인 폼에 유효성 검사 추가해줘&quot;
+              </div>
+              <p className="mt-2 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                한국어로 원하는 작업을 말하면 AI가 코드를 수정해요!
+              </p>
+            </div>
+
+            {/* 대화형 모드 */}
+            <div className="p-4 rounded-lg" style={{ background: 'var(--color-bg)' }}>
+              <p className="font-bold mb-2" style={{ color: 'var(--color-text)' }}>AI와 대화하며 코딩</p>
+              <div className="p-3 rounded font-mono text-sm" style={{ background: '#1e1e1e', color: '#d4d4d4' }}>
+                pnpm kcode -i
+              </div>
+              <p className="mt-2 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                터미널에서 AI와 실시간으로 대화하며 코딩할 수 있어요
+              </p>
+            </div>
+
+            {/* API 키 설정 */}
+            <div className="p-4 rounded-lg" style={{ background: 'var(--color-bg)' }}>
+              <p className="font-bold mb-2" style={{ color: 'var(--color-text)' }}>API 키 설정</p>
+              <div className="p-3 rounded font-mono text-sm space-y-1" style={{ background: '#1e1e1e', color: '#d4d4d4' }}>
+                <p>pnpm kcode --key qwen YOUR_API_KEY</p>
+                <p>pnpm kcode --key deepseek YOUR_API_KEY</p>
+                <p>pnpm kcode --key groq YOUR_API_KEY</p>
+              </div>
+              <p className="mt-2 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                AI를 사용하려면 API 키가 필요해요 (Groq은 무료 티어 제공!)
+              </p>
+            </div>
+
+            {/* 모델 선택 */}
+            <div className="p-4 rounded-lg" style={{ background: 'var(--color-bg)' }}>
+              <p className="font-bold mb-2" style={{ color: 'var(--color-text)' }}>다른 AI 모델 사용</p>
+              <div className="p-3 rounded font-mono text-sm space-y-1" style={{ background: '#1e1e1e', color: '#d4d4d4' }}>
+                <p>pnpm kcode -m deepseek &quot;버그 수정해줘&quot;</p>
+                <p>pnpm kcode --list</p>
+              </div>
+              <p className="mt-2 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                -m 옵션으로 모델 선택, --list로 사용 가능한 모델 확인
+              </p>
+            </div>
+
+            {/* 개발 모드 */}
+            <div className="p-4 rounded-lg" style={{ background: 'var(--color-bg)' }}>
+              <p className="font-bold mb-2" style={{ color: 'var(--color-text)' }}>복잡한 작업 (개발 모드)</p>
+              <div className="p-3 rounded font-mono text-sm" style={{ background: '#1e1e1e', color: '#d4d4d4' }}>
+                pnpm kcode --dev &quot;인증 시스템 리팩토링해줘&quot;
+              </div>
+              <p className="mt-2 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                복잡한 작업은 --dev 옵션으로 더 꼼꼼하게 처리해요
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* 환경변수 명령어 */}
         <Card>
           <CardHeader>
@@ -395,9 +468,17 @@ export default function CommandsGuidePage() {
                     <td className="py-3 px-2">코드 저장</td>
                     <td className="py-3 px-2 font-mono" style={{ color: 'var(--color-accent)' }}>git add . && git commit -m &quot;...&quot;</td>
                   </tr>
-                  <tr>
+                  <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
                     <td className="py-3 px-2">GitHub에 올리기</td>
                     <td className="py-3 px-2 font-mono" style={{ color: 'var(--color-accent)' }}>git push</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
+                    <td className="py-3 px-2">AI에게 코딩 시키기</td>
+                    <td className="py-3 px-2 font-mono" style={{ color: 'var(--color-accent)' }}>pnpm kcode &quot;작업 내용&quot;</td>
+                  </tr>
+                  <tr>
+                    <td className="py-3 px-2">AI와 대화형 코딩</td>
+                    <td className="py-3 px-2 font-mono" style={{ color: 'var(--color-accent)' }}>pnpm kcode -i</td>
                   </tr>
                 </tbody>
               </table>

@@ -16,7 +16,6 @@ import { CodingAgent, runCodingTask, type TokenUsage } from './agent/coding';
 import { LLM } from './llm';
 import { AVAILABLE_MODELS, getApiKey, saveApiKey, getBestAvailableModel } from './models';
 import type { TaskLog } from './types';
-import { Role } from './types';
 import { createRequire } from 'module';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -46,16 +45,36 @@ const c = {
 // 시작 시 검사
 // ============================================================
 
-function checkAndWarnApiKey(): void {
-  // API 키 확인 (없어도 계속 진행)
+async function checkApiKey(): Promise<boolean> {
+  // 무료 모델 우선 확인
   const bestModel = getBestAvailableModel();
   const hasApiKey = !!getApiKey(bestModel.provider);
 
   if (!hasApiKey) {
-    console.log(`${c.yellow}⚠ API 키가 설정되지 않았습니다. /키 명령어로 설정하세요.${c.reset}`);
-  } else {
-    console.log(`${c.green}✓${c.reset} ${bestModel.name} 사용 중`);
+    console.log(`
+${c.red}╔═══════════════════════════════════════════════════════════╗
+║  API 키가 설정되지 않았습니다                             ║
+╚═══════════════════════════════════════════════════════════╝${c.reset}
+
+${c.bold}${c.green}추천: 무료 모델부터 시작하세요!${c.reset}
+
+${c.cyan}1. Google Gemini (완전 무료):${c.reset}
+   kcode --key google YOUR_GOOGLE_API_KEY
+   발급: https://aistudio.google.com/app/apikey
+
+${c.cyan}2. Groq (무료 티어):${c.reset}
+   kcode --key groq YOUR_GROQ_API_KEY
+   발급: https://console.groq.com
+
+${c.cyan}3. DeepSeek (저렴, 추천):${c.reset}
+   kcode --key deepseek YOUR_DEEPSEEK_API_KEY
+   발급: https://platform.deepseek.com
+
+${c.dim}전체 모델 목록: kcode --list${c.reset}
+`);
+    return false;
   }
+  return true;
 }
 
 import { execSync } from 'child_process';
@@ -267,12 +286,8 @@ async function runSingle(prompt: string, modelId: string, reasonerContext?: stri
 
   const apiKey = getApiKey(model.provider);
   if (!apiKey) {
-    console.log(`${c.red}✕${c.reset} ${model.name} 모델을 사용하려면 API 키가 필요합니다\n`);
-    console.log(`${c.yellow}두 가지 방법으로 설정할 수 있습니다:${c.reset}`);
-    console.log(`  1. ${c.cyan}kcode --key ${model.provider} <your-api-key>${c.reset}`);
-    console.log(`  2. ${c.cyan}kcode${c.reset} (인터랙티브 모드) → ${c.cyan}/키 ${model.provider} <your-api-key>${c.reset}\n`);
-    console.log(`${c.dim}또는 환경변수로 설정:${c.reset}`);
-    console.log(`  ${c.dim}export ${model.provider.toUpperCase()}_API_KEY=your-api-key${c.reset}\n`);
+    console.log(`${c.red}✕${c.reset} DEEPSEEK_API_KEY가 필요합니다`);
+    console.log(`${c.dim}  export DEEPSEEK_API_KEY=your-api-key${c.reset}`);
     process.exit(1);
   }
 
@@ -360,25 +375,20 @@ TODO를 참고하고 이번 단계에 해당하는 항목만 수행하세요.
     {
       modelId,
       role: '검토',
-      maxSteps: 30,
-      promptTemplate: (input, prevResult) => `작성된 코드를 빠르게 검토하고 빌드 에러가 있으면 수정하세요.
+      maxSteps: 10,
+      promptTemplate: (input, prevResult) => `작성된 코드를 빠르게 검토하세요.
 
 [이전 결과]
 ${prevResult}
 
 TODO를 참고하고 이번 단계에 해당하는 항목만 수행하세요.
 
-**중요: 우선순위**
-1. 먼저 빌드 실행 (pnpm build)
-2. 빌드 에러 있으면 즉시 수정
-3. 에러 없으면 바로 terminate로 완료 보고
-
 검토 항목:
-- 빌드 에러 수정 (최우선)
 - 명백한 버그만 수정 (있으면)
 - 불필요한 코드 제거 (있으면)
 
-빌드 성공하면 즉시 terminate.`,
+수정할 게 없으면 바로 terminate.
+수정했으면 즉시 terminate.`,
     },
   ];
 }
@@ -460,26 +470,21 @@ TODO를 참고하고 이번 단계에 해당하는 항목만 수행하세요.
     {
       modelId,
       role: '테스트',
-      maxSteps: 30,
-      promptTemplate: (input, prevResult) => `작성된 코드를 검증하고 빌드 에러가 있으면 수정하세요.
+      maxSteps: 10,
+      promptTemplate: (input, prevResult) => `작성된 코드를 검증하세요.
 
 [이전 결과]
 ${prevResult}
 
 TODO를 참고하고 이번 단계에 해당하는 항목만 수행하세요.
 
-**중요: 우선순위**
-1. 먼저 빌드 실행 (pnpm build)
-2. 빌드 에러 있으면 즉시 수정
-3. 에러 없으면 바로 terminate로 완료 보고
-
 검토 항목:
-- 빌드 에러 수정 (최우선)
 - 명백한 버그 수정 (있으면)
 - 필요한 테스트 코드 추가 (있으면)
 - 불필요한 코드 제거 (있으면)
 
-빌드 성공하면 즉시 terminate.`,
+수정할 게 없으면 바로 terminate.
+수정했으면 즉시 terminate.`,
     },
   ];
 }
@@ -837,20 +842,15 @@ function runInteractiveMode(modelId: string) {
 // ============================================================
 
 async function runMultiTasks(prompts: string[], modelId: string) {
-  const model = AVAILABLE_MODELS.find(m => m.id === modelId);
-  if (!model) {
-    console.log(`${c.red}✕${c.reset} 모델을 찾을 수 없습니다: ${modelId}`);
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    console.log(`${c.red}✕${c.reset} DEEPSEEK_API_KEY가 필요합니다`);
     process.exit(1);
   }
 
-  const apiKey = getApiKey(model.provider);
-  if (!apiKey) {
-    console.log(`${c.red}✕${c.reset} ${model.name} 모델을 사용하려면 API 키가 필요합니다\n`);
-    console.log(`${c.yellow}두 가지 방법으로 설정할 수 있습니다:${c.reset}`);
-    console.log(`  1. ${c.cyan}kcode --key ${model.provider} <your-api-key>${c.reset}`);
-    console.log(`  2. ${c.cyan}kcode${c.reset} (인터랙티브 모드) → ${c.cyan}/키 ${model.provider} <your-api-key>${c.reset}\n`);
-    console.log(`${c.dim}또는 환경변수로 설정:${c.reset}`);
-    console.log(`  ${c.dim}export ${model.provider.toUpperCase()}_API_KEY=your-api-key${c.reset}\n`);
+  const model = AVAILABLE_MODELS.find(m => m.id === modelId);
+  if (!model) {
+    console.log(`${c.red}✕${c.reset} 모델을 찾을 수 없습니다: ${modelId}`);
     process.exit(1);
   }
 
@@ -944,13 +944,15 @@ function listModels() {
   console.log(`\n${c.bold}사용 가능한 모델${c.reset}\n`);
 
   // 프로바이더별 그룹화
-  const providers = ['google', 'groq', 'qwen', 'minimax', 'deepseek'] as const;
+  const providers = ['deepseek', 'openai', 'anthropic', 'minimax', 'qwen', 'google', 'groq'] as const;
   const providerNames: Record<string, string> = {
+    deepseek: 'DeepSeek',
+    openai: 'OpenAI',
+    anthropic: 'Anthropic',
+    minimax: 'MiniMax',
+    qwen: 'Qwen (Alibaba)',
     google: 'Google Gemini',
     groq: 'Groq',
-    qwen: 'Qwen (Alibaba)',
-    minimax: 'MiniMax',
-    deepseek: 'DeepSeek',
   };
 
   for (const provider of providers) {
@@ -967,7 +969,7 @@ function listModels() {
   }
 
   console.log(`${c.dim}API 키 설정: kcode --key <provider> <key>${c.reset}`);
-  console.log(`${c.dim}예: kcode --key google sk-...${c.reset}`);
+  console.log(`${c.dim}예: kcode --key openai sk-...${c.reset}`);
 }
 
 // ============================================================
@@ -989,15 +991,15 @@ ${c.bold}사용법:${c.reset}
   kcode "<작업1>" "<작업2>"         여러 작업 동시 병렬 실행
 
 ${c.bold}옵션:${c.reset}
-  --key <provider> <key>  API 키 저장 (예: --key qwen sk-xxx)
-  -u, --update            최신 버전으로 자동 업데이트
-  -i, --interactive       인터랙티브 모드 - 여러 작업을 비동기로 실행
-  -m, --model <id>        사용할 모델 선택 (기본: 자동 선택)
-  --pipe                  파이프라인 모드 - 분석/구현/검토 3단계 순차 실행
-  --multi                 멀티 태스크 모드 - 여러 작업 동시 실행
-  -l, --list              사용 가능한 모델 목록 확인
-  ${c.green}-g, --guide${c.reset}               🚀 원스탑 가이드 (개발→커밋→배포)
-  -h, --help              도움말 표시
+  --key <API_KEY>     API 키 저장 (한번만 설정하면 됨)
+  -u, --update        최신 버전으로 자동 업데이트
+  -i, --interactive   인터랙티브 모드 - 여러 작업을 비동기로 실행
+  -m, --model <id>    사용할 모델 선택 (기본: deepseek)
+  --pipe              파이프라인 모드 - 분석/구현/검토 3단계 순차 실행
+  --multi             멀티 태스크 모드 - 여러 작업 동시 실행
+  -l, --list          사용 가능한 모델 목록 확인
+  ${c.green}-g, --guide${c.reset}         🚀 원스탑 가이드 (개발→커밋→배포)
+  -h, --help          도움말 표시
 
 ${c.bold}모드 설명:${c.reset}
   ${c.cyan}인터랙티브${c.reset}   작업을 입력하면 백그라운드에서 실행, 계속 추가 가능
@@ -1009,23 +1011,16 @@ ${c.bold}예시:${c.reset}
   kcode "로그인 기능 추가해줘"
   kcode "이 버그 수정해줘: TypeError at line 42"
   kcode "코드 리팩토링하고 테스트 추가해줘" --pipe
-  kcode                             # 인터랙티브 모드 시작
+  kcode -i                          # 대화형 모드 시작
 
 ${c.bold}인터랙티브 모드 명령어:${c.reset}
-  <작업>      작업 입력 후 Enter → 백그라운드 실행
-  /키         API 키 목록 확인
-  /키 <provider> <key>  API 키 설정 (예: /키 qwen sk-xxx)
-  /m          모델 목록 보기
-  /clear      화면 정리
-  s           현재 실행 중인 작업 상태 확인
-  q           종료
+  <작업>    작업 입력 후 Enter → 백그라운드 실행
+  s         현재 실행 중인 작업 상태 확인
+  q         종료
 
-${c.bold}지원 모델 제공자:${c.reset}
-  qwen        큐웬 (Alibaba) - 가장 저렴
-  minimax     미니맥스 - 초저렴, 코딩 특화
-  deepseek    딥시크 - 코딩 구현 특화
-  groq        그록 - 초고속 추론
-  google      구글 제미나이
+${c.bold}환경변수:${c.reset}
+  DEEPSEEK_API_KEY    DeepSeek API 키 (필수)
+                      https://platform.deepseek.com 에서 발급
 
 ${c.bold}특징:${c.reset}
   • 프로젝트 구조 자동 분석 후 작업 수행
@@ -1205,28 +1200,26 @@ async function main() {
     const arg1 = args[keyIndex + 1];
     const arg2 = args[keyIndex + 2];
 
-    let provider: 'google' | 'groq' | 'qwen' | 'minimax' | 'deepseek' = 'google';
+    let provider: 'deepseek' | 'openai' | 'anthropic' = 'deepseek';
     let apiKey = arg1;
 
     // provider가 지정된 경우
-    if (['google', 'groq', 'qwen', 'minimax', 'deepseek'].includes(arg1)) {
-      provider = arg1 as 'google' | 'groq' | 'qwen' | 'minimax' | 'deepseek';
+    if (['deepseek', 'openai', 'anthropic'].includes(arg1)) {
+      provider = arg1 as 'deepseek' | 'openai' | 'anthropic';
       apiKey = arg2;
     }
 
     if (!apiKey) {
       console.log(`${c.red}✕${c.reset} API 키를 입력하세요`);
       console.log(`${c.dim}  사용법: kcode --key <provider> <key>${c.reset}`);
-      console.log(`${c.dim}  예: kcode --key google AIza...${c.reset}`);
-      console.log(`${c.dim}  예: kcode --key groq gsk_...${c.reset}`);
-      console.log(`${c.dim}  예: kcode --key qwen sk-...${c.reset}`);
-      console.log(`${c.dim}  예: kcode --key minimax sk-...${c.reset}`);
+      console.log(`${c.dim}  예: kcode --key openai sk-...${c.reset}`);
+      console.log(`${c.dim}  예: kcode --key anthropic sk-ant-...${c.reset}`);
       console.log(`${c.dim}  예: kcode --key deepseek sk-...${c.reset}`);
       return;
     }
 
     if (saveApiKey(apiKey, provider)) {
-      const providerName = { google: 'Google', groq: 'Groq', qwen: 'Qwen', minimax: 'MiniMax', deepseek: 'DeepSeek' }[provider];
+      const providerName = { deepseek: 'DeepSeek', openai: 'OpenAI', anthropic: 'Anthropic' }[provider];
       console.log(`${c.green}✓${c.reset} ${providerName} API 키가 저장되었습니다.`);
       console.log(`${c.dim}  위치: .onesaas/config.json${c.reset}`);
     } else {
@@ -1241,8 +1234,10 @@ async function main() {
   // 버전 체크 (비동기, 백그라운드)
   checkVersion();
 
-  // API 키 확인 (경고만, 계속 진행)
-  checkAndWarnApiKey();
+  // API 키 검사
+  if (!await checkApiKey()) {
+    process.exit(1);
+  }
 
   // 프롬프트 추출
   const prompts: string[] = [];

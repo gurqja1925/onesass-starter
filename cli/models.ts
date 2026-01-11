@@ -13,7 +13,9 @@ const CONFIG_FILE_NAME = 'config.json';
 const LEGACY_CONFIG_DIR = path.join(os.homedir(), '.onesaas');
 const LEGACY_CONFIG_FILE = path.join(LEGACY_CONFIG_DIR, 'config');
 
-export type Provider = 'deepseek' | 'openai' | 'anthropic';
+export type Provider = 'deepseek' | 'minimax' | 'qwen' | 'google' | 'groq';
+
+export type TaskType = '문서작성' | '코딩' | '테스트' | '추론' | '빠른작업';
 
 export interface ModelInfo {
   id: string;
@@ -25,7 +27,9 @@ export interface ModelInfo {
   contextWindow: number;
   inputPrice: number;
   outputPrice: number;
+  avgPrice: number; // 평균 가격 (하나의 숫자)
   baseUrl: string;
+  bestFor: TaskType[]; // 적합한 작업 유형
   capabilities: {
     vision?: boolean;
     functionCalling?: boolean;
@@ -37,22 +41,23 @@ export interface ModelInfo {
 }
 
 // ============================================================
-// 사용 가능한 모델 목록
+// 사용 가능한 모델 목록 (가격순 정렬)
 // ============================================================
 
 export const AVAILABLE_MODELS: ModelInfo[] = [
-  // DeepSeek
   {
-    id: 'deepseek',
-    name: 'DeepSeek V3.2',
-    provider: 'deepseek',
-    model: 'deepseek-chat',
-    description: '가성비 최고. 코딩 구현에 적합. (chat 3.2)',
+    id: 'qwen-turbo',
+    name: 'Qwen Turbo',
+    provider: 'qwen',
+    model: 'qwen-turbo-latest',
+    description: '$0.125',
     maxTokens: 8192,
     contextWindow: 128000,
-    inputPrice: 0.27,
-    outputPrice: 1.1,
-    baseUrl: 'https://api.deepseek.com',
+    inputPrice: 0.05,
+    outputPrice: 0.20,
+    avgPrice: 0.125,
+    baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode',
+    bestFor: ['문서작성', '빠른작업'],
     capabilities: {
       vision: false,
       functionCalling: true,
@@ -60,19 +65,131 @@ export const AVAILABLE_MODELS: ModelInfo[] = [
       json: true,
       reasoning: false,
     },
-    releaseDate: '2025-01-10',
+    releaseDate: '2024-09-19',
+  },
+  {
+    id: 'minimax-m21',
+    name: 'MiniMax M2.1',
+    provider: 'minimax',
+    model: 'abab-m2.1',
+    description: '$0.175',
+    maxTokens: 8192,
+    contextWindow: 245000,
+    inputPrice: 0.07,
+    outputPrice: 0.28,
+    avgPrice: 0.175,
+    baseUrl: 'https://api.minimax.chat',
+    bestFor: ['코딩', '문서작성'],
+    capabilities: {
+      vision: false,
+      functionCalling: true,
+      streaming: true,
+      json: true,
+      reasoning: false,
+    },
+    releaseDate: '2025-12-22',
+  },
+  {
+    id: 'groq-qwen3',
+    name: 'Qwen3 32B (Groq)',
+    provider: 'groq',
+    model: 'qwen3-32b',
+    description: '$0.24',
+    maxTokens: 32768,
+    contextWindow: 128000,
+    inputPrice: 0.24,
+    outputPrice: 0.24,
+    avgPrice: 0.24,
+    baseUrl: 'https://api.groq.com/openai',
+    bestFor: ['빠른작업', '코딩'],
+    capabilities: {
+      vision: false,
+      functionCalling: true,
+      streaming: true,
+      json: true,
+      reasoning: false,
+    },
+    releaseDate: '2026-04-29',
+  },
+  {
+    id: 'deepseek',
+    name: 'DeepSeek V3.2',
+    provider: 'deepseek',
+    model: 'deepseek-chat',
+    description: '$0.35',
+    maxTokens: 8192,
+    contextWindow: 128000,
+    inputPrice: 0.28,
+    outputPrice: 0.42,
+    avgPrice: 0.35,
+    baseUrl: 'https://api.deepseek.com',
+    bestFor: ['코딩', '테스트'],
+    capabilities: {
+      vision: false,
+      functionCalling: true,
+      streaming: true,
+      json: true,
+      reasoning: false,
+    },
+    releaseDate: '2026-01-10',
+  },
+  {
+    id: 'qwen3-235b',
+    name: 'Qwen3 235B',
+    provider: 'qwen',
+    model: 'qwen3-235b-a22b',
+    description: '$0.6',
+    maxTokens: 32768,
+    contextWindow: 1000000,
+    inputPrice: 0.2,
+    outputPrice: 1.0,
+    avgPrice: 0.6,
+    baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode',
+    bestFor: ['문서작성', '추론'],
+    capabilities: {
+      vision: false,
+      functionCalling: true,
+      streaming: true,
+      json: true,
+      reasoning: true,
+    },
+    releaseDate: '2026-04-29',
+  },
+  {
+    id: 'groq-llama-70b',
+    name: 'Llama 3.3 70B (Groq)',
+    provider: 'groq',
+    model: 'llama-3.3-70b-versatile',
+    description: '$0.69',
+    maxTokens: 32768,
+    contextWindow: 128000,
+    inputPrice: 0.59,
+    outputPrice: 0.79,
+    avgPrice: 0.69,
+    baseUrl: 'https://api.groq.com/openai',
+    bestFor: ['빠른작업', '문서작성'],
+    capabilities: {
+      vision: false,
+      functionCalling: true,
+      streaming: true,
+      json: true,
+      reasoning: false,
+    },
+    releaseDate: '2024-12-06',
   },
   {
     id: 'deepseek-reasoner',
-    name: 'DeepSeek Reasoner (V3.2)',
+    name: 'DeepSeek Reasoner',
     provider: 'deepseek',
     model: 'deepseek-reasoner',
-    description: '의도 분류/계획 수립용. (thinking 3.2)',
+    description: '$1.37',
     maxTokens: 8192,
     contextWindow: 128000,
     inputPrice: 0.55,
     outputPrice: 2.19,
+    avgPrice: 1.37,
     baseUrl: 'https://api.deepseek.com',
+    bestFor: ['추론'],
     capabilities: {
       vision: false,
       functionCalling: false,
@@ -80,121 +197,21 @@ export const AVAILABLE_MODELS: ModelInfo[] = [
       json: true,
       reasoning: true,
     },
-    releaseDate: '2025-01-20',
-  },
-  // OpenAI
-  {
-    id: 'gpt-4o',
-    name: 'GPT-4o',
-    provider: 'openai',
-    model: 'gpt-4o',
-    description: 'OpenAI 최신 모델. 빠르고 강력함.',
-    maxTokens: 16384,
-    contextWindow: 128000,
-    inputPrice: 2.5,
-    outputPrice: 10,
-    baseUrl: 'https://api.openai.com',
-    capabilities: {
-      vision: true,
-      functionCalling: true,
-      streaming: true,
-      json: true,
-      reasoning: true,
-    },
-    releaseDate: '2024-05-13',
+    releaseDate: '2026-01-20',
   },
   {
-    id: 'gpt-4o-mini',
-    name: 'GPT-4o Mini',
-    provider: 'openai',
-    model: 'gpt-4o-mini',
-    description: 'GPT-4o 경량 버전. 빠르고 저렴함.',
-    maxTokens: 16384,
-    contextWindow: 128000,
-    inputPrice: 0.15,
-    outputPrice: 0.6,
-    baseUrl: 'https://api.openai.com',
-    capabilities: {
-      vision: true,
-      functionCalling: true,
-      streaming: true,
-      json: true,
-      reasoning: false,
-    },
-    releaseDate: '2024-07-18',
-  },
-  {
-    id: 'o1',
-    name: 'OpenAI o1',
-    provider: 'openai',
-    model: 'o1',
-    description: '추론 특화 모델. 복잡한 문제 해결.',
-    maxTokens: 100000,
-    contextWindow: 200000,
-    inputPrice: 15,
-    outputPrice: 60,
-    baseUrl: 'https://api.openai.com',
-    capabilities: {
-      vision: true,
-      functionCalling: true,
-      streaming: true,
-      json: true,
-      reasoning: true,
-    },
-    releaseDate: '2024-12-17',
-  },
-  // Anthropic
-  {
-    id: 'claude-sonnet',
-    name: 'Claude 4 Sonnet',
-    provider: 'anthropic',
-    model: 'claude-sonnet-4-20250514',
-    description: 'Anthropic 최신 균형 모델.',
-    maxTokens: 16000,
-    contextWindow: 200000,
-    inputPrice: 3,
-    outputPrice: 15,
-    baseUrl: 'https://api.anthropic.com',
-    capabilities: {
-      vision: true,
-      functionCalling: true,
-      streaming: true,
-      json: true,
-      reasoning: true,
-    },
-    releaseDate: '2025-05-14',
-  },
-  {
-    id: 'claude-opus',
-    name: 'Claude 4.5 Opus',
-    provider: 'anthropic',
-    model: 'claude-opus-4-5-20251101',
-    description: 'Anthropic 최강 모델. 복잡한 작업에 최적.',
-    maxTokens: 16000,
-    contextWindow: 200000,
-    inputPrice: 15,
-    outputPrice: 75,
-    baseUrl: 'https://api.anthropic.com',
-    capabilities: {
-      vision: true,
-      functionCalling: true,
-      streaming: true,
-      json: true,
-      reasoning: true,
-    },
-    releaseDate: '2025-11-01',
-  },
-  {
-    id: 'claude-haiku',
-    name: 'Claude 3.5 Haiku',
-    provider: 'anthropic',
-    model: 'claude-3-5-haiku-20241022',
-    description: 'Anthropic 경량 모델. 빠르고 저렴.',
+    id: 'gemini-3-flash',
+    name: 'Gemini 3 Flash',
+    provider: 'google',
+    model: 'gemini-3-flash',
+    description: '$1.75',
     maxTokens: 8192,
-    contextWindow: 200000,
-    inputPrice: 0.8,
-    outputPrice: 4,
-    baseUrl: 'https://api.anthropic.com',
+    contextWindow: 1000000,
+    inputPrice: 0.5,
+    outputPrice: 3,
+    avgPrice: 1.75,
+    baseUrl: 'https://generativelanguage.googleapis.com',
+    bestFor: ['문서작성', '빠른작업'],
     capabilities: {
       vision: true,
       functionCalling: true,
@@ -202,16 +219,55 @@ export const AVAILABLE_MODELS: ModelInfo[] = [
       json: true,
       reasoning: false,
     },
-    releaseDate: '2024-10-22',
+    releaseDate: '2026-01-01',
   },
 ];
 
 // 현재 선택된 모델 ID
-let currentModelId = 'deepseek';
+let currentModelId = 'qwen-turbo';
 
 // ============================================================
 // 모델 함수
 // ============================================================
+
+/**
+ * 사용 가능한 최고의 저렴한 모델 찾기
+ * 우선순위: 가격순
+ */
+export function getBestAvailableModel(): ModelInfo {
+  // 1. Qwen Turbo (가장 저렴)
+  const qwen = AVAILABLE_MODELS.find(m => m.id === 'qwen-turbo');
+  if (qwen && getApiKey('qwen')) {
+    return qwen;
+  }
+
+  // 2. MiniMax M2.1
+  const minimax = AVAILABLE_MODELS.find(m => m.id === 'minimax-m21');
+  if (minimax && getApiKey('minimax')) {
+    return minimax;
+  }
+
+  // 3. DeepSeek V3.2
+  const deepseek = AVAILABLE_MODELS.find(m => m.id === 'deepseek');
+  if (deepseek && getApiKey('deepseek')) {
+    return deepseek;
+  }
+
+  // 4. Groq
+  const groq = AVAILABLE_MODELS.find(m => m.id === 'groq-qwen3');
+  if (groq && getApiKey('groq')) {
+    return groq;
+  }
+
+  // 5. Google
+  const google = AVAILABLE_MODELS.find(m => m.id === 'gemini-3-flash');
+  if (google && getApiKey('google')) {
+    return google;
+  }
+
+  // 기본값
+  return AVAILABLE_MODELS[0];
+}
 
 export function getCurrentModel(): ModelInfo {
   return AVAILABLE_MODELS.find(m => m.id === currentModelId) || AVAILABLE_MODELS[0];
@@ -240,8 +296,10 @@ export function getDefaultModel(): ModelInfo {
 
 interface Config {
   deepseekApiKeyEnc?: string;
-  openaiApiKeyEnc?: string;
-  anthropicApiKeyEnc?: string;
+  minimaxApiKeyEnc?: string;
+  qwenApiKeyEnc?: string;
+  googleApiKeyEnc?: string;
+  groqApiKeyEnc?: string;
   defaultModel?: string;
 }
 
@@ -290,8 +348,10 @@ function saveConfig(config: Config): boolean {
 
 function migrateLegacyConfig(legacy: Config & {
   deepseekApiKey?: string;
-  openaiApiKey?: string;
-  anthropicApiKey?: string;
+  minimaxApiKey?: string;
+  qwenApiKey?: string;
+  googleApiKey?: string;
+  groqApiKey?: string;
 }): Config {
   const config: Config = { defaultModel: legacy.defaultModel };
   const storageDir = getProjectStorageDir();
@@ -300,11 +360,17 @@ function migrateLegacyConfig(legacy: Config & {
   if (legacy.deepseekApiKey && key) {
     config.deepseekApiKeyEnc = encryptString(legacy.deepseekApiKey, key);
   }
-  if (legacy.openaiApiKey && key) {
-    config.openaiApiKeyEnc = encryptString(legacy.openaiApiKey, key);
+  if (legacy.minimaxApiKey && key) {
+    config.minimaxApiKeyEnc = encryptString(legacy.minimaxApiKey, key);
   }
-  if (legacy.anthropicApiKey && key) {
-    config.anthropicApiKeyEnc = encryptString(legacy.anthropicApiKey, key);
+  if (legacy.qwenApiKey && key) {
+    config.qwenApiKeyEnc = encryptString(legacy.qwenApiKey, key);
+  }
+  if (legacy.googleApiKey && key) {
+    config.googleApiKeyEnc = encryptString(legacy.googleApiKey, key);
+  }
+  if (legacy.groqApiKey && key) {
+    config.groqApiKeyEnc = encryptString(legacy.groqApiKey, key);
   }
 
   return config;
@@ -339,10 +405,14 @@ export function getApiKey(provider?: Provider): string | undefined {
   switch (p) {
     case 'deepseek':
       return process.env.DEEPSEEK_API_KEY || decryptApiKey(config.deepseekApiKeyEnc);
-    case 'openai':
-      return process.env.OPENAI_API_KEY || decryptApiKey(config.openaiApiKeyEnc);
-    case 'anthropic':
-      return process.env.ANTHROPIC_API_KEY || decryptApiKey(config.anthropicApiKeyEnc);
+    case 'minimax':
+      return process.env.MINIMAX_API_KEY || decryptApiKey(config.minimaxApiKeyEnc);
+    case 'qwen':
+      return process.env.QWEN_API_KEY || decryptApiKey(config.qwenApiKeyEnc);
+    case 'google':
+      return process.env.GOOGLE_API_KEY || decryptApiKey(config.googleApiKeyEnc);
+    case 'groq':
+      return process.env.GROQ_API_KEY || decryptApiKey(config.groqApiKeyEnc);
     default:
       return undefined;
   }
@@ -351,7 +421,7 @@ export function getApiKey(provider?: Provider): string | undefined {
 // API 키 저장
 export function saveApiKey(apiKey: string, provider?: Provider): boolean {
   const config = loadConfig();
-  const p = provider || 'deepseek';
+  const p = provider || 'qwen';
   const encrypted = encryptApiKey(apiKey);
   if (!encrypted) {
     return false;
@@ -361,11 +431,17 @@ export function saveApiKey(apiKey: string, provider?: Provider): boolean {
     case 'deepseek':
       config.deepseekApiKeyEnc = encrypted;
       break;
-    case 'openai':
-      config.openaiApiKeyEnc = encrypted;
+    case 'minimax':
+      config.minimaxApiKeyEnc = encrypted;
       break;
-    case 'anthropic':
-      config.anthropicApiKeyEnc = encrypted;
+    case 'qwen':
+      config.qwenApiKeyEnc = encrypted;
+      break;
+    case 'google':
+      config.googleApiKeyEnc = encrypted;
+      break;
+    case 'groq':
+      config.groqApiKeyEnc = encrypted;
       break;
   }
 
@@ -375,17 +451,23 @@ export function saveApiKey(apiKey: string, provider?: Provider): boolean {
 // API 키 삭제
 export function deleteApiKey(provider?: Provider): boolean {
   const config = loadConfig();
-  const p = provider || 'deepseek';
+  const p = provider || 'qwen';
 
   switch (p) {
     case 'deepseek':
       delete config.deepseekApiKeyEnc;
       break;
-    case 'openai':
-      delete config.openaiApiKeyEnc;
+    case 'minimax':
+      delete config.minimaxApiKeyEnc;
       break;
-    case 'anthropic':
-      delete config.anthropicApiKeyEnc;
+    case 'qwen':
+      delete config.qwenApiKeyEnc;
+      break;
+    case 'google':
+      delete config.googleApiKeyEnc;
+      break;
+    case 'groq':
+      delete config.groqApiKeyEnc;
       break;
   }
 
@@ -395,7 +477,7 @@ export function deleteApiKey(provider?: Provider): boolean {
 // 기본 모델 저장/로드
 export function getDefaultModelId(): string {
   const config = loadConfig();
-  return config.defaultModel || 'deepseek';
+  return config.defaultModel || 'qwen-turbo';
 }
 
 export function setDefaultModelId(modelId: string): boolean {

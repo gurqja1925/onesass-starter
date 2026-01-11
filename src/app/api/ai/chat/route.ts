@@ -28,7 +28,8 @@ function getModel(modelId: ModelId) {
     throw new Error(`지원하지 않는 모델: ${modelId}`)
   }
 
-  switch (modelInfo.provider) {
+  const provider = modelInfo.provider
+  switch (provider) {
     case 'openai':
       return openai(modelInfo.name)
     case 'anthropic':
@@ -36,7 +37,9 @@ function getModel(modelId: ModelId) {
     case 'google':
       return google(modelInfo.name)
     default:
-      throw new Error(`지원하지 않는 프로바이더: ${modelInfo.provider}`)
+      // Exhaustive check - 모든 케이스 처리됨
+      const _exhaustiveCheck: never = provider
+      throw new Error(`지원하지 않는 프로바이더: ${_exhaustiveCheck}`)
   }
 }
 
@@ -77,8 +80,8 @@ export async function POST(request: NextRequest) {
 
     if (stream) {
       // 스트리밍 응답
-      const result = streamText({
-        model,
+      const result = await streamText({
+        model: model as any,
         messages,
         system: '당신은 친절하고 도움이 되는 AI 어시스턴트입니다. 한국어로 응답해주세요.',
       })
@@ -87,7 +90,7 @@ export async function POST(request: NextRequest) {
     } else {
       // 일반 응답
       const result = await generateText({
-        model,
+        model: model as any,
         messages,
         system: '당신은 친절하고 도움이 되는 AI 어시스턴트입니다. 한국어로 응답해주세요.',
       })

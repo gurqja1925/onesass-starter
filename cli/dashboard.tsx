@@ -13,7 +13,7 @@ import { ensureProjectStorageDir, getProjectStorageDir } from './storage';
 
 // 타입
 import type { TokenUsage } from './agent/coding';
-import { AVAILABLE_MODELS, type ModelInfo, getApiKey } from './models';
+import { AVAILABLE_MODELS, type ModelInfo, getApiKey, saveApiKey, type Provider } from './models';
 
 // ============================================================
 // 유틸리티 함수
@@ -110,6 +110,7 @@ interface Task {
   progress?: number;
   worker?: Worker;
   logs: string[];
+  result?: string; // 작업 결과
 }
 
 interface Stats {
@@ -148,6 +149,22 @@ function Header({ modelName }: { modelName: string }) {
       <Text bold> Code </Text>
       <Text color="gray">| </Text>
       <Text color="cyan">{modelName}</Text>
+    </Box>
+  );
+}
+
+function CommandSummary({ tasks }: { tasks: Task[] }) {
+  if (tasks.length === 0) return null;
+
+  const recent = tasks.slice(-5).map(t => t.prompt);
+  const title = recent
+    .map((item, idx) => `${idx + 1}. ${item.slice(0, 30)}`)
+    .join(' | ');
+
+  return (
+    <Box marginTop={1}>
+      <Text color="gray">명령 요약: </Text>
+      <Text>{title}</Text>
     </Box>
   );
 }
@@ -248,7 +265,7 @@ function TaskList({ tasks }: { tasks: Task[] }) {
 
 // 시스템 로그
 function SystemLogPanel({ logs }: { logs: string[] }) {
-  const recentLogs = logs.slice(-6);
+  const recentLogs = logs.slice(-30); // 최근 30개 표시
 
   if (recentLogs.length === 0) return null;
 
@@ -256,30 +273,63 @@ function SystemLogPanel({ logs }: { logs: string[] }) {
     <Box flexDirection="column" marginY={1} borderStyle="single" borderColor="gray" paddingX={1}>
       <Text color="gray" bold>시스템 로그</Text>
       {recentLogs.map((log, i) => (
-        <Text key={i} color="gray" wrap="truncate">{log.slice(0, 70)}</Text>
+        <Text key={i} color="gray" wrap="wrap">{log}</Text>
       ))}
     </Box>
   );
 }
 
-// 태스크별 로그
+// 태스크별 로그 (스트림 방식)
 function TaskLogsPanel({ tasks }: { tasks: Task[] }) {
   if (tasks.length === 0) return null;
 
+  // 로그 색상 및 아이콘 결정
+  const getLogStyle = (log: string) => {
+    if (log.includes('📋')) return { color: 'cyan' as const, icon: '📋' };
+    if (log.includes('🧠')) return { color: 'magenta' as const, icon: '🧠' };
+    if (log.includes('🚀')) return { color: 'green' as const, icon: '🚀' };
+    if (log.includes('✓') || log.includes('완료')) return { color: 'green' as const, icon: '✓' };
+    if (log.includes('✕') || log.includes('실패')) return { color: 'red' as const, icon: '✕' };
+    if (log.includes('도구')) return { color: 'blue' as const, icon: '🔧' };
+    if (log.includes('Step')) return { color: 'yellow' as const, icon: '▶' };
+    return { color: 'gray' as const, icon: '·' };
+  };
+
   return (
     <Box flexDirection="column" marginY={1}>
-      <Text color="cyan" bold>작업별 로그</Text>
+      <Text color="cyan" bold>🔴 실시간 로그 스트림</Text>
       {tasks.map((task) => {
-        const recentLogs = task.logs.slice(-8);
+        // 모든 로그 표시 (스트림 모드)
+        const allLogs = task.logs;
+        const statusColor = task.status === 'completed' ? 'green' : task.status === 'failed' ? 'red' : 'yellow';
+
         return (
-          <Box key={task.id} flexDirection="column" borderStyle="single" borderColor="gray" paddingX={1} marginTop={1}>
-            <Text color="gray" bold>로그 [{task.id}]</Text>
-            {recentLogs.length === 0 ? (
-              <Text color="gray">로그 없음</Text>
+          <Box key={task.id} flexDirection="column" borderStyle="single" borderColor={statusColor} paddingX={1} marginTop={1}>
+            <Text color={statusColor} bold>
+              {task.status === 'running' && '◐ '}
+              {task.status === 'completed' && '● '}
+              {task.status === 'failed' && '✕ '}
+              [{task.id}] {task.prompt}
+            </Text>
+
+            {allLogs.length === 0 ? (
+              <Text color="gray" dimColor>대기 중...</Text>
             ) : (
-              recentLogs.map((log, i) => (
-                <Text key={i} color="gray" wrap="truncate">{log.slice(0, 70)}</Text>
-              ))
+              allLogs.map((log, i) => {
+                const style = getLogStyle(log);
+                return (
+                  <Text key={i} color={style.color} wrap="wrap">
+                    {log}
+                  </Text>
+                );
+              })
+            )}
+
+            {task.status === 'completed' && task.result && (
+              <Box flexDirection="column" marginTop={1} borderStyle="round" borderColor="green" paddingX={1}>
+                <Text color="green" bold>✓ 최종 결과</Text>
+                <Text color="white" wrap="wrap">{task.result}</Text>
+              </Box>
             )}
           </Box>
         );
@@ -301,7 +351,39 @@ function Dashboard({ initialModelId }: DashboardProps) {
   );
   const [tasks, setTasks] = useState<Task[]>([]);
   const [taskIdCounter, setTaskIdCounter] = useState(0);
-  const [systemLogs, setSystemLogs] = useState<string[]>(['K Code 시작됨']);
+  const [systemLogs, setSystemLogs] = useState<string[]>([
+    '🇰🇷 케이코드 - 작업 유형별 인공지능 모델 추천',
+    '',
+    '━━━ 📝 문서작성에 추천 ━━━',
+    '  Qwen Turbo         0.125달러',
+    '  MiniMax M2.1       0.175달러',
+    '  Qwen3 235B         0.6달러',
+    '  Gemini 3 Flash     1.75달러',
+    '',
+    '━━━ 🔧 코딩 구현에 추천 ━━━',
+    '  MiniMax M2.1       0.175달러  (코딩 특화)',
+    '  Qwen3 32B (Groq)   0.24달러   (초고속)',
+    '  DeepSeek V3.2      0.35달러   (코딩 최강)',
+    '',
+    '━━━ 🧪 테스트에 추천 ━━━',
+    '  DeepSeek V3.2      0.35달러',
+    '',
+    '━━━ 🧠 추론 작업에 추천 ━━━',
+    '  Qwen3 235B         0.6달러',
+    '  DeepSeek Reasoner  1.37달러   (추론 전용)',
+    '',
+    '━━━ ⚡ 빠른 작업에 추천 ━━━',
+    '  Qwen Turbo         0.125달러',
+    '  Qwen3 32B (Groq)   0.24달러   (초고속)',
+    '  Llama 3.3 70B      0.69달러',
+    '',
+    '━━━ 💡 사용 방법 ━━━',
+    '  1. 인증키 설정: /키 qwen sk-xxx',
+    '  2. 모델 보기:   /모델',
+    '  3. 작업 입력:   "로그인 기능 추가해줘"',
+    '  4. 작업 중단:   ESC 키',
+    '  5. 종료:        종료',
+  ]);
   const [stats, setStats] = useState<Stats>({
     totalTasks: 0,
     runningTasks: 0,
@@ -374,6 +456,7 @@ function Dashboard({ initialModelId }: DashboardProps) {
             ...t,
             status: msg.success ? 'completed' : 'failed',
             endTime: Date.now(),
+            result: msg.result, // 작업 결과 저장
             tokens: usage.totalTokens,
             inputTokens: usage.promptTokens,
             outputTokens: usage.completionTokens,
@@ -408,6 +491,12 @@ function Dashboard({ initialModelId }: DashboardProps) {
 
         const icon = msg.success ? '✓' : '✕';
         addTaskLog(newId, `${icon} 완료 ${formatTokens(usage.totalTokens)} ${formatCostKRW(cost)}`);
+
+        // 실패한 경우 에러 메시지 표시
+        if (!msg.success && msg.result) {
+          addTaskLog(newId, `📋 에러: ${msg.result}`);
+        }
+
         worker.terminate();
       }
     });
@@ -430,35 +519,137 @@ function Dashboard({ initialModelId }: DashboardProps) {
     const trimmed = value.trim();
     if (!trimmed) return;
 
+    // /만 입력하면 명령어 목록 표시
+    if (trimmed === '/') {
+      addSystemLog('━━━ 💡 사용 가능한 명령어 ━━━');
+      addSystemLog('');
+      addSystemLog('  /키 <제공자> <키값>');
+      addSystemLog('    예: /키 qwen sk-xxx');
+      addSystemLog('    예: /키 deepseek sk-xxx');
+      addSystemLog('');
+      addSystemLog('  /모델');
+      addSystemLog('    전체 모델 목록 보기');
+      addSystemLog('');
+      addSystemLog('  /지우기');
+      addSystemLog('    화면 정리');
+      addSystemLog('');
+      addSystemLog('  ESC 키 → 작업 중단');
+      addSystemLog('  종료   → 프로그램 종료');
+      setInput('');
+      return;
+    }
+
     // 명령어 처리
-    if (trimmed === 'q' || trimmed === '/quit') {
+    if (trimmed === '종료' || trimmed === 'q') {
       tasks.forEach(t => t.worker?.terminate());
       exit();
       return;
     }
 
-    if (trimmed === '/model' || trimmed === '/m') {
-      addSystemLog('모델: ' + AVAILABLE_MODELS.map((m, i) => `${i})${m.id}`).join(' '));
+    if (trimmed === '/모델') {
+      const taskTypes: Array<{ emoji: string; name: string; type: import('./models').TaskType }> = [
+        { emoji: '📝', name: '문서작성', type: '문서작성' },
+        { emoji: '🔧', name: '코딩', type: '코딩' },
+        { emoji: '🧪', name: '테스트', type: '테스트' },
+        { emoji: '🧠', name: '추론', type: '추론' },
+        { emoji: '⚡', name: '빠른작업', type: '빠른작업' },
+      ];
+
+      taskTypes.forEach(({ emoji, name, type }) => {
+        const models = AVAILABLE_MODELS.filter(m => m.bestFor.includes(type));
+        if (models.length > 0) {
+          addSystemLog(`━━━ ${emoji} ${name}에 추천 ━━━`);
+          models.forEach((m) => {
+            const hasKey = !!getApiKey(m.provider);
+            const keyStatus = hasKey ? '✓' : '○';
+            addSystemLog(`  ${keyStatus} ${m.name.padEnd(18)} ${m.description}`);
+          });
+          addSystemLog('');
+        }
+      });
+
+      addSystemLog('💡 모델 변경: /모델 <모델명>');
+      addSystemLog('   예시: /모델 qwen-turbo');
       setInput('');
       return;
     }
 
-    if (trimmed.startsWith('/m ') || trimmed.startsWith('/model ')) {
-      const arg = trimmed.replace(/^\/(m|model)\s+/, '');
+    if (trimmed.startsWith('/모델 ')) {
+      const arg = trimmed.replace(/^\/모델\s+/, '');
       const idx = parseInt(arg);
       const target = !isNaN(idx) ? AVAILABLE_MODELS[idx] : AVAILABLE_MODELS.find(m => m.id === arg);
       if (target && getApiKey(target.provider)) {
         setModel(target);
-        addSystemLog(`모델 변경: ${target.name}`);
+        addSystemLog(`✓ 모델 변경: ${target.name}`);
       } else {
-        addSystemLog('모델을 찾을 수 없거나 API 키가 없습니다');
+        addSystemLog('✕ 모델을 찾을 수 없거나 인증키가 없습니다');
       }
       setInput('');
       return;
     }
 
-    if (trimmed === '/clear') {
+    if (trimmed === '/지우기') {
       setSystemLogs([]);
+      setInput('');
+      return;
+    }
+
+    // /키 - 인증키 목록
+    if (trimmed === '/키') {
+      const providerInfo = [
+        { id: 'qwen' as Provider, name: '큐웬 (알리바바)', emoji: '💰' },
+        { id: 'minimax' as Provider, name: '미니맥스', emoji: '🔧' },
+        { id: 'deepseek' as Provider, name: '딥시크', emoji: '🚀' },
+        { id: 'groq' as Provider, name: '그록', emoji: '⚡' },
+        { id: 'google' as Provider, name: '구글 제미나이', emoji: '🌟' },
+      ];
+
+      addSystemLog('━━━ 인증키 설정 현황 ━━━');
+      providerInfo.forEach(p => {
+        const hasKey = !!getApiKey(p.id);
+        const status = hasKey ? '✓ 설정됨' : '○ 없음';
+        addSystemLog(`  ${p.emoji} ${p.name.padEnd(18)} ${status}`);
+      });
+      addSystemLog('');
+      addSystemLog('━━━ 키 설정 방법 ━━━');
+      addSystemLog('  아래처럼 직접 입력하세요:');
+      addSystemLog('');
+      addSystemLog('  /키 qwen sk-xxxxxxxxxxxxxxxx');
+      addSystemLog('  /키 minimax sk-xxxxxxxxxxxxxxxx');
+      addSystemLog('  /키 deepseek sk-xxxxxxxxxxxxxxxx');
+      addSystemLog('  /키 groq gsk-xxxxxxxxxxxxxxxx');
+      addSystemLog('  /키 google AIza-xxxxxxxxxxxxxxxx');
+      setInput('');
+      return;
+    }
+
+    // /키 <provider> <key> - 인증키 저장
+    if (trimmed.startsWith('/키 ')) {
+      const parts = trimmed.split(' ').filter(p => p);
+      if (parts.length === 3) {
+        const provider = parts[1] as Provider;
+        const key = parts[2];
+        const providerNames: Record<Provider, string> = {
+          qwen: '큐웬',
+          minimax: '미니맥스',
+          deepseek: '딥시크',
+          groq: '그록',
+          google: '구글 제미나이',
+        };
+        if (['qwen', 'minimax', 'deepseek', 'groq', 'google'].includes(provider)) {
+          if (saveApiKey(key, provider)) {
+            addSystemLog(`✓ ${providerNames[provider]} 인증키가 저장되었습니다!`);
+          } else {
+            addSystemLog(`✕ 인증키 저장 실패`);
+          }
+        } else {
+          addSystemLog(`✕ 잘못된 제공자명: ${provider}`);
+          addSystemLog('사용 가능: qwen, minimax, deepseek, groq, google');
+        }
+      } else {
+        addSystemLog('사용법: /키 <제공자> <키값>');
+        addSystemLog('예시: /키 qwen sk-xxx');
+      }
       setInput('');
       return;
     }
@@ -470,15 +661,34 @@ function Dashboard({ initialModelId }: DashboardProps) {
 
   // Ctrl+C 처리
   useInput((input, key) => {
+    // Ctrl+C: 전체 종료
     if (key.ctrl && input === 'c') {
       tasks.forEach(t => t.worker?.terminate());
       exit();
+    }
+
+    // ESC: 실행 중인 모든 작업 중단
+    if (key.escape) {
+      const runningTasks = tasks.filter(t => t.status === 'running');
+      if (runningTasks.length > 0) {
+        runningTasks.forEach(t => {
+          t.worker?.terminate();
+          setTasks(prev => prev.map(task =>
+            task.id === t.id ? { ...task, status: 'failed' as const, logs: [...task.logs, '✕ 사용자에 의해 중단됨'] } : task
+          ));
+        });
+        addSystemLog(`⚠ ${runningTasks.length}개 작업이 중단되었습니다`);
+      } else {
+        addSystemLog('실행 중인 작업이 없습니다');
+      }
+      setInput('');
     }
   });
 
   return (
     <Box flexDirection="column" padding={1}>
       <Header modelName={model.name} />
+      <CommandSummary tasks={tasks} />
       <StatsPanel stats={stats} />
       <TaskList tasks={tasks} />
       <SystemLogPanel logs={systemLogs} />
@@ -490,8 +700,13 @@ function Dashboard({ initialModelId }: DashboardProps) {
           value={input}
           onChange={setInput}
           onSubmit={handleSubmit}
-          placeholder="작업 입력 (/m 모델, q 종료)"
+          placeholder="작업 입력 (/ 명령어, ESC 중단, 종료)"
         />
+      </Box>
+      <Box marginTop={1}>
+        <Text color="gray" dimColor>
+          💡 팁: "/" 입력 후 엔터 → 명령어 목록 | "/키 qwen sk-xxx" → 키 설정
+        </Text>
       </Box>
     </Box>
   );
@@ -502,12 +717,6 @@ function Dashboard({ initialModelId }: DashboardProps) {
 // ============================================================
 
 export function runInkDashboard(modelId: string) {
-  const apiKey = getApiKey();
-  if (!apiKey) {
-    console.log('DEEPSEEK_API_KEY가 필요합니다');
-    console.log('  kcode --key YOUR_API_KEY');
-    process.exit(1);
-  }
-
+  // API 키 없이도 시작 가능 - 대시보드에서 /키 명령어로 설정 가능
   render(<Dashboard initialModelId={modelId} />);
 }
