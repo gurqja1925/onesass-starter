@@ -15,6 +15,61 @@
 import { createInterface } from 'readline'
 import { writeFileSync, readFileSync, existsSync, appendFileSync } from 'fs'
 import { execSync, spawn } from 'child_process'
+import https from 'https'
+
+// ============================================================
+// Supabase Management API
+// ============================================================
+
+const SUPABASE_API_BASE = 'https://api.supabase.com/v1'
+
+/**
+ * Supabase API 요청
+ */
+function supabaseApi(endpoint, accessToken) {
+  return new Promise((resolve, reject) => {
+    const url = `${SUPABASE_API_BASE}${endpoint}`
+    const req = https.request(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    }, (res) => {
+      let data = ''
+      res.on('data', chunk => data += chunk)
+      res.on('end', () => {
+        if (res.statusCode === 200) {
+          try {
+            resolve(JSON.parse(data))
+          } catch (e) {
+            reject(new Error('API 응답 파싱 실패'))
+          }
+        } else if (res.statusCode === 401) {
+          reject(new Error('Access Token이 유효하지 않습니다.'))
+        } else {
+          reject(new Error(`API 오류: ${res.statusCode}`))
+        }
+      })
+    })
+    req.on('error', reject)
+    req.end()
+  })
+}
+
+/**
+ * 프로젝트 목록 가져오기
+ */
+async function getSupabaseProjects(accessToken) {
+  return supabaseApi('/projects', accessToken)
+}
+
+/**
+ * 프로젝트 API 키 가져오기
+ */
+async function getProjectApiKeys(accessToken, projectRef) {
+  return supabaseApi(`/projects/${projectRef}/api-keys`, accessToken)
+}
 
 const colors = {
   reset: '\x1b[0m',
@@ -150,6 +205,129 @@ function writeEnv(env) {
   writeFileSync('.env', lines.join('\n'))
 }
 
+// ============================================================
+// Supabase 자동 설정
+// ============================================================
+
+async function setupSupabaseAuto(existingEnv) {
+  console.log(`
+${colors.cyan}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${colors.reset}
+${colors.cyan}  Supabase 자동 설정${colors.reset}
+${colors.cyan}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${colors.reset}
+
+Access Token이 필요합니다.
+
+${colors.yellow}[Access Token 발급받기]${colors.reset}
+  1. https://supabase.com/dashboard/account/tokens 접속
+  2. "Generate new token" 클릭
+  3. 토큰 이름 입력 (예: onesaas-setup)
+  4. "Generate token" 클릭
+  5. 생성된 토큰 복사
+
+${colors.dim}(토큰은 sbp_로 시작합니다)${colors.reset}
+`)
+
+  const accessToken = await question('Supabase Access Token')
+  if (!accessToken) {
+    error('Access Token이 필요합니다.')
+    return null
+  }
+
+  // 프로젝트 목록 가져오기
+  info('프로젝트 목록을 가져오는 중...')
+
+  let projects
+  try {
+    projects = await getSupabaseProjects(accessToken)
+  } catch (e) {
+    error(e.message)
+    return null
+  }
+
+  if (!projects || projects.length === 0) {
+    error('프로젝트가 없습니다. 먼저 Supabase에서 프로젝트를 생성하세요.')
+    return null
+  }
+
+  log(`${projects.length}개 프로젝트 발견!`)
+
+  // 프로젝트 선택
+  console.log('')
+  const projectOptions = projects.map((p, i) => ({
+    label: `${p.name} (${p.region})`,
+    value: p.id,
+  }))
+
+  const selectedProjectId = await select('사용할 프로젝트를 선택하세요', projectOptions)
+  const selectedProject = projects.find(p => p.id === selectedProjectId)
+
+  if (!selectedProject) {
+    error('프로젝트를 찾을 수 없습니다.')
+    return null
+  }
+
+  info(`${selectedProject.name} 프로젝트 선택됨`)
+
+  // API 키 가져오기
+  info('API 키를 가져오는 중...')
+
+  let apiKeys
+  try {
+    apiKeys = await getProjectApiKeys(accessToken, selectedProject.id)
+  } catch (e) {
+    error(`API 키 가져오기 실패: ${e.message}`)
+    return null
+  }
+
+  // anon 키 찾기
+  const anonKey = apiKeys.find(k => k.name === 'anon')
+  if (!anonKey) {
+    error('anon 키를 찾을 수 없습니다.')
+    return null
+  }
+
+  log('API 키 가져오기 완료!')
+
+  // 데이터베이스 비밀번호 입력
+  console.log(`
+${colors.yellow}⚠ 마지막 단계: 데이터베이스 비밀번호${colors.reset}
+
+  Supabase 프로젝트 생성 시 입력한 Database Password가 필요합니다.
+  비밀번호를 잊었다면 Supabase 대시보드에서 재설정할 수 있어요:
+  Settings > Database > Database Password > "Reset database password"
+`)
+
+  const dbPassword = await question('데이터베이스 비밀번호')
+  if (!dbPassword) {
+    error('데이터베이스 비밀번호는 필수입니다.')
+    return null
+  }
+
+  // 환경변수 구성
+  const projectRef = selectedProject.id
+  const supabaseUrl = `https://${projectRef}.supabase.co`
+  const dbHost = selectedProject.database?.host || `db.${projectRef}.supabase.co`
+  const dbUrl = `postgresql://postgres.${projectRef}:${encodeURIComponent(dbPassword)}@${dbHost}:5432/postgres`
+
+  const env = {
+    ...existingEnv,
+    DATABASE_URL: dbUrl,
+    DIRECT_URL: dbUrl,
+    NEXT_PUBLIC_SUPABASE_URL: supabaseUrl,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: anonKey.api_key,
+  }
+
+  console.log('')
+  log('Supabase 설정 완료!')
+  console.log(`
+  ${colors.dim}프로젝트:${colors.reset} ${selectedProject.name}
+  ${colors.dim}URL:${colors.reset} ${supabaseUrl}
+  ${colors.dim}Region:${colors.reset} ${selectedProject.region}
+`)
+
+  return env
+}
+
 // 데이터베이스 연결 테스트
 async function testDatabaseConnection(url) {
   try {
@@ -211,7 +389,8 @@ ${colors.cyan}╔═════════════════════
   console.log(`${colors.dim}https://supabase.com 에서 프로젝트를 생성하세요.${colors.reset}\n`)
 
   const hasSupabase = await select('Supabase 프로젝트가 있나요?', [
-    { label: '네, 이미 있어요', value: 'yes' },
+    { label: '네, 있어요 - Access Token으로 자동 설정 (추천)', value: 'auto' },
+    { label: '네, 있어요 - 직접 입력할게요', value: 'manual' },
     { label: '아니요, 만드는 방법을 알려주세요', value: 'no' },
   ])
 
@@ -224,55 +403,69 @@ ${colors.cyan}╔═════════════════════
   }
 
   // Supabase 정보 입력
-  const env = { ...existingEnv }
+  let env = { ...existingEnv }
 
-  console.log(`\n${colors.dim}Supabase 대시보드에서 다음 정보를 찾아주세요:${colors.reset}`)
-  console.log(`${colors.dim}Settings > Database > Connection string (URI)${colors.reset}`)
-  console.log(`${colors.dim}Settings > API > Project URL, anon key${colors.reset}\n`)
-
-  // Database URL
-  while (true) {
-    const dbUrl = await question('DATABASE_URL (postgresql://...)')
-    if (!dbUrl) {
-      error('DATABASE_URL은 필수입니다.')
-      continue
+  // 자동 설정 모드
+  if (hasSupabase === 'auto') {
+    const autoResult = await setupSupabaseAuto(env)
+    if (autoResult) {
+      env = autoResult
+    } else {
+      // 자동 설정 실패 시 수동으로 전환
+      warn('자동 설정에 실패했습니다. 수동 입력으로 전환합니다.')
     }
-    const test = await testDatabaseConnection(dbUrl)
-    if (!test.success) {
-      error(test.error)
-      continue
-    }
-    env.DATABASE_URL = dbUrl
-    env.DIRECT_URL = dbUrl // 대부분 같음
-    log('DATABASE_URL 설정 완료')
-    break
   }
 
-  // Supabase URL
-  while (true) {
-    const supabaseUrl = await question('NEXT_PUBLIC_SUPABASE_URL (https://xxx.supabase.co)')
-    if (!supabaseUrl) {
-      error('Supabase URL은 필수입니다.')
-      continue
-    }
-    if (!supabaseUrl.includes('supabase.co')) {
-      warn('supabase.co URL이 아닌 것 같습니다. 계속하시겠습니까?')
-    }
-    env.NEXT_PUBLIC_SUPABASE_URL = supabaseUrl
-    log('Supabase URL 설정 완료')
-    break
-  }
+  // 수동 설정 모드 (또는 자동 설정 실패 시)
+  if (hasSupabase === 'manual' || !env.DATABASE_URL) {
+    console.log(`\n${colors.dim}Supabase 대시보드에서 다음 정보를 찾아주세요:${colors.reset}`)
+    console.log(`${colors.dim}Settings > Database > Connection string (URI)${colors.reset}`)
+    console.log(`${colors.dim}Settings > API > Project URL, anon key${colors.reset}\n`)
 
-  // Supabase Anon Key
-  while (true) {
-    const anonKey = await question('NEXT_PUBLIC_SUPABASE_ANON_KEY (eyJ...)')
-    if (!anonKey) {
-      error('Anon Key는 필수입니다.')
-      continue
+    // Database URL
+    while (true) {
+      const dbUrl = await question('DATABASE_URL (postgresql://...)')
+      if (!dbUrl) {
+        error('DATABASE_URL은 필수입니다.')
+        continue
+      }
+      const test = await testDatabaseConnection(dbUrl)
+      if (!test.success) {
+        error(test.error)
+        continue
+      }
+      env.DATABASE_URL = dbUrl
+      env.DIRECT_URL = dbUrl // 대부분 같음
+      log('DATABASE_URL 설정 완료')
+      break
     }
-    env.NEXT_PUBLIC_SUPABASE_ANON_KEY = anonKey
-    log('Anon Key 설정 완료')
-    break
+
+    // Supabase URL
+    while (true) {
+      const supabaseUrl = await question('NEXT_PUBLIC_SUPABASE_URL (https://xxx.supabase.co)')
+      if (!supabaseUrl) {
+        error('Supabase URL은 필수입니다.')
+        continue
+      }
+      if (!supabaseUrl.includes('supabase.co')) {
+        warn('supabase.co URL이 아닌 것 같습니다. 계속하시겠습니까?')
+      }
+      env.NEXT_PUBLIC_SUPABASE_URL = supabaseUrl
+      log('Supabase URL 설정 완료')
+      break
+    }
+
+    // Supabase Anon Key
+    while (true) {
+      const anonKey = await question('NEXT_PUBLIC_SUPABASE_ANON_KEY (eyJ...)')
+      if (!anonKey) {
+        error('Anon Key는 필수입니다.')
+        continue
+      }
+      env.NEXT_PUBLIC_SUPABASE_ANON_KEY = anonKey
+      log('Anon Key 설정 완료')
+      break
+    }
   }
 
   // 사이트 URL
