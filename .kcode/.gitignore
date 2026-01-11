@@ -1,0 +1,4 @@
+# K-Code - API 키와 세션 기록 보안
+config.json
+sessions/
+*.log

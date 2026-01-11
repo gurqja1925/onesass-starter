@@ -1,0 +1,125 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// 사용자 모델
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  image         String?
+  role          String    @default("user") // user, admin
+  plan          String    @default("free") // free, pro, enterprise
+  status        String    @default("active") // active, inactive, suspended
+  emailVerified DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  payments      Payment[]
+  subscriptions Subscription[]
+  aiUsages      AIUsage[]
+  contents      Content[]
+  notes         Note[]
+}
+
+// 결제 모델
+model Payment {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount        Int      // 원화 금액
+  currency      String   @default("KRW")
+  status        String   @default("pending") // pending, completed, failed, refunded
+  method        String?  // card, bank, kakao, naver
+  provider      String?  // portone, toss
+  transactionId String?  @unique
+  description   String?
+  metadata      Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// 구독 모델
+model Subscription {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan          String    // free, pro, enterprise
+  status        String    @default("active") // active, canceled, expired, trial
+  currentPeriodStart DateTime @default(now())
+  currentPeriodEnd   DateTime?
+  canceledAt    DateTime?
+  trialEnd      DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+// AI 사용량 모델
+model AIUsage {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   // writer, image, code, translate
+  tokens    Int      @default(0)
+  cost      Float    @default(0)
+  input     String?  @db.Text
+  output    String?  @db.Text
+  model     String?  // gpt-4, claude, etc.
+  createdAt DateTime @default(now())
+}
+
+// 콘텐츠 모델 (사용자 생성 콘텐츠)
+model Content {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  body      String?  @db.Text
+  type      String   @default("post") // post, page, draft
+  status    String   @default("draft") // draft, published, archived
+  metadata  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// 분석/통계 모델
+model Analytics {
+  id        String   @id @default(cuid())
+  date      DateTime @default(now())
+  type      String   // pageview, signup, payment, ai_usage
+  value     Int      @default(1)
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([date, type])
+}
+
+// 서비스 설정 모델
+model Setting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String   @db.Text
+  type      String   @default("string") // string, number, boolean, json
+  category  String   @default("general") // general, payment, email, ai
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// 노트 모델
+model Note {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  content   String?  @db.Text
+  published Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
