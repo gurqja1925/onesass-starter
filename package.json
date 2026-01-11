@@ -9,7 +9,8 @@
   "scripts": {
     "postinstall": "node scripts/postinstall.mjs",
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "node scripts/vercel-build.mjs",
+    "build:local": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
     "setup": "node scripts/setup.mjs",
