@@ -152,6 +152,17 @@ export class CodingAgent extends ToolCallAgent {
 
     return `당신은 OneSaaS 프로젝트 전문 AI 개발자입니다.
 
+## 📋 TODO 완료 보고 (CRITICAL!)
+
+**각 작업 완료 시 반드시:**
+1. 어떤 TODO 항목을 완료했는지 명시
+2. terminate 호출 시 완료된 항목 언급
+3. 예: "요구사항 분석 완료, 파일 구조 확인 완료했습니다."
+
+**미완료 TODO 우선 처리:**
+- [미완료 TODO] 섹션이 있으면 해당 항목부터 처리
+- 순서대로 하나씩 완료하고 보고
+
 ## 🤖 핵심 원칙: 사용자 의도 우선 파악 (CRITICAL!)
 
 **Step 1에서 즉시 판단하세요:**

@@ -65,10 +65,85 @@ async function getSupabaseProjects(accessToken) {
 }
 
 /**
+ * 조직 목록 가져오기
+ */
+async function getSupabaseOrganizations(accessToken) {
+  return supabaseApi('/organizations', accessToken)
+}
+
+/**
  * 프로젝트 API 키 가져오기
  */
 async function getProjectApiKeys(accessToken, projectRef) {
   return supabaseApi(`/projects/${projectRef}/api-keys`, accessToken)
+}
+
+/**
+ * 새 프로젝트 생성
+ */
+function createSupabaseProject(accessToken, orgId, name, dbPassword, region = 'ap-northeast-2') {
+  return new Promise((resolve, reject) => {
+    const data = JSON.stringify({
+      organization_id: orgId,
+      name: name,
+      db_pass: dbPassword,
+      region: region,
+      plan: 'free',
+    })
+
+    const req = https.request(`${SUPABASE_API_BASE}/projects`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(data),
+      },
+    }, (res) => {
+      let responseData = ''
+      res.on('data', chunk => responseData += chunk)
+      res.on('end', () => {
+        if (res.statusCode === 201 || res.statusCode === 200) {
+          try {
+            resolve(JSON.parse(responseData))
+          } catch (e) {
+            reject(new Error('API 응답 파싱 실패'))
+          }
+        } else if (res.statusCode === 401) {
+          reject(new Error('Access Token이 유효하지 않습니다.'))
+        } else if (res.statusCode === 422) {
+          reject(new Error('프로젝트 생성 실패: 입력값을 확인하세요.'))
+        } else {
+          reject(new Error(`프로젝트 생성 실패: ${res.statusCode} - ${responseData}`))
+        }
+      })
+    })
+    req.on('error', reject)
+    req.write(data)
+    req.end()
+  })
+}
+
+/**
+ * 프로젝트 상태 확인 (생성 완료될 때까지 대기)
+ */
+async function waitForProjectReady(accessToken, projectRef, maxWaitMs = 180000) {
+  const startTime = Date.now()
+  const checkInterval = 5000 // 5초마다 확인
+
+  while (Date.now() - startTime < maxWaitMs) {
+    try {
+      const project = await supabaseApi(`/projects/${projectRef}`, accessToken)
+      if (project.status === 'ACTIVE_HEALTHY') {
+        return project
+      }
+      // 진행 상태 표시
+      process.stdout.write('.')
+    } catch (e) {
+      // 아직 준비 안 됨
+    }
+    await new Promise(resolve => setTimeout(resolve, checkInterval))
+  }
+  throw new Error('프로젝트 생성 시간 초과 (3분)')
 }
 
 const colors = {

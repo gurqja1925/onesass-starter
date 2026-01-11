@@ -9,11 +9,30 @@ import { Worker } from 'worker_threads';
 import { fileURLToPath } from 'url';
 import * as path from 'path';
 import * as fs from 'fs';
-import { ensureProjectStorageDir, getProjectStorageDir } from './storage';
+import {
+  ensureProjectStorageDir,
+  getProjectStorageDir,
+  generateSessionId,
+  saveSession,
+  loadProjectMetadata,
+  updateProjectMetadata,
+  type SessionData,
+  type ProjectMetadata,
+} from './storage';
 
 // 타입
 import type { TokenUsage } from './agent/coding';
-import { AVAILABLE_MODELS, type ModelInfo, getApiKey, saveApiKey, type Provider } from './models';
+import {
+  AVAILABLE_MODELS,
+  type ModelInfo,
+  type TaskType,
+  getApiKey,
+  saveApiKey,
+  type Provider,
+  getModelByNumber,
+  getTaskModels,
+  setTaskModel,
+} from './models';
 
 // ============================================================
 // 유틸리티 함수
@@ -352,37 +371,13 @@ function Dashboard({ initialModelId }: DashboardProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [taskIdCounter, setTaskIdCounter] = useState(0);
   const [systemLogs, setSystemLogs] = useState<string[]>([
-    '🇰🇷 케이코드 - 작업 유형별 인공지능 모델 추천',
+    '🚀 K-Code - DeepSeek 기본 모델 (코딩 특화)',
     '',
-    '━━━ 📝 문서작성에 추천 ━━━',
-    '  Qwen Turbo         0.125달러',
-    '  MiniMax M2.1       0.175달러',
-    '  Qwen3 235B         0.6달러',
-    '  Gemini 3 Flash     1.75달러',
+    '💡 빠른 시작:',
+    '  1. /키 deepseek sk-xxx  → 인증키 설정',
+    '  2. "로그인 기능 추가해줘" → 작업 입력',
     '',
-    '━━━ 🔧 코딩 구현에 추천 ━━━',
-    '  MiniMax M2.1       0.175달러  (코딩 특화)',
-    '  Qwen3 32B (Groq)   0.24달러   (초고속)',
-    '  DeepSeek V3.2      0.35달러   (코딩 최강)',
-    '',
-    '━━━ 🧪 테스트에 추천 ━━━',
-    '  DeepSeek V3.2      0.35달러',
-    '',
-    '━━━ 🧠 추론 작업에 추천 ━━━',
-    '  Qwen3 235B         0.6달러',
-    '  DeepSeek Reasoner  1.37달러   (추론 전용)',
-    '',
-    '━━━ ⚡ 빠른 작업에 추천 ━━━',
-    '  Qwen Turbo         0.125달러',
-    '  Qwen3 32B (Groq)   0.24달러   (초고속)',
-    '  Llama 3.3 70B      0.69달러',
-    '',
-    '━━━ 💡 사용 방법 ━━━',
-    '  1. 인증키 설정: /키 qwen sk-xxx',
-    '  2. 모델 보기:   /모델',
-    '  3. 작업 입력:   "로그인 기능 추가해줘"',
-    '  4. 작업 중단:   ESC 키',
-    '  5. 종료:        종료',
+    '📋 명령어: / (목록) | /모델 (모델보기) | /설정 (작업별 모델)',
   ]);
   const [stats, setStats] = useState<Stats>({
     totalTasks: 0,
@@ -395,6 +390,56 @@ function Dashboard({ initialModelId }: DashboardProps) {
     startTime: Date.now(),
     monthlyUsage: loadMonthlyUsage(),
   });
+
+  // 세션 관리
+  const [sessionId] = useState(() => generateSessionId());
+  const [sessionData, setSessionData] = useState<SessionData>({
+    id: sessionId,
+    startedAt: new Date().toISOString(),
+    tasks: [],
+    totalTokens: 0,
+    totalCost: 0,
+  });
+
+  // 프로젝트 메타데이터 로드
+  useEffect(() => {
+    try {
+      const metadata = loadProjectMetadata();
+      addSystemLog(`📂 프로젝트: ${metadata.name} (${metadata.type})`);
+      addSystemLog(`📊 총 ${metadata.totalSessions}개 세션 | ${metadata.totalTasks}개 작업`);
+    } catch (err) {
+      // 메타데이터 로드 실패는 무시 (초기화됨)
+    }
+  }, []);
+
+  // 세션 저장 (언마운트 또는 주기적)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // 30초마다 세션 저장
+      saveSession(sessionData);
+    }, 30000);
+
+    return () => {
+      clearInterval(interval);
+      // 세션 종료 시 최종 저장
+      const finalSession: SessionData = {
+        ...sessionData,
+        endedAt: new Date().toISOString(),
+      };
+      saveSession(finalSession);
+
+      // 프로젝트 메타데이터 업데이트
+      try {
+        const metadata = loadProjectMetadata();
+        updateProjectMetadata({
+          totalSessions: metadata.totalSessions + 1,
+          totalTasks: metadata.totalTasks + sessionData.tasks.length,
+          totalTokens: metadata.totalTokens + sessionData.totalTokens,
+          totalCost: metadata.totalCost + sessionData.totalCost,
+        });
+      } catch {}
+    };
+  }, [sessionData]);
 
   // Worker 경로
   const __filename = fileURLToPath(import.meta.url);
@@ -489,6 +534,26 @@ function Dashboard({ initialModelId }: DashboardProps) {
           };
         });
 
+        // 세션 데이터 업데이트
+        setSessionData(prev => ({
+          ...prev,
+          tasks: [
+            ...prev.tasks,
+            {
+              id: `task-${newId}`,
+              prompt,
+              status: msg.success ? 'completed' : 'failed',
+              tokens: usage.totalTokens,
+              cost,
+              filesChanged: msg.filesChanged || [],
+              startedAt: new Date(task.startTime).toISOString(),
+              completedAt: new Date().toISOString(),
+            },
+          ],
+          totalTokens: prev.totalTokens + usage.totalTokens,
+          totalCost: prev.totalCost + cost,
+        }));
+
         const icon = msg.success ? '✓' : '✕';
         addTaskLog(newId, `${icon} 완료 ${formatTokens(usage.totalTokens)} ${formatCostKRW(cost)}`);
 
@@ -526,6 +591,10 @@ function Dashboard({ initialModelId }: DashboardProps) {
       addSystemLog('  /키 <제공자> <키값>');
       addSystemLog('    예: /키 qwen sk-xxx');
       addSystemLog('    예: /키 deepseek sk-xxx');
+      addSystemLog('');
+      addSystemLog('  /설정');
+      addSystemLog('    작업별 모델 설정 (번호로 간편 설정)');
+      addSystemLog('    예: /설정 추론 7');
       addSystemLog('');
       addSystemLog('  /모델');
       addSystemLog('    전체 모델 목록 보기');
@@ -649,6 +718,79 @@ function Dashboard({ initialModelId }: DashboardProps) {
       } else {
         addSystemLog('사용법: /키 <제공자> <키값>');
         addSystemLog('예시: /키 qwen sk-xxx');
+      }
+      setInput('');
+      return;
+    }
+
+    // /설정 - 작업별 모델 설정
+    if (trimmed === '/설정') {
+      const taskModels = getTaskModels();
+      addSystemLog('━━━ 📋 작업별 모델 설정 ━━━');
+      addSystemLog('');
+      addSystemLog('현재 설정:');
+      addSystemLog(`  📝 문서작성: ${taskModels['문서작성']}번 (${getModelByNumber(taskModels['문서작성'])?.name})`);
+      addSystemLog(`  🔧 코딩:     ${taskModels['코딩']}번 (${getModelByNumber(taskModels['코딩'])?.name})`);
+      addSystemLog(`  🧪 테스트:   ${taskModels['테스트']}번 (${getModelByNumber(taskModels['테스트'])?.name})`);
+      addSystemLog(`  🧠 추론:     ${taskModels['추론']}번 (${getModelByNumber(taskModels['추론'])?.name})`);
+      addSystemLog(`  ⚡ 빠른작업: ${taskModels['빠른작업']}번 (${getModelByNumber(taskModels['빠른작업'])?.name})`);
+      addSystemLog('');
+      addSystemLog('모델 번호:');
+      AVAILABLE_MODELS.forEach(m => {
+        const hasKey = !!getApiKey(m.provider);
+        const keyStatus = hasKey ? '✓' : '○';
+        addSystemLog(`  ${keyStatus} ${m.number}번: ${m.name.padEnd(20)} ${m.description}`);
+      });
+      addSystemLog('');
+      addSystemLog('설정 방법:');
+      addSystemLog('  /설정 <작업> <번호>');
+      addSystemLog('');
+      addSystemLog('예시:');
+      addSystemLog('  /설정 추론 7     → 추론 작업에 7번(DeepSeek Reasoner) 사용');
+      addSystemLog('  /설정 코딩 1     → 코딩 작업에 1번(DeepSeek V3.2) 사용');
+      addSystemLog('  /설정 문서작성 2 → 문서작성에 2번(Qwen Turbo) 사용');
+      setInput('');
+      return;
+    }
+
+    // /설정 <작업> <번호>
+    if (trimmed.startsWith('/설정 ')) {
+      const parts = trimmed.split(' ').filter(p => p);
+      if (parts.length === 3) {
+        const taskName = parts[1];
+        const modelNum = parseInt(parts[2]);
+
+        const taskTypeMap: Record<string, TaskType> = {
+          '문서작성': '문서작성',
+          '코딩': '코딩',
+          '테스트': '테스트',
+          '추론': '추론',
+          '빠른작업': '빠른작업',
+        };
+
+        const taskType = taskTypeMap[taskName];
+        if (!taskType) {
+          addSystemLog('✕ 잘못된 작업명');
+          addSystemLog('사용 가능: 문서작성, 코딩, 테스트, 추론, 빠른작업');
+          setInput('');
+          return;
+        }
+
+        const model = getModelByNumber(modelNum);
+        if (!model) {
+          addSystemLog(`✕ ${modelNum}번 모델을 찾을 수 없습니다`);
+          setInput('');
+          return;
+        }
+
+        if (setTaskModel(taskType, modelNum)) {
+          addSystemLog(`✓ ${taskName} 작업: ${modelNum}번 (${model.name})으로 설정됨`);
+        } else {
+          addSystemLog('✕ 설정 실패');
+        }
+      } else {
+        addSystemLog('사용법: /설정 <작업> <번호>');
+        addSystemLog('예시: /설정 추론 7');
       }
       setInput('');
       return;

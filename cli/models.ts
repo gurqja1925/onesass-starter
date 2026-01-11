@@ -19,6 +19,7 @@ export type TaskType = '문서작성' | '코딩' | '테스트' | '추론' | '빠
 
 export interface ModelInfo {
   id: string;
+  number: number; // 모델 번호 (1~8)
   name: string;
   provider: Provider;
   model: string;
@@ -46,7 +47,31 @@ export interface ModelInfo {
 
 export const AVAILABLE_MODELS: ModelInfo[] = [
   {
+    id: 'deepseek',
+    number: 1,
+    name: 'DeepSeek V3.2',
+    provider: 'deepseek',
+    model: 'deepseek-chat',
+    description: '$0.35',
+    maxTokens: 8192,
+    contextWindow: 128000,
+    inputPrice: 0.28,
+    outputPrice: 0.42,
+    avgPrice: 0.35,
+    baseUrl: 'https://api.deepseek.com',
+    bestFor: ['코딩', '테스트'],
+    capabilities: {
+      vision: false,
+      functionCalling: true,
+      streaming: true,
+      json: true,
+      reasoning: false,
+    },
+    releaseDate: '2026-01-10',
+  },
+  {
     id: 'qwen-turbo',
+    number: 2,
     name: 'Qwen Turbo',
     provider: 'qwen',
     model: 'qwen-turbo-latest',
@@ -69,6 +94,7 @@ export const AVAILABLE_MODELS: ModelInfo[] = [
   },
   {
     id: 'minimax-m21',
+    number: 3,
     name: 'MiniMax M2.1',
     provider: 'minimax',
     model: 'abab-m2.1',
@@ -91,6 +117,7 @@ export const AVAILABLE_MODELS: ModelInfo[] = [
   },
   {
     id: 'groq-qwen3',
+    number: 4,
     name: 'Qwen3 32B (Groq)',
     provider: 'groq',
     model: 'qwen3-32b',
@@ -112,29 +139,8 @@ export const AVAILABLE_MODELS: ModelInfo[] = [
     releaseDate: '2026-04-29',
   },
   {
-    id: 'deepseek',
-    name: 'DeepSeek V3.2',
-    provider: 'deepseek',
-    model: 'deepseek-chat',
-    description: '$0.35',
-    maxTokens: 8192,
-    contextWindow: 128000,
-    inputPrice: 0.28,
-    outputPrice: 0.42,
-    avgPrice: 0.35,
-    baseUrl: 'https://api.deepseek.com',
-    bestFor: ['코딩', '테스트'],
-    capabilities: {
-      vision: false,
-      functionCalling: true,
-      streaming: true,
-      json: true,
-      reasoning: false,
-    },
-    releaseDate: '2026-01-10',
-  },
-  {
     id: 'qwen3-235b',
+    number: 5,
     name: 'Qwen3 235B',
     provider: 'qwen',
     model: 'qwen3-235b-a22b',
@@ -157,6 +163,7 @@ export const AVAILABLE_MODELS: ModelInfo[] = [
   },
   {
     id: 'groq-llama-70b',
+    number: 6,
     name: 'Llama 3.3 70B (Groq)',
     provider: 'groq',
     model: 'llama-3.3-70b-versatile',
@@ -179,6 +186,7 @@ export const AVAILABLE_MODELS: ModelInfo[] = [
   },
   {
     id: 'deepseek-reasoner',
+    number: 7,
     name: 'DeepSeek Reasoner',
     provider: 'deepseek',
     model: 'deepseek-reasoner',
@@ -201,6 +209,7 @@ export const AVAILABLE_MODELS: ModelInfo[] = [
   },
   {
     id: 'gemini-3-flash',
+    number: 8,
     name: 'Gemini 3 Flash',
     provider: 'google',
     model: 'gemini-3-flash',
@@ -224,33 +233,33 @@ export const AVAILABLE_MODELS: ModelInfo[] = [
 ];
 
 // 현재 선택된 모델 ID
-let currentModelId = 'qwen-turbo';
+let currentModelId = 'deepseek';
 
 // ============================================================
 // 모델 함수
 // ============================================================
 
 /**
- * 사용 가능한 최고의 저렴한 모델 찾기
- * 우선순위: 가격순
+ * 사용 가능한 최고의 모델 찾기
+ * 우선순위: DeepSeek 기본, 그 다음 가격순
  */
 export function getBestAvailableModel(): ModelInfo {
-  // 1. Qwen Turbo (가장 저렴)
+  // 1. DeepSeek V3.2 (기본)
+  const deepseek = AVAILABLE_MODELS.find(m => m.id === 'deepseek');
+  if (deepseek && getApiKey('deepseek')) {
+    return deepseek;
+  }
+
+  // 2. Qwen Turbo (저렴)
   const qwen = AVAILABLE_MODELS.find(m => m.id === 'qwen-turbo');
   if (qwen && getApiKey('qwen')) {
     return qwen;
   }
 
-  // 2. MiniMax M2.1
+  // 3. MiniMax M2.1
   const minimax = AVAILABLE_MODELS.find(m => m.id === 'minimax-m21');
   if (minimax && getApiKey('minimax')) {
     return minimax;
-  }
-
-  // 3. DeepSeek V3.2
-  const deepseek = AVAILABLE_MODELS.find(m => m.id === 'deepseek');
-  if (deepseek && getApiKey('deepseek')) {
-    return deepseek;
   }
 
   // 4. Groq
@@ -265,8 +274,8 @@ export function getBestAvailableModel(): ModelInfo {
     return google;
   }
 
-  // 기본값
-  return AVAILABLE_MODELS[0];
+  // 기본값: DeepSeek
+  return AVAILABLE_MODELS.find(m => m.id === 'deepseek') || AVAILABLE_MODELS[0];
 }
 
 export function getCurrentModel(): ModelInfo {
@@ -287,7 +296,7 @@ export function getAvailableModels(): ModelInfo[] {
 }
 
 export function getDefaultModel(): ModelInfo {
-  return AVAILABLE_MODELS[0];
+  return AVAILABLE_MODELS.find(m => m.id === 'deepseek') || AVAILABLE_MODELS[0];
 }
 
 // ============================================================
@@ -301,6 +310,7 @@ interface Config {
   googleApiKeyEnc?: string;
   groqApiKeyEnc?: string;
   defaultModel?: string;
+  taskModels?: Record<TaskType, number>; // 작업별 모델 번호
 }
 
 function readConfigFile(filePath: string): Config {
@@ -315,8 +325,16 @@ function readConfigFile(filePath: string): Config {
   return {};
 }
 
+// 전역 설정 디렉토리 (API 키는 모든 프로젝트에서 공유)
+function ensureGlobalConfigDir(): string {
+  if (!fs.existsSync(LEGACY_CONFIG_DIR)) {
+    fs.mkdirSync(LEGACY_CONFIG_DIR, { recursive: true, mode: 0o700 });
+  }
+  return LEGACY_CONFIG_DIR;
+}
+
 function getConfigFilePath(): string {
-  const dir = ensureProjectStorageDir();
+  const dir = ensureGlobalConfigDir();
   return path.join(dir, CONFIG_FILE_NAME);
 }
 
@@ -354,7 +372,7 @@ function migrateLegacyConfig(legacy: Config & {
   groqApiKey?: string;
 }): Config {
   const config: Config = { defaultModel: legacy.defaultModel };
-  const storageDir = getProjectStorageDir();
+  const storageDir = ensureGlobalConfigDir();
   const key = getEncryptionKey({ allowCreate: true, storageDir });
 
   if (legacy.deepseekApiKey && key) {
@@ -378,7 +396,7 @@ function migrateLegacyConfig(legacy: Config & {
 
 function decryptApiKey(value?: string): string | undefined {
   if (!value) return undefined;
-  const storageDir = getProjectStorageDir();
+  const storageDir = ensureGlobalConfigDir();
   const key = getEncryptionKey({ allowCreate: false, storageDir });
   if (!key) return undefined;
   try {
@@ -389,7 +407,7 @@ function decryptApiKey(value?: string): string | undefined {
 }
 
 function encryptApiKey(value: string): string | undefined {
-  const storageDir = getProjectStorageDir();
+  const storageDir = ensureGlobalConfigDir();
   const key = getEncryptionKey({ allowCreate: true, storageDir });
   if (!key) return undefined;
   return encryptString(value, key);
@@ -477,11 +495,76 @@ export function deleteApiKey(provider?: Provider): boolean {
 // 기본 모델 저장/로드
 export function getDefaultModelId(): string {
   const config = loadConfig();
-  return config.defaultModel || 'qwen-turbo';
+  return config.defaultModel || 'deepseek';
 }
 
 export function setDefaultModelId(modelId: string): boolean {
   const config = loadConfig();
   config.defaultModel = modelId;
   return saveConfig(config);
+}
+
+// ============================================================
+// 작업별 모델 설정
+// ============================================================
+
+/**
+ * 번호로 모델 찾기
+ */
+export function getModelByNumber(num: number): ModelInfo | undefined {
+  return AVAILABLE_MODELS.find(m => m.number === num);
+}
+
+/**
+ * 작업별 모델 설정 가져오기
+ */
+export function getTaskModels(): Record<TaskType, number> {
+  const config = loadConfig();
+  return config.taskModels || {
+    '문서작성': 1, // DeepSeek (기본)
+    '코딩': 1,     // DeepSeek (기본)
+    '테스트': 1,   // DeepSeek (기본)
+    '추론': 7,     // DeepSeek Reasoner
+    '빠른작업': 1, // DeepSeek (기본)
+  };
+}
+
+/**
+ * 작업별 모델 설정
+ */
+export function setTaskModel(taskType: TaskType, modelNumber: number): boolean {
+  const model = getModelByNumber(modelNumber);
+  if (!model) return false;
+
+  const config = loadConfig();
+  if (!config.taskModels) {
+    config.taskModels = getTaskModels();
+  }
+  config.taskModels[taskType] = modelNumber;
+  return saveConfig(config);
+}
+
+/**
+ * 모든 작업별 모델 한번에 설정
+ */
+export function setAllTaskModels(taskModels: Record<TaskType, number>): boolean {
+  const config = loadConfig();
+  config.taskModels = taskModels;
+  return saveConfig(config);
+}
+
+/**
+ * 작업 유형에 맞는 모델 가져오기
+ */
+export function getModelForTask(taskType: TaskType): ModelInfo {
+  const taskModels = getTaskModels();
+  const modelNumber = taskModels[taskType];
+  const model = getModelByNumber(modelNumber);
+
+  if (model && getApiKey(model.provider)) {
+    return model;
+  }
+
+  // API 키가 없으면 기본 모델 사용
+  return getBestAvailableModel();
 }

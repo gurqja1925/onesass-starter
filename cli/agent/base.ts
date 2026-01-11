@@ -143,22 +143,37 @@ export abstract class BaseAgent {
   }
 
   private detectLoopReason(): string | null {
-    if (this.currentStep < 10) {
+    // 충분한 스텝 진행 후에만 체크 (20스텝 이후)
+    if (this.currentStep < 20) {
       return null;
     }
 
     const messages = this.getMessages();
-    if (messages.length < 4) return null;
+    if (messages.length < 8) return null;
 
     const assistantMessages = messages.filter(m => m.role === Role.ASSISTANT);
-    if (assistantMessages.length < 3) return null;
+    if (assistantMessages.length < 6) return null;
 
     const normalize = (content: string | null) => (content || '').trim();
-    const recentThree = assistantMessages.slice(-3);
-    const contents = recentThree.map(m => normalize(m.content));
-    const allSame = contents.every(c => c && c === contents[0]);
-    if (allSame) {
+    const recentSix = assistantMessages.slice(-6);
+    const contents = recentSix.map(m => normalize(m.content));
+
+    // 최근 6개 중 5개 이상이 동일한 경우에만 루프로 판단
+    const uniqueContents = [...new Set(contents)];
+    if (uniqueContents.length === 1) {
       return '동일한 메시지 반복';
+    }
+
+    // 또는 최근 6개 중 같은 내용이 5번 이상 반복되는 경우
+    const contentCounts = new Map<string, number>();
+    contents.forEach(c => {
+      contentCounts.set(c, (contentCounts.get(c) || 0) + 1);
+    });
+
+    for (const [content, count] of contentCounts) {
+      if (count >= 5 && content.length > 10) {
+        return '동일한 메시지 반복';
+      }
     }
 
     return null;

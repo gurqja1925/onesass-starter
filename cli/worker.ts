@@ -21,7 +21,7 @@ function getPipelineStages(): PipelineStage[] {
   return [
     {
       role: '분석/설계',
-      maxSteps: 10,
+      maxSteps: 30,
       promptTemplate: (input) => `요청을 분석하세요. 도구 사용 없이 텍스트로만 응답.
 
 요청: ${input}
@@ -37,7 +37,7 @@ TODO를 참고하고 이번 단계에 해당하는 항목만 수행하세요.
     },
     {
       role: '구현',
-      maxSteps: 30,
+      maxSteps: 100,
       promptTemplate: (input, prevResult) => `계획대로 코드 구현:
 
 [요청] ${input}
@@ -51,7 +51,7 @@ TODO를 참고하고 이번 단계에 해당하는 항목만 수행하세요.
     },
     {
       role: '검토',
-      maxSteps: 30,
+      maxSteps: 50,
       promptTemplate: (input, prevResult) => `작성된 코드를 빠르게 검토하고 빌드 에러가 있으면 수정하세요.
 
 [이전 결과]
@@ -78,7 +78,7 @@ function getDevPipelineStages(): PipelineStage[] {
   return [
   {
     role: '분석',
-    maxSteps: 10,
+    maxSteps: 30,
     promptTemplate: (input) => `요청을 분석하세요. 도구 사용 없이 텍스트로만 응답.
 
 요청: ${input}
@@ -94,7 +94,7 @@ TODO를 참고하고 이번 단계에 해당하는 항목만 수행하세요.
   },
   {
     role: '설계',
-    maxSteps: 10,
+    maxSteps: 30,
     promptTemplate: (input, prevResult) => `분석 결과를 바탕으로 설계안을 작성하세요. 도구 사용 없이 텍스트로만 응답.
 
 [요청] ${input}
@@ -113,7 +113,7 @@ TODO를 참고하고 이번 단계에 해당하는 항목만 수행하세요.
   },
   {
     role: '개발',
-    maxSteps: 10,
+    maxSteps: 30,
     promptTemplate: (input, prevResult) => `설계에 따라 작업 계획을 작성하세요. 도구 사용 없이 텍스트로만 응답.
 
 [요청] ${input}
@@ -131,7 +131,7 @@ TODO를 참고하고 이번 단계에 해당하는 항목만 수행하세요.
   },
   {
     role: '구현',
-    maxSteps: 30,
+    maxSteps: 100,
     promptTemplate: (input, prevResult) => `계획대로 코드 구현:
 
 [요청] ${input}
@@ -145,7 +145,7 @@ TODO를 참고하고 이번 단계에 해당하는 항목만 수행하세요.
   },
   {
     role: '테스트',
-    maxSteps: 30,
+    maxSteps: 50,
     promptTemplate: (input, prevResult) => `작성된 코드를 검증하고 빌드 에러가 있으면 수정하세요.
 
 [이전 결과]
@@ -176,6 +176,112 @@ type ReasonerDecision = {
   priorityFiles: string[];
   todo: string[];
 };
+
+// ============================================================
+// TODO 추적 시스템
+// ============================================================
+
+class TodoTracker {
+  private todos: Array<{ item: string; completed: boolean }> = [];
+  private onUpdate?: (progress: string) => void;
+
+  constructor(todoList: string[], onUpdate?: (progress: string) => void) {
+    this.todos = todoList.map(item => ({ item, completed: false }));
+    this.onUpdate = onUpdate;
+    this.logProgress();
+  }
+
+  /**
+   * TODO 항목 완료 체크 (LLM 응답에서 파싱)
+   */
+  checkCompletion(responseText: string): void {
+    const lowerText = responseText.toLowerCase();
+
+    this.todos.forEach((todo, idx) => {
+      if (!todo.completed) {
+        const keywords = todo.item.toLowerCase().split(' ');
+        // 3개 이상의 키워드가 응답에 포함되어 있으면 완료로 간주
+        const matchCount = keywords.filter(kw => kw.length > 2 && lowerText.includes(kw)).length;
+        if (matchCount >= Math.min(3, keywords.length)) {
+          todo.completed = true;
+        }
+      }
+    });
+
+    this.logProgress();
+  }
+
+  /**
+   * 명시적 완료 마킹
+   */
+  markCompleted(indices: number[]): void {
+    indices.forEach(idx => {
+      if (this.todos[idx]) {
+        this.todos[idx].completed = true;
+      }
+    });
+    this.logProgress();
+  }
+
+  /**
+   * 진행률 로깅
+   */
+  private logProgress(): void {
+    const completed = this.todos.filter(t => t.completed).length;
+    const total = this.todos.length;
+    const progress = `📊 TODO 진행: ${completed}/${total} 완료`;
+
+    if (this.onUpdate) {
+      this.onUpdate(progress);
+    }
+  }
+
+  /**
+   * 미완료 항목 반환
+   */
+  getIncomplete(): string[] {
+    return this.todos.filter(t => !t.completed).map(t => t.item);
+  }
+
+  /**
+   * 완료율 반환
+   */
+  getCompletionRate(): number {
+    if (this.todos.length === 0) return 1.0;
+    const completed = this.todos.filter(t => t.completed).length;
+    return completed / this.todos.length;
+  }
+
+  /**
+   * 전체 완료 여부
+   */
+  isAllCompleted(): boolean {
+    return this.todos.every(t => t.completed);
+  }
+
+  /**
+   * 상태 요약
+   */
+  getSummary(): string {
+    const completed = this.todos.filter(t => t.completed).length;
+    const total = this.todos.length;
+    const incomplete = this.getIncomplete();
+
+    let summary = `\n━━━ TODO 완료 현황 ━━━\n`;
+    summary += `완료: ${completed}/${total} (${Math.round(this.getCompletionRate() * 100)}%)\n\n`;
+
+    if (incomplete.length > 0) {
+      summary += `⚠️  미완료 항목:\n`;
+      incomplete.forEach((item, idx) => {
+        summary += `  ${idx + 1}. ${item}\n`;
+      });
+    } else {
+      summary += `✅ 모든 TODO 완료!\n`;
+    }
+
+    return summary;
+  }
+}
 
 function parseReasonerDecision(raw: string): ReasonerDecision | null {
   const trimmed = raw.trim();
@@ -253,14 +359,29 @@ function postLog(message: string, level: 'info' | 'warning' | 'error' | 'debug' 
   });
 }
 
-async function runPipeline(prompt: string, modelId: string, reasonerContext?: string) {
+async function runPipeline(prompt: string, modelId: string, reasonerContext?: string, todoList?: string[]) {
   const PIPELINE_STAGES = getPipelineStages();
   let prevResult = '';
   const totalUsage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
 
+  // TODO 추적 시작
+  const todoTracker = todoList && todoList.length > 0
+    ? new TodoTracker(todoList, postLog)
+    : null;
+
   for (let i = 0; i < PIPELINE_STAGES.length; i++) {
     const stage = PIPELINE_STAGES[i];
-    const stagePrompt = `${reasonerContext ? reasonerContext + '\n\n' : ''}${stage.promptTemplate(prompt, prevResult)}`;
+
+    // TODO 진행 상황을 프롬프트에 추가
+    let todoContext = '';
+    if (todoTracker) {
+      const incomplete = todoTracker.getIncomplete();
+      if (incomplete.length > 0) {
+        todoContext = `\n\n[미완료 TODO]\n${incomplete.map((item, idx) => `${idx + 1}. ${item}`).join('\n')}\n`;
+      }
+    }
+
+    const stagePrompt = `${reasonerContext ? reasonerContext + '\n\n' : ''}${todoContext}${stage.promptTemplate(prompt, prevResult)}`;
     postLog(`[${stage.role}] 시작 (${i + 1}/${PIPELINE_STAGES.length})`);
 
     const result = await runCodingTask(stagePrompt, {
@@ -276,22 +397,54 @@ async function runPipeline(prompt: string, modelId: string, reasonerContext?: st
     }
 
     prevResult = result.result;
+
+    // TODO 완료 체크
+    if (todoTracker) {
+      todoTracker.checkCompletion(result.result);
+    }
+
     totalUsage.promptTokens += result.usage.promptTokens;
     totalUsage.completionTokens += result.usage.completionTokens;
     totalUsage.totalTokens += result.usage.totalTokens;
   }
 
+  // 최종 TODO 요약
+  if (todoTracker) {
+    const summary = todoTracker.getSummary();
+    postLog(summary);
+
+    // 미완료 항목이 있으면 경고
+    if (!todoTracker.isAllCompleted()) {
+      postLog('⚠️  일부 TODO가 미완료 상태입니다.');
+    }
+  }
+
   return { success: true, result: prevResult, usage: totalUsage };
 }
 
-async function runDevPipeline(prompt: string, modelId: string, reasonerContext?: string) {
+async function runDevPipeline(prompt: string, modelId: string, reasonerContext?: string, todoList?: string[]) {
   const DEV_PIPELINE_STAGES = getDevPipelineStages();
   let prevResult = '';
   const totalUsage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
 
+  // TODO 추적 시작
+  const todoTracker = todoList && todoList.length > 0
+    ? new TodoTracker(todoList, postLog)
+    : null;
+
   for (let i = 0; i < DEV_PIPELINE_STAGES.length; i++) {
     const stage = DEV_PIPELINE_STAGES[i];
-    const stagePrompt = `${reasonerContext ? reasonerContext + '\n\n' : ''}${stage.promptTemplate(prompt, prevResult)}`;
+
+    // TODO 진행 상황을 프롬프트에 추가
+    let todoContext = '';
+    if (todoTracker) {
+      const incomplete = todoTracker.getIncomplete();
+      if (incomplete.length > 0) {
+        todoContext = `\n\n[미완료 TODO]\n${incomplete.map((item, idx) => `${idx + 1}. ${item}`).join('\n')}\n`;
+      }
+    }
+
+    const stagePrompt = `${reasonerContext ? reasonerContext + '\n\n' : ''}${todoContext}${stage.promptTemplate(prompt, prevResult)}`;
     postLog(`[${stage.role}] 시작 (${i + 1}/${DEV_PIPELINE_STAGES.length})`);
 
     const result = await runCodingTask(stagePrompt, {
@@ -307,9 +460,26 @@ async function runDevPipeline(prompt: string, modelId: string, reasonerContext?:
     }
 
     prevResult = result.result;
+
+    // TODO 완료 체크
+    if (todoTracker) {
+      todoTracker.checkCompletion(result.result);
+    }
+
     totalUsage.promptTokens += result.usage.promptTokens;
     totalUsage.completionTokens += result.usage.completionTokens;
     totalUsage.totalTokens += result.usage.totalTokens;
+  }
+
+  // 최종 TODO 요약
+  if (todoTracker) {
+    const summary = todoTracker.getSummary();
+    postLog(summary);
+
+    // 미완료 항목이 있으면 경고
+    if (!todoTracker.isAllCompleted()) {
+      postLog('⚠️  일부 TODO가 미완료 상태입니다.');
+    }
   }
 
   return { success: true, result: prevResult, usage: totalUsage };
@@ -337,8 +507,10 @@ if (parentPort) {
 
     postLog('🚀 작업 시작...');
 
+    const todoList = decision?.todo || [];
+
     if (decision?.pipeline === 'dev') {
-      return runDevPipeline(prompt, modelId, reasonerContext);
+      return runDevPipeline(prompt, modelId, reasonerContext, todoList);
     }
     if (decision?.pipeline === 'single') {
       return runCodingTask(prompt, {
@@ -350,7 +522,7 @@ if (parentPort) {
         ...(reasonerContext ? { systemPrompt: reasonerContext } : {}),
       });
     }
-    return runPipeline(prompt, modelId, reasonerContext);
+    return runPipeline(prompt, modelId, reasonerContext, todoList);
   })();
 
   runner

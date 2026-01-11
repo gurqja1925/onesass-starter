@@ -8,7 +8,7 @@
 
 import { LLM } from '../llm';
 import { getApiKey } from '../models';
-import type { Role } from '../types';
+import { Role } from '../types';
 
 // ============================================================
 // 타입 정의
@@ -149,14 +149,14 @@ export class Orchestrator {
 
 JSON만 응답하세요.`;
 
-    this.conversationHistory.push({ role: 'user', content: prompt });
+    this.conversationHistory.push({ role: Role.USER, content: prompt });
 
-    const response = await this.deepseekLLM.chat({
-      messages: this.conversationHistory,
-      systemPrompt: 'You are a task analysis expert. Always respond in JSON format.',
-    });
+    const response = await this.deepseekLLM.ask(
+      this.conversationHistory,
+      [{ role: Role.SYSTEM, content: 'You are a task analysis expert. Always respond in JSON format.' }]
+    );
 
-    this.conversationHistory.push({ role: 'assistant', content: response.content });
+    this.conversationHistory.push({ role: Role.ASSISTANT, content: response.content });
 
     try {
       const understanding = JSON.parse(response.content.replace(/```json\n?|```/g, ''));
@@ -202,14 +202,14 @@ JSON만 응답하세요.`;
 
 JSON만 응답하세요.`;
 
-    this.conversationHistory.push({ role: 'user', content: prompt });
+    this.conversationHistory.push({ role: Role.USER, content: prompt });
 
-    const response = await this.deepseekLLM.chat({
-      messages: this.conversationHistory,
-      systemPrompt: 'You are an execution planning expert. Always respond in JSON format.',
-    });
+    const response = await this.deepseekLLM.ask(
+      this.conversationHistory,
+      [{ role: Role.SYSTEM, content: 'You are an execution planning expert. Always respond in JSON format.' }]
+    );
 
-    this.conversationHistory.push({ role: 'assistant', content: response.content });
+    this.conversationHistory.push({ role: Role.ASSISTANT, content: response.content });
 
     try {
       const plan = JSON.parse(response.content.replace(/```json\n?|```/g, ''));
@@ -285,14 +285,14 @@ ${results.join('\n\n')}
 
 JSON만 응답하세요.`;
 
-    this.conversationHistory.push({ role: 'user', content: prompt });
+    this.conversationHistory.push({ role: Role.USER, content: prompt });
 
     const response = await this.deepseekLLM.chat({
       messages: this.conversationHistory,
       systemPrompt: 'You are a code verification expert. Always respond in JSON format.',
     });
 
-    this.conversationHistory.push({ role: 'assistant', content: response.content });
+    this.conversationHistory.push({ role: Role.ASSISTANT, content: response.content });
 
     try {
       const verification = JSON.parse(response.content.replace(/```json\n?|```/g, ''));
@@ -336,7 +336,7 @@ JSON만 응답하세요.`;
 
 JSON만 응답하세요.`;
 
-    this.conversationHistory.push({ role: 'user', content: prompt });
+    this.conversationHistory.push({ role: Role.USER, content: prompt });
 
     const response = await this.deepseekLLM.chat({
       messages: this.conversationHistory,
