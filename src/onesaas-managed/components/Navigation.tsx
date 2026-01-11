@@ -13,6 +13,9 @@ import { useState, useEffect } from 'react'
 import { Menu, X, Sun, Moon, Palette, ChevronDown } from 'lucide-react'
 import { loadTheme, type ThemeId } from '@/onesaas-core/plugins'
 
+// 개발자 모드 (데모/쇼케이스용) - 배포 시 false로 설정
+const DEV_MODE = process.env.NEXT_PUBLIC_DEV_MODE === 'true'
+
 // 테마 목록
 const THEMES: { id: ThemeId; name: string; colors: string[] }[] = [
   // 기본 테마 10개
@@ -83,11 +86,11 @@ export default function Navigation() {
     }
   }, [showThemeDropdown])
 
-  // 메뉴 아이템
+  // 메뉴 아이템 (DEV_MODE일 때만 쇼케이스, 문서 표시)
   const menuItems = [
-    { href: '/showcase', label: '쇼케이스' },
+    ...(DEV_MODE ? [{ href: '/showcase', label: '쇼케이스' }] : []),
     { href: '/admin', label: '관리자' },
-    { href: '/docs', label: '문서' },
+    ...(DEV_MODE ? [{ href: '/docs', label: '문서' }] : []),
   ]
 
   return (
@@ -150,84 +153,86 @@ export default function Navigation() {
                 {themeMode === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
               </button>
 
-              {/* 테마 선택 */}
-              <div className="relative">
-                <button
-                  onClick={(e) => { e.stopPropagation(); setShowThemeDropdown(!showThemeDropdown) }}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors hover:opacity-80"
-                  style={{ background: 'var(--color-bg-secondary)', color: 'var(--color-text)' }}
-                >
-                  <Palette className="w-4 h-4" />
-                  <span className="text-sm hidden lg:inline">{THEMES.find(t => t.id === currentTheme)?.name}</span>
-                  <ChevronDown className={`w-4 h-4 transition-transform ${showThemeDropdown ? 'rotate-180' : ''}`} />
-                </button>
-
-                {showThemeDropdown && (
-                  <div
-                    className="absolute right-0 top-full mt-2 p-4 rounded-xl shadow-2xl z-50 w-[480px] max-h-[70vh] overflow-y-auto"
-                    style={{ background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)' }}
-                    onClick={(e) => e.stopPropagation()}
+              {/* 테마 선택 - DEV_MODE일 때만 표시 */}
+              {DEV_MODE && (
+                <div className="relative">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setShowThemeDropdown(!showThemeDropdown) }}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors hover:opacity-80"
+                    style={{ background: 'var(--color-bg-secondary)', color: 'var(--color-text)' }}
                   >
-                    <h4 className="text-sm font-semibold mb-3" style={{ color: 'var(--color-text)' }}>
-                      🎨 테마 선택 (20가지)
-                    </h4>
+                    <Palette className="w-4 h-4" />
+                    <span className="text-sm hidden lg:inline">{THEMES.find(t => t.id === currentTheme)?.name}</span>
+                    <ChevronDown className={`w-4 h-4 transition-transform ${showThemeDropdown ? 'rotate-180' : ''}`} />
+                  </button>
 
-                    {/* 기본 테마 */}
-                    <p className="text-xs mb-2" style={{ color: 'var(--color-text-secondary)' }}>기본 테마</p>
-                    <div className="grid grid-cols-5 gap-2 mb-4">
-                      {THEMES.slice(0, 10).map(theme => (
-                        <button
-                          key={theme.id}
-                          onClick={() => handleThemeChange(theme.id)}
-                          className={`p-2 rounded-lg text-center transition-all hover:scale-105 ${currentTheme === theme.id ? 'ring-2' : ''}`}
-                          style={{
-                            background: 'var(--color-bg)',
-                            border: '1px solid var(--color-border)',
-                            ['--tw-ring-color' as string]: currentTheme === theme.id ? 'var(--color-accent)' : undefined,
-                          }}
-                          title={theme.name}
-                        >
-                          <div className="flex justify-center gap-1 mb-1">
-                            {theme.colors.map((color, i) => (
-                              <div key={i} className="w-3 h-3 rounded-full" style={{ background: color }} />
-                            ))}
-                          </div>
-                          <p className="text-[10px] font-medium truncate" style={{ color: 'var(--color-text)' }}>
-                            {theme.name}
-                          </p>
-                        </button>
-                      ))}
-                    </div>
+                  {showThemeDropdown && (
+                    <div
+                      className="absolute right-0 top-full mt-2 p-4 rounded-xl shadow-2xl z-50 w-[480px] max-h-[70vh] overflow-y-auto"
+                      style={{ background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)' }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <h4 className="text-sm font-semibold mb-3" style={{ color: 'var(--color-text)' }}>
+                        🎨 테마 선택 (20가지)
+                      </h4>
 
-                    {/* 특이한 테마 */}
-                    <p className="text-xs mb-2" style={{ color: 'var(--color-text-secondary)' }}>특별 테마</p>
-                    <div className="grid grid-cols-5 gap-2">
-                      {THEMES.slice(10).map(theme => (
-                        <button
-                          key={theme.id}
-                          onClick={() => handleThemeChange(theme.id)}
-                          className={`p-2 rounded-lg text-center transition-all hover:scale-105 ${currentTheme === theme.id ? 'ring-2' : ''}`}
-                          style={{
-                            background: 'var(--color-bg)',
-                            border: '1px solid var(--color-border)',
-                            ['--tw-ring-color' as string]: currentTheme === theme.id ? 'var(--color-accent)' : undefined,
-                          }}
-                          title={theme.name}
-                        >
-                          <div className="flex justify-center gap-1 mb-1">
-                            {theme.colors.map((color, i) => (
-                              <div key={i} className="w-3 h-3 rounded-full" style={{ background: color }} />
-                            ))}
-                          </div>
-                          <p className="text-[10px] font-medium truncate" style={{ color: 'var(--color-text)' }}>
-                            {theme.name}
-                          </p>
-                        </button>
-                      ))}
+                      {/* 기본 테마 */}
+                      <p className="text-xs mb-2" style={{ color: 'var(--color-text-secondary)' }}>기본 테마</p>
+                      <div className="grid grid-cols-5 gap-2 mb-4">
+                        {THEMES.slice(0, 10).map(theme => (
+                          <button
+                            key={theme.id}
+                            onClick={() => handleThemeChange(theme.id)}
+                            className={`p-2 rounded-lg text-center transition-all hover:scale-105 ${currentTheme === theme.id ? 'ring-2' : ''}`}
+                            style={{
+                              background: 'var(--color-bg)',
+                              border: '1px solid var(--color-border)',
+                              ['--tw-ring-color' as string]: currentTheme === theme.id ? 'var(--color-accent)' : undefined,
+                            }}
+                            title={theme.name}
+                          >
+                            <div className="flex justify-center gap-1 mb-1">
+                              {theme.colors.map((color, i) => (
+                                <div key={i} className="w-3 h-3 rounded-full" style={{ background: color }} />
+                              ))}
+                            </div>
+                            <p className="text-[10px] font-medium truncate" style={{ color: 'var(--color-text)' }}>
+                              {theme.name}
+                            </p>
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* 특이한 테마 */}
+                      <p className="text-xs mb-2" style={{ color: 'var(--color-text-secondary)' }}>특별 테마</p>
+                      <div className="grid grid-cols-5 gap-2">
+                        {THEMES.slice(10).map(theme => (
+                          <button
+                            key={theme.id}
+                            onClick={() => handleThemeChange(theme.id)}
+                            className={`p-2 rounded-lg text-center transition-all hover:scale-105 ${currentTheme === theme.id ? 'ring-2' : ''}`}
+                            style={{
+                              background: 'var(--color-bg)',
+                              border: '1px solid var(--color-border)',
+                              ['--tw-ring-color' as string]: currentTheme === theme.id ? 'var(--color-accent)' : undefined,
+                            }}
+                            title={theme.name}
+                          >
+                            <div className="flex justify-center gap-1 mb-1">
+                              {theme.colors.map((color, i) => (
+                                <div key={i} className="w-3 h-3 rounded-full" style={{ background: color }} />
+                              ))}
+                            </div>
+                            <p className="text-[10px] font-medium truncate" style={{ color: 'var(--color-text)' }}>
+                              {theme.name}
+                            </p>
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Auth Buttons */}
@@ -309,50 +314,53 @@ export default function Navigation() {
                 </button>
               </div>
 
-              <div className="px-4 max-h-48 overflow-y-auto">
-                <p className="text-xs mb-2" style={{ color: 'var(--color-text-secondary)' }}>기본 테마</p>
-                <div className="grid grid-cols-5 gap-1 mb-3">
-                  {THEMES.slice(0, 10).map(theme => (
-                    <button
-                      key={theme.id}
-                      onClick={() => { handleThemeChange(theme.id); setIsMenuOpen(false) }}
-                      className={`p-1.5 rounded-lg text-center ${currentTheme === theme.id ? 'ring-2' : ''}`}
-                      style={{
-                        background: 'var(--color-bg-secondary)',
-                        ['--tw-ring-color' as string]: currentTheme === theme.id ? 'var(--color-accent)' : undefined,
-                      }}
-                    >
-                      <div className="flex justify-center gap-0.5 mb-0.5">
-                        {theme.colors.map((color, i) => (
-                          <div key={i} className="w-2 h-2 rounded-full" style={{ background: color }} />
-                        ))}
-                      </div>
-                      <p className="text-[8px] truncate" style={{ color: 'var(--color-text)' }}>{theme.name}</p>
-                    </button>
-                  ))}
+              {/* 테마 선택 - DEV_MODE일 때만 표시 */}
+              {DEV_MODE && (
+                <div className="px-4 max-h-48 overflow-y-auto">
+                  <p className="text-xs mb-2" style={{ color: 'var(--color-text-secondary)' }}>기본 테마</p>
+                  <div className="grid grid-cols-5 gap-1 mb-3">
+                    {THEMES.slice(0, 10).map(theme => (
+                      <button
+                        key={theme.id}
+                        onClick={() => { handleThemeChange(theme.id); setIsMenuOpen(false) }}
+                        className={`p-1.5 rounded-lg text-center ${currentTheme === theme.id ? 'ring-2' : ''}`}
+                        style={{
+                          background: 'var(--color-bg-secondary)',
+                          ['--tw-ring-color' as string]: currentTheme === theme.id ? 'var(--color-accent)' : undefined,
+                        }}
+                      >
+                        <div className="flex justify-center gap-0.5 mb-0.5">
+                          {theme.colors.map((color, i) => (
+                            <div key={i} className="w-2 h-2 rounded-full" style={{ background: color }} />
+                          ))}
+                        </div>
+                        <p className="text-[8px] truncate" style={{ color: 'var(--color-text)' }}>{theme.name}</p>
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs mb-2" style={{ color: 'var(--color-text-secondary)' }}>특별 테마</p>
+                  <div className="grid grid-cols-5 gap-1">
+                    {THEMES.slice(10).map(theme => (
+                      <button
+                        key={theme.id}
+                        onClick={() => { handleThemeChange(theme.id); setIsMenuOpen(false) }}
+                        className={`p-1.5 rounded-lg text-center ${currentTheme === theme.id ? 'ring-2' : ''}`}
+                        style={{
+                          background: 'var(--color-bg-secondary)',
+                          ['--tw-ring-color' as string]: currentTheme === theme.id ? 'var(--color-accent)' : undefined,
+                        }}
+                      >
+                        <div className="flex justify-center gap-0.5 mb-0.5">
+                          {theme.colors.map((color, i) => (
+                            <div key={i} className="w-2 h-2 rounded-full" style={{ background: color }} />
+                          ))}
+                        </div>
+                        <p className="text-[8px] truncate" style={{ color: 'var(--color-text)' }}>{theme.name}</p>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <p className="text-xs mb-2" style={{ color: 'var(--color-text-secondary)' }}>특별 테마</p>
-                <div className="grid grid-cols-5 gap-1">
-                  {THEMES.slice(10).map(theme => (
-                    <button
-                      key={theme.id}
-                      onClick={() => { handleThemeChange(theme.id); setIsMenuOpen(false) }}
-                      className={`p-1.5 rounded-lg text-center ${currentTheme === theme.id ? 'ring-2' : ''}`}
-                      style={{
-                        background: 'var(--color-bg-secondary)',
-                        ['--tw-ring-color' as string]: currentTheme === theme.id ? 'var(--color-accent)' : undefined,
-                      }}
-                    >
-                      <div className="flex justify-center gap-0.5 mb-0.5">
-                        {theme.colors.map((color, i) => (
-                          <div key={i} className="w-2 h-2 rounded-full" style={{ background: color }} />
-                        ))}
-                      </div>
-                      <p className="text-[8px] truncate" style={{ color: 'var(--color-text)' }}>{theme.name}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
+              )}
 
               <div className="my-2" style={{ borderTop: '1px solid var(--color-border)' }} />
 

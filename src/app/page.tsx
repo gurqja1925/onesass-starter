@@ -1,15 +1,20 @@
 import Link from 'next/link'
 
+// 개발자 모드 (데모/쇼케이스용) - 배포 시 false로 설정
+const DEV_MODE = process.env.NEXT_PUBLIC_DEV_MODE === 'true'
+
 export default function Home() {
   return (
     <div style={{ background: 'var(--color-bg)', color: 'var(--color-text)' }}>
-      {/* 안내 배너 */}
-      <div
-        className="py-3 px-4 text-center text-sm"
-        style={{ background: 'var(--color-accent)', color: 'var(--color-bg)' }}
-      >
-        이 페이지는 <strong>스타터 템플릿</strong>입니다. AI와 함께 로컬에서 커스터마이징하여 나만의 서비스를 만드세요.
-      </div>
+      {/* 안내 배너 - DEV_MODE일 때만 표시 */}
+      {DEV_MODE && (
+        <div
+          className="py-3 px-4 text-center text-sm"
+          style={{ background: 'var(--color-accent)', color: 'var(--color-bg)' }}
+        >
+          이 페이지는 <strong>스타터 템플릿</strong>입니다. AI와 함께 로컬에서 커스터마이징하여 나만의 서비스를 만드세요.
+        </div>
+      )}
 
       {/* Hero Section */}
       <section className="pt-16 pb-20 px-4">
@@ -136,7 +141,8 @@ export default function Home() {
               { icon: '📊', title: '관리자 대시보드', desc: '대시보드, 사용자 관리, 통계 페이지가 포함되어 있습니다', link: '/admin' },
               { icon: '🤖', title: 'AI 기능', desc: 'AI 글쓰기, 이미지 생성 등 AI 도구가 있습니다', link: '/dashboard/ai' },
               { icon: '📱', title: '반응형 디자인', desc: '모바일, 태블릿, 데스크톱 모두 지원합니다', link: '/' },
-              { icon: '🎨', title: '20가지 테마', desc: '상단 메뉴에서 다양한 테마를 미리보기할 수 있습니다', link: '/' },
+              // DEV_MODE일 때만 테마 기능 표시
+              ...(DEV_MODE ? [{ icon: '🎨', title: '20가지 테마', desc: '상단 메뉴에서 다양한 테마를 미리보기할 수 있습니다', link: '/' }] : []),
             ].map((feature, i) => (
               <Link
                 key={i}
@@ -183,8 +189,11 @@ export default function Home() {
               { name: '결제 관리', href: '/admin/payments', desc: '결제 내역' },
               { name: '통계', href: '/admin/analytics', desc: '통계 차트' },
               { name: '설정', href: '/admin/settings', desc: '서비스 설정' },
-              { name: '쇼케이스', href: '/showcase', desc: 'UI 컴포넌트' },
-              { name: '문서', href: '/docs', desc: '사용 가이드' },
+              // DEV_MODE일 때만 표시
+              ...(DEV_MODE ? [
+                { name: '쇼케이스', href: '/showcase', desc: 'UI 컴포넌트' },
+                { name: '문서', href: '/docs', desc: '사용 가이드' },
+              ] : []),
             ].map((page, i) => (
               <Link
                 key={i}
