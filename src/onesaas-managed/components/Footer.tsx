@@ -1,6 +1,12 @@
 import Link from 'next/link'
+import { getAppName, getAppDescription, getAppInitial, getCompanyName } from '@/lib/branding'
 
 export default function Footer() {
+  const appName = getAppName()
+  const appInitial = getAppInitial()
+  const appDescription = getAppDescription()
+  const companyName = getCompanyName()
+
   return (
     <footer style={{ background: 'var(--color-bg-secondary)', borderTop: '1px solid var(--color-border)' }}>
       <div className="max-w-6xl mx-auto px-4 py-12">
@@ -12,18 +18,17 @@ export default function Footer() {
                 className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold"
                 style={{ background: 'var(--color-accent)', color: 'var(--color-bg)' }}
               >
-                O
+                {appInitial}
               </span>
               <span
                 className="font-bold text-lg"
                 style={{ color: 'var(--color-text)', fontFamily: 'var(--font-display)' }}
               >
-                OneSaaS
+                {appName}
               </span>
             </Link>
             <p className="text-sm max-w-xs" style={{ color: 'var(--color-text-secondary)' }}>
-              클릭 몇 번으로 완성하는 SaaS.
-              결제, 인증, 관리자 페이지까지 모두 포함.
+              {appDescription}
             </p>
           </div>
 
@@ -100,7 +105,7 @@ export default function Footer() {
         {/* Copyright */}
         <div className="mt-12 pt-8" style={{ borderTop: '1px solid var(--color-border)' }}>
           <p className="text-sm text-center" style={{ color: 'var(--color-text-secondary)' }}>
-            © {new Date().getFullYear()} OneSaaS. All rights reserved.
+            © {new Date().getFullYear()} {companyName}. All rights reserved.
           </p>
         </div>
       </div>

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useState, Suspense } from 'react'
 import { useAuth } from '@/onesaas-core/auth/provider'
 import { getEnabledProviders, PROVIDER_META } from '@/onesaas-core/auth/config'
+import { getAppName, getAppIcon, getCompanyName } from '@/lib/branding'
 
 function LoginForm() {
   const router = useRouter()
@@ -16,6 +17,10 @@ function LoginForm() {
   const hasEmail = providers.includes('email')
   const hasSocial = providers.some((p) => p !== 'email')
   const socialProviders = providers.filter((p) => p !== 'email')
+
+  const appName = getAppName()
+  const appIcon = getAppIcon()
+  const companyName = getCompanyName()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -47,12 +52,12 @@ function LoginForm() {
       >
         <div className="relative z-10">
           <Link href="/" className="flex items-center gap-3">
-            <span className="text-4xl">🚀</span>
+            <span className="text-4xl">{appIcon}</span>
             <span
               className="font-bold text-2xl"
               style={{ color: 'var(--color-bg)', fontFamily: 'var(--font-display)' }}
             >
-              OneSaaS
+              {appName}
             </span>
           </Link>
         </div>
@@ -74,7 +79,7 @@ function LoginForm() {
         </div>
 
         <div className="relative z-10" style={{ color: 'var(--color-bg)' }}>
-          <p className="text-sm opacity-70">© 2024 OneSaaS. All rights reserved.</p>
+          <p className="text-sm opacity-70">© {new Date().getFullYear()} {companyName}. All rights reserved.</p>
         </div>
 
         {/* Decorative circles */}
@@ -94,12 +99,12 @@ function LoginForm() {
           {/* Mobile Logo */}
           <div className="lg:hidden text-center mb-10">
             <Link href="/" className="inline-flex items-center gap-3">
-              <span className="text-4xl">🚀</span>
+              <span className="text-4xl">{appIcon}</span>
               <span
                 className="font-bold text-2xl"
                 style={{ color: 'var(--color-accent)', fontFamily: 'var(--font-display)' }}
               >
-                OneSaaS
+                {appName}
               </span>
             </Link>
           </div>

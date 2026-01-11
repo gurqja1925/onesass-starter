@@ -12,6 +12,7 @@ import { usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { Menu, X, Sun, Moon, Palette, ChevronDown } from 'lucide-react'
 import { loadTheme, type ThemeId } from '@/onesaas-core/plugins'
+import { getAppName, getAppInitial } from '@/lib/branding'
 
 // 개발자 모드 (데모/쇼케이스용) - 배포 시 false로 설정
 const DEV_MODE = process.env.NEXT_PUBLIC_DEV_MODE === 'true'
@@ -109,13 +110,13 @@ export default function Navigation() {
               className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold"
               style={{ background: 'var(--color-accent)', color: 'var(--color-bg)' }}
             >
-              O
+              {getAppInitial()}
             </span>
             <span
               className="font-bold text-lg"
               style={{ color: 'var(--color-text)', fontFamily: 'var(--font-display)' }}
             >
-              OneSaaS
+              {getAppName()}
             </span>
           </Link>
 

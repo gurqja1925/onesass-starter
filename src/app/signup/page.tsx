@@ -4,12 +4,15 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { SignUpForm, SocialLoginButtons } from '@/onesaas-core/auth/components'
 import { getEnabledProviders } from '@/onesaas-core/auth/config'
+import { getAppName, getAppIcon } from '@/lib/branding'
 
 export default function SignupPage() {
   const router = useRouter()
   const providers = getEnabledProviders()
   const hasEmail = providers.includes('email')
   const hasSocial = providers.some((p) => p !== 'email')
+  const appName = getAppName()
+  const appIcon = getAppIcon()
 
   const handleSuccess = () => {
     router.push('/dashboard')
@@ -33,7 +36,7 @@ export default function SignupPage() {
             href="/"
             className="inline-flex items-center gap-3 transition-transform hover:scale-105"
           >
-            <span className="text-4xl">🚀</span>
+            <span className="text-4xl">{appIcon}</span>
             <span
               className="font-bold text-3xl"
               style={{
@@ -41,7 +44,7 @@ export default function SignupPage() {
                 color: 'var(--color-accent)',
               }}
             >
-              OneSaaS
+              {appName}
             </span>
           </Link>
           <h1
