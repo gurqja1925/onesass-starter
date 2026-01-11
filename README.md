@@ -20,14 +20,34 @@ pnpm setup
 ```
 
 **`pnpm setup` 하나로 끝!** 마법사가 단계별로 안내해줍니다:
+- **자동 설정 (추천)**: Access Token만 입력하면 프로젝트 선택 → 자동 완성!
+- **수동 설정**: 직접 환경변수를 입력하고 싶다면 이 옵션
 - Supabase 없으면? → 만드는 방법 상세 안내
-- 어디서 뭘 복사해야 하는지 → 하나씩 알려줌
 - DB 스키마 적용 → 자동 실행 옵션
 - 개발 서버 실행 → 자동 실행 옵션
 
 > 💡 **Supabase가 뭔가요?**
 > 무료 데이터베이스 서비스예요. https://supabase.com 에서 2분이면 만들 수 있어요.
 > `pnpm setup` 실행하면 만드는 방법도 알려줍니다!
+
+### Supabase 자동 설정 (추천)
+
+Access Token 하나로 모든 환경변수가 자동 설정됩니다!
+
+```bash
+pnpm setup
+# → "Access Token으로 자동 설정" 선택
+# → Access Token 입력 (supabase.com/dashboard/account/tokens에서 발급)
+# → 프로젝트 선택
+# → DB 비밀번호 입력
+# → 완료! 🎉
+```
+
+| 자동 설정되는 항목 | 설명 |
+|------------------|------|
+| DATABASE_URL | 데이터베이스 연결 URL |
+| NEXT_PUBLIC_SUPABASE_URL | Supabase 프로젝트 URL |
+| NEXT_PUBLIC_SUPABASE_ANON_KEY | 공개 API 키 |
 
 http://localhost:3000 에서 확인
 

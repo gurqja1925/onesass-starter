@@ -191,14 +191,110 @@ export default function DatabaseGuidePage() {
           </CardContent>
         </Card>
 
-        {/* Supabase 환경변수 찾기 */}
+        {/* Supabase 자동 설정 (추천) */}
         <Card>
           <CardHeader>
-            <CardTitle>🔑 Supabase 환경변수 찾기</CardTitle>
+            <CardTitle>⚡ Supabase 자동 설정 (추천)</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="p-4 rounded-lg" style={{ background: '#dcfce7', border: '2px solid #22c55e' }}>
+              <p style={{ color: '#166534' }}>
+                <strong>🎉 가장 쉬운 방법!</strong> Access Token 하나로 모든 환경변수가 자동 설정됩니다.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              {/* 단계 1: Access Token 발급 */}
+              <div className="flex gap-4">
+                <div
+                  className="w-10 h-10 rounded-full flex items-center justify-center font-bold flex-shrink-0"
+                  style={{ background: '#10b981', color: 'white' }}
+                >
+                  1
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-bold mb-2" style={{ color: 'var(--color-text)' }}>
+                    Access Token 발급받기
+                  </h4>
+                  <div className="p-3 rounded" style={{ background: 'var(--color-bg-secondary)' }}>
+                    <p className="font-mono text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                      <a href="https://supabase.com/dashboard/account/tokens" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-accent)' }}>
+                        supabase.com/dashboard/account/tokens
+                      </a> 접속
+                      <br />
+                      → &quot;Generate new token&quot; 클릭
+                      <br />
+                      → 토큰 이름 입력 (예: onesaas-setup)
+                      <br />
+                      → 생성된 토큰 복사 (sbp_로 시작)
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 단계 2: pnpm setup 실행 */}
+              <div className="flex gap-4">
+                <div
+                  className="w-10 h-10 rounded-full flex items-center justify-center font-bold flex-shrink-0"
+                  style={{ background: '#10b981', color: 'white' }}
+                >
+                  2
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-bold mb-2" style={{ color: 'var(--color-text)' }}>
+                    설정 마법사 실행
+                  </h4>
+                  <div className="p-3 rounded font-mono text-sm" style={{ background: '#1e1e1e', color: '#d4d4d4' }}>
+                    pnpm setup
+                  </div>
+                  <p className="mt-2 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                    → &quot;Access Token으로 자동 설정&quot; 선택
+                  </p>
+                </div>
+              </div>
+
+              {/* 단계 3: 자동 설정 */}
+              <div className="flex gap-4">
+                <div
+                  className="w-10 h-10 rounded-full flex items-center justify-center font-bold flex-shrink-0"
+                  style={{ background: '#10b981', color: 'white' }}
+                >
+                  3
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-bold mb-2" style={{ color: 'var(--color-text)' }}>
+                    프로젝트 선택 & 비밀번호 입력
+                  </h4>
+                  <p style={{ color: 'var(--color-text-secondary)' }}>
+                    프로젝트 목록이 자동으로 표시되면 선택하고,
+                    <br />
+                    Supabase 프로젝트 생성 시 입력한 DB 비밀번호만 입력하면 끝!
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-lg" style={{ background: 'var(--color-bg)' }}>
+              <p className="font-medium mb-2" style={{ color: 'var(--color-text)' }}>
+                자동으로 설정되는 항목:
+              </p>
+              <ul className="space-y-1 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                <li>✅ DATABASE_URL (데이터베이스 연결 URL)</li>
+                <li>✅ NEXT_PUBLIC_SUPABASE_URL (프로젝트 URL)</li>
+                <li>✅ NEXT_PUBLIC_SUPABASE_ANON_KEY (공개 API 키)</li>
+              </ul>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Supabase 환경변수 찾기 (수동) */}
+        <Card>
+          <CardHeader>
+            <CardTitle>🔑 Supabase 환경변수 찾기 (수동 설정)</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <p style={{ color: 'var(--color-text-secondary)' }}>
-              .env 파일에 필요한 Supabase 정보를 찾는 방법이에요.
+              자동 설정 대신 직접 환경변수를 입력하고 싶다면 아래 방법을 따라하세요.
               <br />
               총 <strong>3가지</strong> 정보가 필요해요!
             </p>
