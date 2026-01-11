@@ -4,9 +4,76 @@
  * 인증 관련 컴포넌트
  */
 
-import { useState } from 'react'
+import { useState, useEffect, ReactNode } from 'react'
+import { useRouter } from 'next/navigation'
 import { useAuth } from './provider'
 import { getEnabledProviders, PROVIDER_META, type AuthProviderType } from './config'
+
+/**
+ * 인증 보호 래퍼 - 로그인하지 않으면 로그인 페이지로 리다이렉트
+ */
+export function ProtectedRoute({ children, fallback }: { children: ReactNode; fallback?: ReactNode }) {
+  const { user, loading, isConfigured } = useAuth()
+  const router = useRouter()
+  const [isChecking, setIsChecking] = useState(true)
+
+  useEffect(() => {
+    if (!loading) {
+      // Supabase가 설정되지 않은 경우 데모 모드로 허용
+      if (!isConfigured) {
+        setIsChecking(false)
+        return
+      }
+
+      // 로그인하지 않은 경우 로그인 페이지로 이동
+      if (!user) {
+        const currentPath = window.location.pathname
+        router.push(`/login?redirect=${encodeURIComponent(currentPath)}`)
+      } else {
+        setIsChecking(false)
+      }
+    }
+  }, [user, loading, isConfigured, router])
+
+  // 로딩 중
+  if (loading || isChecking) {
+    if (fallback) return <>{fallback}</>
+
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: 'var(--color-bg)' }}
+      >
+        <div className="text-center">
+          <div
+            className="w-12 h-12 border-4 border-t-transparent rounded-full animate-spin mx-auto mb-4"
+            style={{ borderColor: 'var(--color-accent)', borderTopColor: 'transparent' }}
+          />
+          <p style={{ color: 'var(--color-text-secondary)' }}>로딩 중...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Supabase 미설정 시 경고 표시 (데모 모드)
+  if (!isConfigured) {
+    return (
+      <>
+        <div
+          className="fixed top-16 left-0 right-0 z-40 py-2 px-4 text-center text-sm"
+          style={{ background: '#f59e0b', color: 'white' }}
+        >
+          ⚠️ 데모 모드: Supabase가 설정되지 않아 인증이 비활성화되어 있습니다
+        </div>
+        <div className="pt-10">
+          {children}
+        </div>
+      </>
+    )
+  }
+
+  return <>{children}</>
+}
 
 /**
  * 소셜 로그인 버튼

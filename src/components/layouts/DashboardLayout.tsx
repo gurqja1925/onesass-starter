@@ -3,6 +3,8 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { ReactNode } from 'react'
+import { ProtectedRoute } from '@/onesaas-core/auth/components'
+import { useAuth } from '@/onesaas-core/auth/provider'
 
 interface MenuItem {
   href: string
@@ -35,10 +37,12 @@ export function DashboardLayout({
   menuItems = defaultMenuItems
 }: DashboardLayoutProps) {
   const pathname = usePathname()
+  const { user, signOut } = useAuth()
 
   return (
-    <div className="min-h-screen flex" style={{ background: 'var(--color-bg)', color: 'var(--color-text)' }}>
-      {/* Sidebar */}
+    <ProtectedRoute>
+      <div className="min-h-screen flex" style={{ background: 'var(--color-bg)', color: 'var(--color-text)' }}>
+        {/* Sidebar */}
       <aside
         className="w-64 fixed left-0 top-0 h-screen overflow-y-auto"
         style={{
@@ -115,11 +119,24 @@ export function DashboardLayout({
             >
               ⚙️
             </Link>
-            <div
-              className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
-              style={{ background: 'var(--color-accent)', color: 'var(--color-bg)' }}
-            >
-              U
+            {/* 사용자 정보 */}
+            <div className="flex items-center gap-3">
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
+                style={{ background: 'var(--color-accent)', color: 'var(--color-bg)' }}
+              >
+                {user?.email?.[0].toUpperCase() || 'U'}
+              </div>
+              <span className="text-sm hidden md:block" style={{ color: 'var(--color-text-secondary)' }}>
+                {user?.email || '게스트'}
+              </span>
+              <button
+                onClick={signOut}
+                className="text-sm px-3 py-1 rounded-lg transition-all hover:opacity-80"
+                style={{ background: 'var(--color-bg-secondary)', color: 'var(--color-text-secondary)' }}
+              >
+                로그아웃
+              </button>
             </div>
           </div>
         </header>
@@ -129,6 +146,7 @@ export function DashboardLayout({
           {children}
         </div>
       </main>
-    </div>
+      </div>
+    </ProtectedRoute>
   )
 }
