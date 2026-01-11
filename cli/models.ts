@@ -5,10 +5,13 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+import { decryptString, encryptString, getEncryptionKey } from './crypto';
+import { ensureProjectStorageDir, getProjectStorageDir } from './storage';
 
-// API 키 저장 경로 (~/.onesaas/config)
-const CONFIG_DIR = path.join(os.homedir(), '.onesaas');
-const CONFIG_FILE = path.join(CONFIG_DIR, 'config');
+// API 키 저장 경로 (프로젝트 내부 .onesaas/config.json)
+const CONFIG_FILE_NAME = 'config.json';
+const LEGACY_CONFIG_DIR = path.join(os.homedir(), '.onesaas');
+const LEGACY_CONFIG_FILE = path.join(LEGACY_CONFIG_DIR, 'config');
 
 export type Provider = 'deepseek' | 'openai' | 'anthropic';
 
@@ -41,10 +44,10 @@ export const AVAILABLE_MODELS: ModelInfo[] = [
   // DeepSeek
   {
     id: 'deepseek',
-    name: 'DeepSeek V3',
+    name: 'DeepSeek V3.2',
     provider: 'deepseek',
     model: 'deepseek-chat',
-    description: '가성비 최고. 코딩 구현에 적합.',
+    description: '가성비 최고. 코딩 구현에 적합. (chat 3.2)',
     maxTokens: 8192,
     contextWindow: 128000,
     inputPrice: 0.27,
@@ -58,26 +61,6 @@ export const AVAILABLE_MODELS: ModelInfo[] = [
       reasoning: false,
     },
     releaseDate: '2025-01-10',
-  },
-  {
-    id: 'deepseek-reasoner',
-    name: 'DeepSeek Reasoner',
-    provider: 'deepseek',
-    model: 'deepseek-reasoner',
-    description: '추론 특화. 분석/설계에 최적.',
-    maxTokens: 8192,
-    contextWindow: 128000,
-    inputPrice: 0.55,  // 추론 모드는 더 비쌈
-    outputPrice: 2.19,
-    baseUrl: 'https://api.deepseek.com',
-    capabilities: {
-      vision: false,
-      functionCalling: false,  // Reasoner는 function calling 미지원
-      streaming: true,
-      json: true,
-      reasoning: true,
-    },
-    releaseDate: '2025-01-20',
   },
   // OpenAI
   {
@@ -236,16 +219,16 @@ export function getDefaultModel(): ModelInfo {
 // ============================================================
 
 interface Config {
-  deepseekApiKey?: string;
-  openaiApiKey?: string;
-  anthropicApiKey?: string;
+  deepseekApiKeyEnc?: string;
+  openaiApiKeyEnc?: string;
+  anthropicApiKeyEnc?: string;
   defaultModel?: string;
 }
 
-function loadConfig(): Config {
+function readConfigFile(filePath: string): Config {
   try {
-    if (fs.existsSync(CONFIG_FILE)) {
-      const content = fs.readFileSync(CONFIG_FILE, 'utf-8');
+    if (fs.existsSync(filePath)) {
+      const content = fs.readFileSync(filePath, 'utf-8');
       return JSON.parse(content);
     }
   } catch {
@@ -254,16 +237,76 @@ function loadConfig(): Config {
   return {};
 }
 
+function getConfigFilePath(): string {
+  const dir = ensureProjectStorageDir();
+  return path.join(dir, CONFIG_FILE_NAME);
+}
+
+function loadConfig(): Config {
+  const configFile = getConfigFilePath();
+  const config = readConfigFile(configFile);
+  if (Object.keys(config).length > 0) {
+    return config;
+  }
+
+  const legacy = readConfigFile(LEGACY_CONFIG_FILE);
+  if (Object.keys(legacy).length > 0) {
+    const migrated = migrateLegacyConfig(legacy);
+    saveConfig(migrated);
+    return migrated;
+  }
+  return {};
+}
+
 function saveConfig(config: Config): boolean {
   try {
-    if (!fs.existsSync(CONFIG_DIR)) {
-      fs.mkdirSync(CONFIG_DIR, { recursive: true, mode: 0o700 });
-    }
-    fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), { mode: 0o600 });
+    const configFile = getConfigFilePath();
+    fs.writeFileSync(configFile, JSON.stringify(config, null, 2), { mode: 0o600 });
     return true;
   } catch {
     return false;
   }
+}
+
+function migrateLegacyConfig(legacy: Config & {
+  deepseekApiKey?: string;
+  openaiApiKey?: string;
+  anthropicApiKey?: string;
+}): Config {
+  const config: Config = { defaultModel: legacy.defaultModel };
+  const storageDir = getProjectStorageDir();
+  const key = getEncryptionKey({ allowCreate: true, storageDir });
+
+  if (legacy.deepseekApiKey && key) {
+    config.deepseekApiKeyEnc = encryptString(legacy.deepseekApiKey, key);
+  }
+  if (legacy.openaiApiKey && key) {
+    config.openaiApiKeyEnc = encryptString(legacy.openaiApiKey, key);
+  }
+  if (legacy.anthropicApiKey && key) {
+    config.anthropicApiKeyEnc = encryptString(legacy.anthropicApiKey, key);
+  }
+
+  return config;
+}
+
+function decryptApiKey(value?: string): string | undefined {
+  if (!value) return undefined;
+  const storageDir = getProjectStorageDir();
+  const key = getEncryptionKey({ allowCreate: false, storageDir });
+  if (!key) return undefined;
+  try {
+    return decryptString(value, key);
+  } catch {
+    return undefined;
+  }
+}
+
+function encryptApiKey(value: string): string | undefined {
+  const storageDir = getProjectStorageDir();
+  const key = getEncryptionKey({ allowCreate: true, storageDir });
+  if (!key) return undefined;
+  return encryptString(value, key);
 }
 
 // API 키 로드 (환경변수 → 로컬 파일)
@@ -275,11 +318,11 @@ export function getApiKey(provider?: Provider): string | undefined {
 
   switch (p) {
     case 'deepseek':
-      return process.env.DEEPSEEK_API_KEY || config.deepseekApiKey;
+      return process.env.DEEPSEEK_API_KEY || decryptApiKey(config.deepseekApiKeyEnc);
     case 'openai':
-      return process.env.OPENAI_API_KEY || config.openaiApiKey;
+      return process.env.OPENAI_API_KEY || decryptApiKey(config.openaiApiKeyEnc);
     case 'anthropic':
-      return process.env.ANTHROPIC_API_KEY || config.anthropicApiKey;
+      return process.env.ANTHROPIC_API_KEY || decryptApiKey(config.anthropicApiKeyEnc);
     default:
       return undefined;
   }
@@ -289,16 +332,20 @@ export function getApiKey(provider?: Provider): string | undefined {
 export function saveApiKey(apiKey: string, provider?: Provider): boolean {
   const config = loadConfig();
   const p = provider || 'deepseek';
+  const encrypted = encryptApiKey(apiKey);
+  if (!encrypted) {
+    return false;
+  }
 
   switch (p) {
     case 'deepseek':
-      config.deepseekApiKey = apiKey;
+      config.deepseekApiKeyEnc = encrypted;
       break;
     case 'openai':
-      config.openaiApiKey = apiKey;
+      config.openaiApiKeyEnc = encrypted;
       break;
     case 'anthropic':
-      config.anthropicApiKey = apiKey;
+      config.anthropicApiKeyEnc = encrypted;
       break;
   }
 
@@ -312,13 +359,13 @@ export function deleteApiKey(provider?: Provider): boolean {
 
   switch (p) {
     case 'deepseek':
-      delete config.deepseekApiKey;
+      delete config.deepseekApiKeyEnc;
       break;
     case 'openai':
-      delete config.openaiApiKey;
+      delete config.openaiApiKeyEnc;
       break;
     case 'anthropic':
-      delete config.anthropicApiKey;
+      delete config.anthropicApiKeyEnc;
       break;
   }
 

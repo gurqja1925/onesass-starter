@@ -42,6 +42,9 @@ next-env.d.ts
 .DS_Store
 Thumbs.db
 
+# OneSaaS local storage
+.onesaas
+
 # Prisma
 prisma/migrations
 

@@ -3,7 +3,7 @@
  * 한국어 특화 AI 코딩 에이전트
  *
  * 사용법:
- *   kcode "작업 내용"              단일 작업
+ *   kcode "작업 내용"              단일 작업 (기본: 파이프라인)
  *   kcode "작업" --pipe            파이프라인 (분석→구현→검토)
  *   kcode -i                       인터랙티브 모드
  *   kcode --list                   모델 목록
@@ -13,13 +13,13 @@ import { config } from 'dotenv';
 config(); // .env 파일 로드
 
 import { CodingAgent, runCodingTask, type TokenUsage } from './agent/coding';
-import { AVAILABLE_MODELS, type ModelInfo, getApiKey, saveApiKey } from './models';
+import { AVAILABLE_MODELS, getApiKey, saveApiKey } from './models';
 import type { TaskLog } from './types';
 import { createRequire } from 'module';
 import * as fs from 'fs';
-import * as os from 'os';
 import * as path from 'path';
 import { runInkDashboard } from './dashboard';
+import { ensureProjectStorageDir, getProjectStorageDir } from './storage';
 
 // 버전 정보
 const require = createRequire(import.meta.url);
@@ -372,57 +372,87 @@ ${prevResult}
   },
 ];
 
-// ============================================================
-// Smart 파이프라인 (Reasoner→Chat)
-// ============================================================
-
-const SMART_PIPELINE: PipelineStage[] = [
+// 개발 전용 파이프라인 (분석 → 설계 → 개발 → 구현 → 테스트)
+const DEV_PIPELINE_STAGES: PipelineStage[] = [
   {
-    modelId: 'deepseek-reasoner',
-    role: '🧠 추론/분석',
-    maxSteps: 1, // Reasoner는 function calling 미지원, 바로 응답
-    promptTemplate: (input) => `당신은 시니어 소프트웨어 아키텍트입니다.
-다음 요청을 심층 분석하고 구현 계획을 작성하세요.
+    modelId: 'deepseek',
+    role: '분석',
+    maxSteps: 3,
+    promptTemplate: (input) => `요청을 분석하세요. 도구 사용 없이 텍스트로만 응답.
 
-## 요청
-${input}
+요청: ${input}
 
-## 분석 항목
-1. 요구사항 분석
-   - 핵심 기능은 무엇인가?
-   - 엣지 케이스는?
-   - 성능/보안 고려사항?
+간결하게 작성:
+1. 핵심 요구사항
+2. 제약/주의사항
+3. 영향을 받는 영역
 
-2. 구현 전략
-   - 어떤 파일을 수정/생성해야 하는가?
-   - 각 파일의 역할은?
-   - 구현 순서는?
-
-3. 상세 구현 계획
-   - 각 파일에 어떤 코드가 필요한가?
-   - 함수/클래스 시그니처는?
-   - 핵심 로직 의사코드
-
-## 출력
-명확하고 구체적인 구현 계획을 작성하세요. 개발자가 바로 코드를 작성할 수 있도록.`,
+바로 terminate로 분석 결과 반환.`,
   },
   {
     modelId: 'deepseek',
-    role: '💻 구현',
-    maxSteps: 20, // 구현은 충분히
-    promptTemplate: (input, prevResult) => `아키텍트의 분석과 계획에 따라 코드를 구현하세요.
+    role: '설계',
+    maxSteps: 3,
+    promptTemplate: (input, prevResult) => `분석 결과를 바탕으로 설계안을 작성하세요. 도구 사용 없이 텍스트로만 응답.
 
-## 원래 요청
-${input}
+[요청] ${input}
 
-## 아키텍트 분석 및 계획
+[분석]
 ${prevResult}
 
-## 지침
-- 계획대로 정확히 구현
-- 각 파일을 순서대로 작성
-- 불필요한 주석 없이 깔끔하게
-- 완료 후 즉시 terminate`,
+간결하게 작성:
+1. 변경/추가 파일 목록
+2. 컴포넌트/함수 구조
+3. 데이터 흐름
+
+바로 terminate로 설계 결과 반환.`,
+  },
+  {
+    modelId: 'deepseek',
+    role: '개발',
+    maxSteps: 5,
+    promptTemplate: (input, prevResult) => `설계에 따라 작업 계획을 작성하세요. 도구 사용 없이 텍스트로만 응답.
+
+[요청] ${input}
+
+[설계]
+${prevResult}
+
+간결하게 작성:
+1. 구현 순서
+2. 세부 작업 체크리스트
+
+바로 terminate로 계획 반환.`,
+  },
+  {
+    modelId: 'deepseek',
+    role: '구현',
+    maxSteps: 15,
+    promptTemplate: (input, prevResult) => `계획대로 코드 구현:
+
+[요청] ${input}
+
+[계획]
+${prevResult}
+
+파일 작성 후 즉시 terminate로 완료 보고.`,
+  },
+  {
+    modelId: 'deepseek',
+    role: '테스트',
+    maxSteps: 5,
+    promptTemplate: (input, prevResult) => `작성된 코드를 검증하세요.
+
+[이전 결과]
+${prevResult}
+
+검토 항목:
+- 명백한 버그 수정 (있으면)
+- 필요한 테스트 코드 추가 (있으면)
+- 불필요한 코드 제거 (있으면)
+
+수정할 게 없으면 바로 terminate.
+수정했으면 즉시 terminate.`,
   },
 ];
 
@@ -547,11 +577,7 @@ ${c.green}╔══════════════════════�
   }
 }
 
-// ============================================================
-// Smart 파이프라인 실행 (Reasoner → Chat)
-// ============================================================
-
-async function runSmartPipeline(prompt: string) {
+async function runDevPipeline(prompt: string) {
   const apiKey = getApiKey();
   if (!apiKey) {
     console.log(`${c.red}✕${c.reset} DEEPSEEK_API_KEY가 필요합니다`);
@@ -559,11 +585,11 @@ async function runSmartPipeline(prompt: string) {
   }
 
   console.log(`
-${c.bold}${c.magenta}╔═══════════════════════════════════════════════════════════╗
-║                    🧠 Smart 모드                            ║
+${c.bold}${c.cyan}╔═══════════════════════════════════════════════════════════╗
+║                 개발 파이프라인 모드                         ║
 ╚═══════════════════════════════════════════════════════════╝${c.reset}
 
-  ${c.yellow}Reasoner${c.reset} (추론/분석) → ${c.blue}Chat${c.reset} (구현)
+  ${c.blue}분석${c.reset} → ${c.blue}설계${c.reset} → ${c.blue}개발${c.reset} → ${c.blue}구현${c.reset} → ${c.blue}테스트${c.reset}
 `);
 
   const startTime = Date.now();
@@ -571,24 +597,8 @@ ${c.bold}${c.magenta}╔══════════════════�
   const stageResults: Array<{ stage: PipelineStage; result: string; elapsed: number; usage: TokenUsage }> = [];
   let totalUsage: TokenUsage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
 
-  // 진행률 막대 상태
-  const progressBars: string[] = SMART_PIPELINE.map(() => '░'.repeat(20));
-
-  const renderProgress = () => {
-    console.log('\n' + '─'.repeat(60));
-    SMART_PIPELINE.forEach((stage, i) => {
-      const done = i < stageResults.length;
-      const current = i === stageResults.length;
-      const icon = done ? `${c.green}●${c.reset}` : current ? `${c.yellow}◐${c.reset}` : `${c.gray}○${c.reset}`;
-      const bar = done ? `${c.green}${'█'.repeat(20)}${c.reset}` : progressBars[i];
-      const pct = done ? '100%' : current ? '...' : '0%';
-      console.log(`  ${icon} ${stage.role.padEnd(15)} [${bar}] ${pct}`);
-    });
-    console.log('─'.repeat(60));
-  };
-
-  for (let i = 0; i < SMART_PIPELINE.length; i++) {
-    const stage = SMART_PIPELINE[i];
+  for (let i = 0; i < DEV_PIPELINE_STAGES.length; i++) {
+    const stage = DEV_PIPELINE_STAGES[i];
     const stageNum = i + 1;
     const model = AVAILABLE_MODELS.find(m => m.id === stage.modelId);
 
@@ -597,95 +607,60 @@ ${c.bold}${c.magenta}╔══════════════════�
       continue;
     }
 
-    console.log(`\n${c.cyan}[${stageNum}/${SMART_PIPELINE.length}]${c.reset} ${c.bold}${stage.role}${c.reset} - ${model.name}`);
+    console.log(`\n${c.cyan}[${stageNum}/${DEV_PIPELINE_STAGES.length}]${c.reset} ${c.bold}${stage.role}${c.reset} - ${model.name}`);
+    console.log(`${'─'.repeat(50)}`);
 
     const stageStart = Date.now();
     const stagePrompt = stage.promptTemplate(prompt, prevResult);
 
     try {
-      // Reasoner는 function calling 미지원이므로 다르게 처리
-      if (stage.modelId === 'deepseek-reasoner') {
-        console.log(`  ${c.dim}추론 중... (시간이 걸릴 수 있습니다)${c.reset}`);
-
-        // LLM 직접 호출 (function calling 없이)
-        const { LLM } = await import('./llm');
-        const llm = new LLM({
-          model: model.model,
-          apiKey,
-          maxTokens: model.maxTokens,
-          baseUrl: model.baseUrl,
-          provider: model.provider,
-        });
-
-        const response = await llm.chat([{ role: 'user', content: stagePrompt }]);
-        const stageElapsed = (Date.now() - stageStart) / 1000;
-
-        if (response.content) {
-          prevResult = response.content;
-          const usage: TokenUsage = {
-            promptTokens: response.usage?.prompt_tokens || 0,
-            completionTokens: response.usage?.completion_tokens || 0,
-            totalTokens: response.usage?.total_tokens || 0,
-          };
-          stageResults.push({ stage, result: response.content, elapsed: stageElapsed, usage });
-          totalUsage.promptTokens += usage.promptTokens;
-          totalUsage.completionTokens += usage.completionTokens;
-          totalUsage.totalTokens += usage.totalTokens;
-          progressBars[i] = `${c.green}${'█'.repeat(20)}${c.reset}`;
-
-          console.log(`  ${c.green}✓${c.reset} 완료 (${stageElapsed.toFixed(1)}초) - ${formatTokens(usage.totalTokens)} 토큰`);
-
-          // 추론 결과 미리보기
-          console.log(`\n  ${c.dim}── 분석 결과 미리보기 ──${c.reset}`);
-          const preview = prevResult.slice(0, 300).split('\n').slice(0, 5).join('\n');
-          console.log(`  ${c.dim}${preview}${prevResult.length > 300 ? '\n  ...(생략)' : ''}${c.reset}`);
-        } else {
-          console.log(`  ${c.red}✕${c.reset} 응답 없음`);
-          break;
-        }
-      } else {
-        // Chat 모델은 기존 방식 (function calling)
-        const result = await runCodingTask(stagePrompt, {
-          modelId: stage.modelId,
-          maxSteps: stage.maxSteps,
-          onLog: (log) => {
-            if (log.level === 'info') {
-              const stepMatch = log.message.match(/Step (\d+)\/(\d+)/);
-              if (stepMatch) {
-                const [, current, total] = stepMatch;
-                const progress = Math.round((parseInt(current) / parseInt(total)) * 20);
-                progressBars[i] = `${c.yellow}${'█'.repeat(progress)}${'░'.repeat(20 - progress)}${c.reset}`;
-                process.stdout.write(`\r  [${progressBars[i]}] Step ${current}/${total}  `);
-              }
-
-              const toolMatch = log.message.match(/도구 실행: (\w+)/);
-              if (toolMatch) {
-                const tools: Record<string, string> = {
-                  read_file: '📖 읽기', write_file: '📝 작성', edit_file: '✏️ 수정',
-                  list_directory: '📁 탐색', bash: '💻 실행', search_files: '🔍 검색',
-                  terminate: '✅ 완료', think: '🤔 분석', planning: '📋 계획',
-                };
-                console.log(`\n  ${c.dim}${tools[toolMatch[1]] || toolMatch[1]}${c.reset}`);
-              }
+      const result = await runCodingTask(stagePrompt, {
+        modelId: stage.modelId,
+        maxSteps: stage.maxSteps,
+        onLog: (log) => {
+          if (log.level === 'info') {
+            const stepMatch = log.message.match(/Step (\d+)\/(\d+)/);
+            if (stepMatch) {
+              const [, current, total] = stepMatch;
+              const progress = Math.round((parseInt(current) / parseInt(total)) * 20);
+              const bar = '█'.repeat(progress) + '░'.repeat(20 - progress);
+              process.stdout.write(`\r  [${c.cyan}${bar}${c.reset}] Step ${current}/${total}  `);
             }
-          },
-        });
 
-        const stageElapsed = (Date.now() - stageStart) / 1000;
-        process.stdout.write('\n');
+            const toolMatch = log.message.match(/도구 실행: (\w+)/);
+            if (toolMatch) {
+              const toolName = toolMatch[1];
+              const toolDesc: Record<string, string> = {
+                read_file: '📖 파일 읽는 중',
+                write_file: '📝 파일 작성 중',
+                edit_file: '✏️  파일 수정 중',
+                list_directory: '📁 디렉토리 확인 중',
+                bash: '💻 명령어 실행 중',
+                search_files: '🔍 파일 검색 중',
+                terminate: '✅ 완료 처리 중',
+                think: '🤔 분석 중',
+                planning: '📋 계획 수립 중',
+              };
+              const desc = toolDesc[toolName] || `🔧 ${toolName}`;
+              console.log(`\n  ${c.dim}${desc}${c.reset}`);
+            }
+          }
+        },
+      });
 
-        if (result.success) {
-          console.log(`  ${c.green}✓${c.reset} 완료 (${stageElapsed.toFixed(1)}초) - ${formatTokens(result.usage.totalTokens)} 토큰`);
-          prevResult = result.result;
-          stageResults.push({ stage, result: result.result, elapsed: stageElapsed, usage: result.usage });
-          totalUsage.promptTokens += result.usage.promptTokens;
-          totalUsage.completionTokens += result.usage.completionTokens;
-          totalUsage.totalTokens += result.usage.totalTokens;
-          progressBars[i] = `${c.green}${'█'.repeat(20)}${c.reset}`;
-        } else {
-          console.log(`  ${c.red}✕${c.reset} 실패: ${result.result}`);
-          break;
-        }
+      const stageElapsed = (Date.now() - stageStart) / 1000;
+      process.stdout.write('\n');
+
+      if (result.success) {
+        console.log(`  ${c.green}✓${c.reset} 완료 (${stageElapsed.toFixed(1)}초) - ${formatTokens(result.usage.totalTokens)} 토큰`);
+        prevResult = result.result;
+        stageResults.push({ stage, result: result.result, elapsed: stageElapsed, usage: result.usage });
+        totalUsage.promptTokens += result.usage.promptTokens;
+        totalUsage.completionTokens += result.usage.completionTokens;
+        totalUsage.totalTokens += result.usage.totalTokens;
+      } else {
+        console.log(`  ${c.red}✕${c.reset} 실패: ${result.result}`);
+        break;
       }
     } catch (error) {
       console.log(`  ${c.red}✕${c.reset} 오류: ${error instanceof Error ? error.message : 'Unknown'}`);
@@ -696,27 +671,23 @@ ${c.bold}${c.magenta}╔══════════════════�
   const totalElapsed = ((Date.now() - startTime) / 1000).toFixed(1);
   const totalCost = calculateCost(totalUsage);
 
-  // 최종 진행률 표시
-  renderProgress();
-
-  // 최종 결과
   console.log(`
 ${c.green}╔═══════════════════════════════════════════════════════════╗
-║                      🧠 Smart 완료                          ║
+║                   개발 파이프라인 완료                      ║
 ╚═══════════════════════════════════════════════════════════╝${c.reset}
 
   ${c.bold}시간:${c.reset} ${totalElapsed}초
   ${c.bold}토큰:${c.reset} ${formatTokens(totalUsage.totalTokens)} (입력: ${formatTokens(totalUsage.promptTokens)}, 출력: ${formatTokens(totalUsage.completionTokens)})
-  ${c.bold}비용:${c.reset} ${formatCostKRW(totalCost)}
+  ${c.bold}Cost:${c.reset} ${formatCostKRW(totalCost)}
 `);
 
-  console.log(`  ${c.dim}단계별:${c.reset}`);
+  console.log(`  ${c.dim}Details:${c.reset}`);
   for (const { stage, elapsed, usage } of stageResults) {
     const cost = calculateCost(usage);
     console.log(`  ${c.green}●${c.reset} ${stage.role}: ${elapsed.toFixed(1)}s, ${formatTokens(usage.totalTokens)} tokens, ${formatCostKRW(cost)}`);
   }
 
-  if (stageResults.length === SMART_PIPELINE.length) {
+  if (stageResults.length === DEV_PIPELINE_STAGES.length) {
     console.log(`\n${c.dim}최종 결과:${c.reset}`);
     console.log(prevResult.slice(0, 500));
     if (prevResult.length > 500) console.log(`${c.dim}... (생략)${c.reset}`);
@@ -729,7 +700,7 @@ ${c.green}╔══════════════════════�
 
 // 디렉토리 히스토리 (최대 20개, 파일에 저장)
 const MAX_HISTORY = 20;
-const DIR_HISTORY_FILE = path.join(os.homedir(), '.onesaas', 'dir_history.json');
+const DIR_HISTORY_FILE = path.join(getProjectStorageDir(), 'dir_history.json');
 
 function loadDirHistory(): string[] {
   try {
@@ -743,10 +714,7 @@ function loadDirHistory(): string[] {
 
 function saveDirHistory(history: string[]) {
   try {
-    const dir = path.dirname(DIR_HISTORY_FILE);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
+    ensureProjectStorageDir();
     fs.writeFileSync(DIR_HISTORY_FILE, JSON.stringify(history, null, 2));
   } catch {}
 }
@@ -766,10 +734,10 @@ function addToHistory(dir: string) {
 }
 
 // ============================================================
-// 작업 히스토리 자동 기록 (.kcode-history/YYYY-MM-DD.md)
+// 작업 히스토리 자동 기록 (.onesaas/kcode-history/YYYY-MM-DD.md)
 // ============================================================
 
-const HISTORY_DIR = path.join(os.homedir(), '.kcode-history');
+const HISTORY_DIR = path.join(getProjectStorageDir(), 'kcode-history');
 
 function logTaskHistory(task: {
   prompt: string;
@@ -781,6 +749,7 @@ function logTaskHistory(task: {
 }) {
   try {
     // 히스토리 디렉토리 생성
+    ensureProjectStorageDir();
     if (!fs.existsSync(HISTORY_DIR)) {
       fs.mkdirSync(HISTORY_DIR, { recursive: true });
     }
@@ -964,8 +933,7 @@ ${c.bold}${c.cyan}K 코드 (K Code)${c.reset} - 한국어 특화 AI 코딩 에�
 
 ${c.bold}사용법:${c.reset}
   kcode                             ${c.cyan}인터랙티브 모드${c.reset} (기본)
-  kcode "<작업>"                    단일 작업 실행
-  kcode "<작업>" --smart            ${c.magenta}🧠 Smart 모드${c.reset} (Reasoner→Chat 파이프라인)
+  kcode "<작업>"                    단일 작업 실행 (기본: 파이프라인)
   kcode "<작업>" --pipe             파이프라인 모드 (분석→구현→검토)
   kcode "<작업1>" "<작업2>"         여러 작업 동시 병렬 실행
 
@@ -974,7 +942,6 @@ ${c.bold}옵션:${c.reset}
   -u, --update        최신 버전으로 자동 업데이트
   -i, --interactive   인터랙티브 모드 - 여러 작업을 비동기로 실행
   -m, --model <id>    사용할 모델 선택 (기본: deepseek)
-  ${c.magenta}--smart${c.reset}             🧠 Smart 모드 - Reasoner 분석 후 Chat 구현
   --pipe              파이프라인 모드 - 분석/구현/검토 3단계 순차 실행
   --multi             멀티 태스크 모드 - 여러 작업 동시 실행
   -l, --list          사용 가능한 모델 목록 확인
@@ -983,14 +950,13 @@ ${c.bold}옵션:${c.reset}
 
 ${c.bold}모드 설명:${c.reset}
   ${c.cyan}인터랙티브${c.reset}   작업을 입력하면 백그라운드에서 실행, 계속 추가 가능
-  ${c.magenta}Smart${c.reset}        Reasoner가 심층 분석/설계 → Chat이 구현 (권장!)
-  ${c.cyan}파이프라인${c.reset}   복잡한 작업을 분석→구현→검토 단계로 나눠 처리
+  ${c.cyan}파이프라인${c.reset}   분석→구현→검토 3단계 자동 실행 (기본)
   ${c.cyan}멀티태스크${c.reset}   여러 독립적인 작업을 동시에 병렬 처리
+  ${c.cyan}개발 파이프라인${c.reset}   요청에 "개발" 포함 시 분석→설계→개발→구현→테스트
 
 ${c.bold}예시:${c.reset}
   kcode "로그인 기능 추가해줘"
   kcode "이 버그 수정해줘: TypeError at line 42"
-  kcode "복잡한 API 설계하고 구현해줘" --smart  # 권장!
   kcode "코드 리팩토링하고 테스트 추가해줘" --pipe
   kcode -i                          # 대화형 모드 시작
 
@@ -1072,6 +1038,7 @@ ${c.dim}더 자세한 정보: https://onesaas.kr/docs${c.reset}
 
 async function main() {
   const args = process.argv.slice(2);
+  const isDevPrompt = (text: string) => /개발/.test(text);
 
   // 도움말
   if (args.includes('-h') || args.includes('--help')) {
@@ -1130,7 +1097,7 @@ async function main() {
     if (saveApiKey(apiKey, provider)) {
       const providerName = { deepseek: 'DeepSeek', openai: 'OpenAI', anthropic: 'Anthropic' }[provider];
       console.log(`${c.green}✓${c.reset} ${providerName} API 키가 저장되었습니다.`);
-      console.log(`${c.dim}  위치: ~/.onesaas/config${c.reset}`);
+      console.log(`${c.dim}  위치: .onesaas/config.json${c.reset}`);
     } else {
       console.log(`${c.red}✕${c.reset} API 키 저장 실패`);
     }
@@ -1151,10 +1118,10 @@ async function main() {
   // 프롬프트 추출
   const prompts: string[] = [];
   let modelId = 'deepseek';
-  let pipeline = false;
-  let smart = false;
+  let pipeline = true;
   let multi = false;
   let interactive = false;
+
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -1163,10 +1130,9 @@ async function main() {
       modelId = args[++i];
     } else if (arg === '--pipe' || arg === '--pipeline') {
       pipeline = true;
-    } else if (arg === '--smart' || arg === '-s') {
-      smart = true;
     } else if (arg === '--multi') {
       multi = true;
+      pipeline = false;
     } else if (arg === '-i' || arg === '--interactive') {
       interactive = true;
     } else if (!arg.startsWith('-')) {
@@ -1183,9 +1149,8 @@ async function main() {
   if (multi || prompts.length > 1) {
     // 멀티 태스크 모드
     await runMultiTasks(prompts, modelId);
-  } else if (smart) {
-    // 🧠 Smart 모드 (Reasoner → Chat)
-    await runSmartPipeline(prompts[0]);
+  } else if (prompts.length === 1 && isDevPrompt(prompts[0])) {
+    await runDevPipeline(prompts[0]);
   } else if (pipeline) {
     await runPipeline(prompts[0]);
   } else {

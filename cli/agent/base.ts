@@ -135,27 +135,33 @@ export abstract class BaseAgent {
   // ============================================================
 
   protected isStuck(): boolean {
-    const messages = this.getMessages();
-    if (messages.length < 4) return false;
-
-    // 최근 메시지들 확인
-    const recent = messages.slice(-4);
-    const assistantMessages = recent.filter(m => m.role === Role.ASSISTANT);
-
-    if (assistantMessages.length < 2) return false;
-
-    // 같은 내용 반복 체크
-    const contents = assistantMessages.map(m => m.content);
-    return new Set(contents).size < contents.length;
+    return this.detectLoopReason() !== null;
   }
 
-  protected handleStuck(): void {
-    this.log('warning', '동일한 응답이 반복되고 있습니다. 전략을 변경합니다.');
-    this.updateMemory(
-      systemMessage(
-        '주의: 동일한 응답이 반복되고 있습니다. 다른 접근 방식을 시도하거나, 작업을 완료할 수 없다면 terminate 도구를 사용하세요.'
-      )
-    );
+  protected handleStuck(reason: string): void {
+    this.log('warning', `루프 감지: ${reason}. 작업을 중단합니다.`);
+  }
+
+  private detectLoopReason(): string | null {
+    if (this.currentStep < 10) {
+      return null;
+    }
+
+    const messages = this.getMessages();
+    if (messages.length < 4) return null;
+
+    const assistantMessages = messages.filter(m => m.role === Role.ASSISTANT);
+    if (assistantMessages.length < 3) return null;
+
+    const normalize = (content: string | null) => (content || '').trim();
+    const recentThree = assistantMessages.slice(-3);
+    const contents = recentThree.map(m => normalize(m.content));
+    const allSame = contents.every(c => c && c === contents[0]);
+    if (allSame) {
+      return '동일한 메시지 반복';
+    }
+
+    return null;
   }
 
   // ============================================================
@@ -189,8 +195,11 @@ export abstract class BaseAgent {
         this.log('info', `Step ${this.currentStep}/${this.maxSteps}`);
 
         // 무한 루프 체크
-        if (this.isStuck()) {
-          this.handleStuck();
+        const loopReason = this.detectLoopReason();
+        if (loopReason) {
+          this.handleStuck(loopReason);
+          this.setState(AgentState.FINISHED);
+          return '루프가 감지되어 작업을 중단했습니다. 입력을 더 구체적으로 작성해 주세요.';
         }
 
         // 단계 실행

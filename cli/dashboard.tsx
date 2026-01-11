@@ -9,7 +9,7 @@ import { Worker } from 'worker_threads';
 import { fileURLToPath } from 'url';
 import * as path from 'path';
 import * as fs from 'fs';
-import * as os from 'os';
+import { ensureProjectStorageDir, getProjectStorageDir } from './storage';
 
 // 타입
 import type { TokenUsage } from './agent/coding';
@@ -42,7 +42,7 @@ function calculateCost(inTok: number, outTok: number): number {
 // 월별 사용량
 // ============================================================
 
-const USAGE_DIR = path.join(os.homedir(), '.kcode-usage');
+const USAGE_DIR = path.join(getProjectStorageDir(), 'kcode-usage');
 
 interface MonthlyUsage {
   month: string;
@@ -80,6 +80,7 @@ function loadMonthlyUsage(): MonthlyUsage {
 
 function saveMonthlyUsage(usage: MonthlyUsage): void {
   try {
+    ensureProjectStorageDir();
     if (!fs.existsSync(USAGE_DIR)) {
       fs.mkdirSync(USAGE_DIR, { recursive: true });
     }
@@ -240,16 +241,44 @@ function TaskList({ tasks }: { tasks: Task[] }) {
   );
 }
 
-// 로그
-function LogPanel({ logs }: { logs: string[] }) {
-  const recentLogs = logs.slice(-8);
+// 시스템 로그
+function SystemLogPanel({ logs }: { logs: string[] }) {
+  const recentLogs = logs.slice(-6);
+
+  if (recentLogs.length === 0) return null;
 
   return (
     <Box flexDirection="column" marginY={1} borderStyle="single" borderColor="gray" paddingX={1}>
-      <Text color="gray" bold>로그</Text>
+      <Text color="gray" bold>시스템 로그</Text>
       {recentLogs.map((log, i) => (
         <Text key={i} color="gray" wrap="truncate">{log.slice(0, 70)}</Text>
       ))}
+    </Box>
+  );
+}
+
+// 태스크별 로그
+function TaskLogsPanel({ tasks }: { tasks: Task[] }) {
+  if (tasks.length === 0) return null;
+
+  return (
+    <Box flexDirection="column" marginY={1}>
+      <Text color="cyan" bold>작업별 로그</Text>
+      {tasks.map((task) => {
+        const recentLogs = task.logs.slice(-8);
+        return (
+          <Box key={task.id} flexDirection="column" borderStyle="single" borderColor="gray" paddingX={1} marginTop={1}>
+            <Text color="gray" bold>로그 [{task.id}]</Text>
+            {recentLogs.length === 0 ? (
+              <Text color="gray">로그 없음</Text>
+            ) : (
+              recentLogs.map((log, i) => (
+                <Text key={i} color="gray" wrap="truncate">{log.slice(0, 70)}</Text>
+              ))
+            )}
+          </Box>
+        );
+      })}
     </Box>
   );
 }
@@ -267,7 +296,7 @@ function Dashboard({ initialModelId }: DashboardProps) {
   );
   const [tasks, setTasks] = useState<Task[]>([]);
   const [taskIdCounter, setTaskIdCounter] = useState(0);
-  const [logs, setLogs] = useState<string[]>(['K Code 시작됨']);
+  const [systemLogs, setSystemLogs] = useState<string[]>(['K Code 시작됨']);
   const [stats, setStats] = useState<Stats>({
     totalTasks: 0,
     runningTasks: 0,
@@ -285,8 +314,14 @@ function Dashboard({ initialModelId }: DashboardProps) {
   const __dirname = path.dirname(__filename);
   const workerPath = path.join(__dirname, 'worker.mjs');
 
-  const addLog = useCallback((msg: string) => {
-    setLogs(prev => [...prev.slice(-50), msg]);
+  const addSystemLog = useCallback((msg: string) => {
+    setSystemLogs(prev => [...prev.slice(-50), msg]);
+  }, []);
+
+  const addTaskLog = useCallback((taskId: number, msg: string) => {
+    setTasks(prev => prev.map(t =>
+      t.id === taskId ? { ...t, logs: [...t.logs.slice(-50), msg] } : t
+    ));
   }, []);
 
   const startTask = useCallback((prompt: string) => {
@@ -307,7 +342,7 @@ function Dashboard({ initialModelId }: DashboardProps) {
       totalTasks: prev.totalTasks + 1,
       runningTasks: prev.runningTasks + 1,
     }));
-    addLog(`▶ [${newId}] ${prompt.slice(0, 40)}...`);
+    addTaskLog(newId, `▶ 시작: ${prompt.slice(0, 60)}...`);
 
     // Worker 시작
     const worker = new Worker(workerPath, {
@@ -324,7 +359,7 @@ function Dashboard({ initialModelId }: DashboardProps) {
             t.id === newId ? { ...t, progress: cur / max } : t
           ));
         }
-        addLog(`[${newId}] ${msg.log.message.slice(0, 50)}`);
+        addTaskLog(newId, msg.log.message);
       } else if (msg.type === 'done') {
         const usage = msg.usage || { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
         const cost = calculateCost(usage.promptTokens, usage.completionTokens);
@@ -367,7 +402,7 @@ function Dashboard({ initialModelId }: DashboardProps) {
         });
 
         const icon = msg.success ? '✓' : '✕';
-        addLog(`${icon} [${newId}] 완료 ${formatTokens(usage.totalTokens)} ${formatCostKRW(cost)}`);
+        addTaskLog(newId, `${icon} 완료 ${formatTokens(usage.totalTokens)} ${formatCostKRW(cost)}`);
         worker.terminate();
       }
     });
@@ -381,10 +416,10 @@ function Dashboard({ initialModelId }: DashboardProps) {
         runningTasks: Math.max(0, prev.runningTasks - 1),
         failedTasks: prev.failedTasks + 1,
       }));
-      addLog(`✕ [${newId}] 에러: ${err.message}`);
+      addTaskLog(newId, `✕ 에러: ${err.message}`);
       worker.terminate();
     });
-  }, [taskIdCounter, model.id, addLog, workerPath]);
+  }, [taskIdCounter, model.id, addTaskLog, workerPath]);
 
   const handleSubmit = useCallback((value: string) => {
     const trimmed = value.trim();
@@ -398,7 +433,7 @@ function Dashboard({ initialModelId }: DashboardProps) {
     }
 
     if (trimmed === '/model' || trimmed === '/m') {
-      addLog('모델: ' + AVAILABLE_MODELS.map((m, i) => `${i})${m.id}`).join(' '));
+      addSystemLog('모델: ' + AVAILABLE_MODELS.map((m, i) => `${i})${m.id}`).join(' '));
       setInput('');
       return;
     }
@@ -409,16 +444,16 @@ function Dashboard({ initialModelId }: DashboardProps) {
       const target = !isNaN(idx) ? AVAILABLE_MODELS[idx] : AVAILABLE_MODELS.find(m => m.id === arg);
       if (target && getApiKey(target.provider)) {
         setModel(target);
-        addLog(`모델 변경: ${target.name}`);
+        addSystemLog(`모델 변경: ${target.name}`);
       } else {
-        addLog('모델을 찾을 수 없거나 API 키가 없습니다');
+        addSystemLog('모델을 찾을 수 없거나 API 키가 없습니다');
       }
       setInput('');
       return;
     }
 
     if (trimmed === '/clear') {
-      setLogs([]);
+      setSystemLogs([]);
       setInput('');
       return;
     }
@@ -426,7 +461,7 @@ function Dashboard({ initialModelId }: DashboardProps) {
     // 작업 실행
     startTask(trimmed);
     setInput('');
-  }, [tasks, exit, addLog, startTask]);
+  }, [tasks, exit, addSystemLog, startTask]);
 
   // Ctrl+C 처리
   useInput((input, key) => {
@@ -441,7 +476,8 @@ function Dashboard({ initialModelId }: DashboardProps) {
       <Header modelName={model.name} />
       <StatsPanel stats={stats} />
       <TaskList tasks={tasks} />
-      <LogPanel logs={logs} />
+      <SystemLogPanel logs={systemLogs} />
+      <TaskLogsPanel tasks={tasks} />
 
       <Box borderStyle="single" borderColor="green" paddingX={1}>
         <Text color="green">▸ </Text>
