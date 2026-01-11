@@ -323,33 +323,72 @@ ${colors.cyan}╔═════════════════════
 
 async function showSupabaseGuide() {
   console.log(`
-${colors.cyan}━━━ Supabase 프로젝트 만들기 ━━━${colors.reset}
+${colors.cyan}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${colors.reset}
+${colors.cyan}  Supabase 프로젝트 만들기 (무료)${colors.reset}
+${colors.cyan}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${colors.reset}
 
-${colors.yellow}1.${colors.reset} https://supabase.com 접속
+${colors.yellow}[1단계]${colors.reset} https://supabase.com 접속
 
-${colors.yellow}2.${colors.reset} "Start your project" 클릭 → GitHub로 로그인
+${colors.yellow}[2단계]${colors.reset} 로그인
+   - "Start your project" 또는 "Sign In" 클릭
+   - GitHub 계정으로 로그인 (가장 쉬움)
 
-${colors.yellow}3.${colors.reset} "New Project" 클릭
-   - Organization: 기본값 사용
-   - Project name: 원하는 이름 (예: my-saas)
-   - Database Password: 안전한 비밀번호 입력 ${colors.red}(꼭 기억하세요!)${colors.reset}
+${colors.yellow}[3단계]${colors.reset} 새 프로젝트 만들기
+   - "New Project" 버튼 클릭
+   - Organization: 기본값 그대로 사용
+   - Project name: 원하는 이름 입력 (예: my-saas)
+   - Database Password: ${colors.red}비밀번호 입력 ← 꼭 기억하세요!${colors.reset}
    - Region: Northeast Asia (Seoul) 선택
+   - "Create new project" 클릭
 
-${colors.yellow}4.${colors.reset} 프로젝트 생성 후 (1-2분 소요)
+${colors.yellow}[4단계]${colors.reset} 1-2분 기다리기 (프로젝트 생성 중...)
 
-${colors.yellow}5.${colors.reset} 필요한 정보 찾기:
+${colors.cyan}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${colors.reset}
+${colors.cyan}  필요한 정보 찾기 (총 3개)${colors.reset}
+${colors.cyan}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${colors.reset}
 
-   ${colors.dim}[DATABASE_URL]${colors.reset}
-   Settings > Database > Connection string > URI
-   → postgresql://postgres:[비밀번호]@db.xxx.supabase.co:5432/postgres
+${colors.green}1. DATABASE_URL${colors.reset} - 데이터베이스 연결 주소
 
-   ${colors.dim}[NEXT_PUBLIC_SUPABASE_URL]${colors.reset}
-   Settings > API > Project URL
-   → https://xxx.supabase.co
+   찾는 위치:
+   ┌─────────────────────────────────────────────────┐
+   │  왼쪽 메뉴 "Settings" (톱니바퀴) 클릭           │
+   │  → "Database" 클릭                              │
+   │  → 스크롤 내려서 "Connection string" 섹션       │
+   │  → "URI" 탭 선택                                │
+   │  → 복사 버튼 클릭                               │
+   └─────────────────────────────────────────────────┘
 
-   ${colors.dim}[NEXT_PUBLIC_SUPABASE_ANON_KEY]${colors.reset}
-   Settings > API > anon public
-   → eyJ...로 시작하는 긴 문자열
+   형식: postgresql://postgres:${colors.red}[비밀번호]${colors.reset}@db.xxx.supabase.co:5432/postgres
+
+   ${colors.yellow}⚠ [YOUR-PASSWORD] 부분을 3단계에서 입력한 비밀번호로 바꿔야 해요!${colors.reset}
+
+${colors.green}2. NEXT_PUBLIC_SUPABASE_URL${colors.reset} - Supabase 프로젝트 URL
+
+   찾는 위치:
+   ┌─────────────────────────────────────────────────┐
+   │  왼쪽 메뉴 "Settings" (톱니바퀴) 클릭           │
+   │  → "API" 클릭                                   │
+   │  → "Project URL" 섹션                           │
+   │  → 복사 버튼 클릭                               │
+   └─────────────────────────────────────────────────┘
+
+   형식: https://xxxxxxxxxxxx.supabase.co
+
+${colors.green}3. NEXT_PUBLIC_SUPABASE_ANON_KEY${colors.reset} - 공개 API 키
+
+   찾는 위치:
+   ┌─────────────────────────────────────────────────┐
+   │  왼쪽 메뉴 "Settings" (톱니바퀴) 클릭           │
+   │  → "API" 클릭                                   │
+   │  → "Project API keys" 섹션                      │
+   │  → "anon public" 옆의 복사 버튼 클릭            │
+   └─────────────────────────────────────────────────┘
+
+   형식: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9... (긴 문자열)
+
+   ${colors.dim}(service_role은 비밀 키라서 쓰면 안 됨! anon public만 사용)${colors.reset}
+
+${colors.cyan}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${colors.reset}
 `)
 }
 

@@ -191,6 +191,128 @@ export default function DatabaseGuidePage() {
           </CardContent>
         </Card>
 
+        {/* Supabase 환경변수 찾기 */}
+        <Card>
+          <CardHeader>
+            <CardTitle>🔑 Supabase 환경변수 찾기</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <p style={{ color: 'var(--color-text-secondary)' }}>
+              .env 파일에 필요한 Supabase 정보를 찾는 방법이에요.
+              <br />
+              총 <strong>3가지</strong> 정보가 필요해요!
+            </p>
+
+            {/* DATABASE_URL */}
+            <div className="p-4 rounded-lg" style={{ background: 'var(--color-bg)', border: '2px solid var(--color-border)' }}>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="px-2 py-1 rounded text-xs font-bold" style={{ background: '#10b981', color: 'white' }}>1</span>
+                <code className="font-bold" style={{ color: 'var(--color-accent)' }}>DATABASE_URL</code>
+                <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>- 데이터베이스 연결 주소</span>
+              </div>
+              <div className="ml-6 space-y-2">
+                <p style={{ color: 'var(--color-text)' }}>
+                  <strong>찾는 위치:</strong>
+                </p>
+                <div className="p-3 rounded" style={{ background: 'var(--color-bg-secondary)' }}>
+                  <p className="font-mono text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                    왼쪽 메뉴 <strong>&quot;Settings&quot;</strong> (톱니바퀴) 클릭
+                    <br />
+                    → <strong>&quot;Database&quot;</strong> 클릭
+                    <br />
+                    → 스크롤 내려서 <strong>&quot;Connection string&quot;</strong> 섹션
+                    <br />
+                    → <strong>&quot;URI&quot;</strong> 탭 선택
+                    <br />
+                    → 복사 버튼 클릭
+                  </p>
+                </div>
+                <div className="p-3 rounded" style={{ background: '#fef3c7', border: '1px solid #f59e0b' }}>
+                  <p className="text-sm" style={{ color: '#92400e' }}>
+                    <strong>⚠️ 주의!</strong> 복사한 URL에서 <code>[YOUR-PASSWORD]</code> 부분을
+                    <br />
+                    프로젝트 만들 때 입력한 <strong>실제 비밀번호</strong>로 바꿔야 해요!
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* NEXT_PUBLIC_SUPABASE_URL */}
+            <div className="p-4 rounded-lg" style={{ background: 'var(--color-bg)', border: '2px solid var(--color-border)' }}>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="px-2 py-1 rounded text-xs font-bold" style={{ background: '#10b981', color: 'white' }}>2</span>
+                <code className="font-bold" style={{ color: 'var(--color-accent)' }}>NEXT_PUBLIC_SUPABASE_URL</code>
+                <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>- 프로젝트 URL</span>
+              </div>
+              <div className="ml-6 space-y-2">
+                <p style={{ color: 'var(--color-text)' }}>
+                  <strong>찾는 위치:</strong>
+                </p>
+                <div className="p-3 rounded" style={{ background: 'var(--color-bg-secondary)' }}>
+                  <p className="font-mono text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                    왼쪽 메뉴 <strong>&quot;Settings&quot;</strong> (톱니바퀴) 클릭
+                    <br />
+                    → <strong>&quot;API&quot;</strong> 클릭
+                    <br />
+                    → <strong>&quot;Project URL&quot;</strong> 섹션
+                    <br />
+                    → 복사 버튼 클릭
+                  </p>
+                </div>
+                <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                  형식: <code>https://xxxxxxxxxxxx.supabase.co</code>
+                </p>
+              </div>
+            </div>
+
+            {/* NEXT_PUBLIC_SUPABASE_ANON_KEY */}
+            <div className="p-4 rounded-lg" style={{ background: 'var(--color-bg)', border: '2px solid var(--color-border)' }}>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="px-2 py-1 rounded text-xs font-bold" style={{ background: '#10b981', color: 'white' }}>3</span>
+                <code className="font-bold" style={{ color: 'var(--color-accent)' }}>NEXT_PUBLIC_SUPABASE_ANON_KEY</code>
+                <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>- 공개 API 키</span>
+              </div>
+              <div className="ml-6 space-y-2">
+                <p style={{ color: 'var(--color-text)' }}>
+                  <strong>찾는 위치:</strong>
+                </p>
+                <div className="p-3 rounded" style={{ background: 'var(--color-bg-secondary)' }}>
+                  <p className="font-mono text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                    왼쪽 메뉴 <strong>&quot;Settings&quot;</strong> (톱니바퀴) 클릭
+                    <br />
+                    → <strong>&quot;API&quot;</strong> 클릭
+                    <br />
+                    → <strong>&quot;Project API keys&quot;</strong> 섹션
+                    <br />
+                    → <strong>&quot;anon public&quot;</strong> 옆의 복사 버튼 클릭
+                  </p>
+                </div>
+                <div className="p-3 rounded" style={{ background: '#dbeafe', border: '1px solid #3b82f6' }}>
+                  <p className="text-sm" style={{ color: '#1e40af' }}>
+                    <strong>💡 팁:</strong> &quot;service_role&quot;은 비밀 키라서 쓰면 안 돼요!
+                    <br />
+                    꼭 <strong>&quot;anon public&quot;</strong>을 복사하세요.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* 예시 */}
+            <div className="p-4 rounded-lg" style={{ background: '#1e1e1e' }}>
+              <p className="font-bold mb-3" style={{ color: '#d4d4d4' }}>
+                .env 파일 예시:
+              </p>
+              <pre className="font-mono text-sm" style={{ color: '#d4d4d4' }}>
+{`DATABASE_URL="postgresql://postgres:내비밀번호@db.xxx.supabase.co:5432/postgres"
+DIRECT_URL="postgresql://postgres:내비밀번호@db.xxx.supabase.co:5432/postgres"
+
+NEXT_PUBLIC_SUPABASE_URL="https://xxx.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJhbGciOi...긴문자열"`}
+              </pre>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Prisma */}
         <Card>
           <CardHeader>
