@@ -104,14 +104,37 @@ export default function EnvironmentGuidePage() {
           </CardContent>
         </Card>
 
+        {/* 자동 설정 안내 */}
+        <Card style={{ background: '#dcfce7', border: '2px solid #22c55e' }}>
+          <CardContent>
+            <div className="flex items-start gap-4 pt-4">
+              <span className="text-4xl">⚡</span>
+              <div>
+                <h3 className="font-bold text-lg mb-2" style={{ color: '#166534' }}>
+                  자동 설정 기능 (추천)
+                </h3>
+                <p style={{ color: '#166534' }}>
+                  환경변수를 직접 입력하지 않아도 돼요!
+                  <br />
+                  <strong>pnpm setup</strong> 명령어로 Access Token만 입력하면 자동으로 설정됩니다.
+                </p>
+                <div className="mt-3 p-3 rounded" style={{ background: '#bbf7d0' }}>
+                  <code style={{ color: '#166534' }}>pnpm setup</code>
+                  <span className="ml-2 text-sm" style={{ color: '#166534' }}>→ &quot;Access Token으로 자동 설정&quot; 선택</span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* 필수 환경변수 */}
         <Card>
           <CardHeader>
-            <CardTitle>📋 필수 환경변수 목록</CardTitle>
+            <CardTitle>📋 필수 환경변수 목록 (수동 설정 시)</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <p style={{ color: 'var(--color-text-secondary)' }}>
-              이 프로젝트에서 필요한 환경변수들이에요:
+              자동 설정 대신 직접 입력하려면 다음 환경변수들이 필요해요:
             </p>
 
             {/* 데이터베이스 */}

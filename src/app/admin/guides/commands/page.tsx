@@ -62,6 +62,56 @@ export default function CommandsGuidePage() {
           </CardContent>
         </Card>
 
+        {/* 초기 설정 명령어 */}
+        <Card>
+          <CardHeader>
+            <CardTitle>⚡ 초기 설정 명령어</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p style={{ color: 'var(--color-text-secondary)' }}>
+              프로젝트를 처음 시작할 때 사용해요:
+            </p>
+
+            {/* pnpm setup */}
+            <div className="p-4 rounded-lg" style={{ background: '#dcfce7', border: '2px solid #22c55e' }}>
+              <div className="flex items-center justify-between mb-2">
+                <p className="font-bold" style={{ color: '#166534' }}>설정 마법사 (자동 설정)</p>
+                <span className="text-xs px-2 py-1 rounded" style={{ background: '#166534', color: 'white' }}>필수!</span>
+              </div>
+              <div className="p-3 rounded font-mono text-sm" style={{ background: '#1e1e1e', color: '#d4d4d4' }}>
+                pnpm setup
+              </div>
+              <p className="mt-2 text-sm" style={{ color: '#166534' }}>
+                Access Token만 입력하면 Supabase 환경변수가 자동으로 설정돼요!
+                <br />
+                → &quot;Access Token으로 자동 설정&quot; 선택 추천
+              </p>
+            </div>
+
+            {/* pnpm install */}
+            <div className="p-4 rounded-lg" style={{ background: 'var(--color-bg)' }}>
+              <p className="font-bold mb-2" style={{ color: 'var(--color-text)' }}>패키지 설치</p>
+              <div className="p-3 rounded font-mono text-sm" style={{ background: '#1e1e1e', color: '#d4d4d4' }}>
+                pnpm install
+              </div>
+              <p className="mt-2 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                프로젝트에 필요한 모든 도구들을 설치해요
+              </p>
+            </div>
+
+            {/* pnpm db:push */}
+            <div className="p-4 rounded-lg" style={{ background: 'var(--color-bg)' }}>
+              <p className="font-bold mb-2" style={{ color: 'var(--color-text)' }}>DB 스키마 적용</p>
+              <div className="p-3 rounded font-mono text-sm" style={{ background: '#1e1e1e', color: '#d4d4d4' }}>
+                pnpm db:push
+              </div>
+              <p className="mt-2 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                데이터베이스에 테이블을 생성해요 (처음 한 번만)
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* 개발 명령어 */}
         <Card>
           <CardHeader>
@@ -444,6 +494,10 @@ export default function CommandsGuidePage() {
                   </tr>
                 </thead>
                 <tbody style={{ color: 'var(--color-text-secondary)' }}>
+                  <tr style={{ borderBottom: '1px solid var(--color-border)', background: '#dcfce720' }}>
+                    <td className="py-3 px-2" style={{ color: '#166534' }}>초기 설정 (자동)</td>
+                    <td className="py-3 px-2 font-mono" style={{ color: '#166534' }}>pnpm setup</td>
+                  </tr>
                   <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
                     <td className="py-3 px-2">개발 서버 시작</td>
                     <td className="py-3 px-2 font-mono" style={{ color: 'var(--color-accent)' }}>pnpm dev</td>
