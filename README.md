@@ -12,22 +12,22 @@ Next.js 16 + Supabase + Tailwind CSS 기반의 SaaS 스타터 킷입니다.
 git clone https://github.com/johunsang/onesass-starter.git my-saas
 cd my-saas
 
-# 2. 의존성 설치
+# 2. 의존성 설치 (자동으로 안내 메시지 표시)
 pnpm install
 
-# 3. 환경변수 설정
-cp .env.example .env
-# .env 파일에 Supabase 정보 입력
-
-# 4. DB 스키마 적용
-pnpm db:push
-
-# 5. K-Code CLI 빌드
-pnpm cli:build
-
-# 6. 개발 서버 실행
-pnpm dev
+# 3. 설정 마법사 실행 ⭐ (단계별 안내)
+pnpm setup
 ```
+
+**`pnpm setup` 하나로 끝!** 마법사가 단계별로 안내해줍니다:
+- Supabase 없으면? → 만드는 방법 상세 안내
+- 어디서 뭘 복사해야 하는지 → 하나씩 알려줌
+- DB 스키마 적용 → 자동 실행 옵션
+- 개발 서버 실행 → 자동 실행 옵션
+
+> 💡 **Supabase가 뭔가요?**
+> 무료 데이터베이스 서비스예요. https://supabase.com 에서 2분이면 만들 수 있어요.
+> `pnpm setup` 실행하면 만드는 방법도 알려줍니다!
 
 http://localhost:3000 에서 확인
 
@@ -40,51 +40,48 @@ http://localhost:3000 에서 확인
 ### 사용법
 
 ```bash
-# 기본 사용
-pnpm kcode "로그인 페이지에 네이버 로그인 추가해줘"
+# 기본 사용 - 한국어로 말하면 끝!
+pnpm kcode "로그인 페이지에 유효성 검사 추가해줘"
 
-# Smart 모드 (분석 → 구현)
-pnpm kcode "복잡한 API 설계해줘" --smart
+# 대화형 모드 - AI와 실시간 대화
+pnpm kcode -i
 
-# 원스탑 가이드 보기
-pnpm kcode --guide
+# 복잡한 작업 - 개발 모드
+pnpm kcode --dev "인증 시스템 리팩토링해줘"
 
-# 도움말
-pnpm kcode --help
+# 모델 선택
+pnpm kcode -m deepseek "버그 수정해줘"
 ```
 
-### K-Code 기능
+### 지원 AI 모델 (가격순)
 
-| 기능 | 설명 |
-|-----|------|
-| **자연어 코딩** | 한국어로 요청하면 자동으로 코드 수정 |
-| **프로젝트 분석** | OneSaaS 구조를 이해하고 올바른 위치에 코드 작성 |
-| **Smart 모드** | DeepSeek Reasoner로 분석 후 구현 |
-| **원스탑 가이드** | 개발→커밋→배포 전 과정 안내 |
+| 모델 | 가격 (1M 토큰) | 특징 |
+|-----|---------------|------|
+| Qwen Turbo | $0.03 | 💰 **가장 저렴!** |
+| MiniMax M2.1 | $0.07 | 코딩 특화 |
+| Groq Qwen3 | $0.24 | ⚡ 초고속, **무료 티어** |
+| DeepSeek V3.2 | $0.27 | 🔧 코딩 구현 |
+| Gemini 3 Flash | $0.50 | 🌟 이미지 분석 |
 
 ### API 키 설정
 
 ```bash
-# DeepSeek API 키 저장 (한 번만)
-pnpm kcode --key YOUR_DEEPSEEK_API_KEY
+# Groq (무료 티어 있음, 추천)
+pnpm kcode --key groq YOUR_GROQ_API_KEY
 
-# 또는 다른 모델
-pnpm kcode --key openai sk-...
-pnpm kcode --key anthropic sk-ant-...
+# Qwen (가장 저렴)
+pnpm kcode --key qwen YOUR_QWEN_API_KEY
+
+# DeepSeek (코딩 특화)
+pnpm kcode --key deepseek YOUR_DEEPSEEK_API_KEY
+
+# 모델 목록 보기
+pnpm kcode --list
 ```
 
----
-
-## AI 도구 비교: K-Code vs Claude Code
-
-| 항목 | K-Code (내장) | Claude Code (설치형) |
-|-----|--------------|---------------------|
-| **비용** | 💰 매우 저렴 (~$0.001/작업) | 💰💰💰 비쌈 (~$0.10/작업) |
-| **추천 작업** | 간단한 수정, 페이지 추가, API | 복잡한 로직, 대규모 리팩토링 |
-| **설치** | 불필요 (내장) | npm 설치 필요 |
-| **OneSaaS 특화** | 완벽 | 좋음 |
-
-**추천:** 일반 작업은 K-Code, 복잡한 작업만 Claude Code 사용
+> 💡 **어떤 API 키를 써야 하나요?**
+> 처음이라면 **Groq** 추천! 무료 티어가 있어서 테스트하기 좋아요.
+> https://console.groq.com 에서 가입하고 API 키 발급받으세요.
 
 ---
 
@@ -142,45 +139,44 @@ pnpm db:migrate             # 프로덕션용
 
 ## 환경 변수
 
-`.env` 파일:
+> 💡 **직접 설정하지 마세요!** `pnpm setup` 실행하면 알아서 만들어줍니다.
+
+수동으로 설정하려면 `.env` 파일:
 
 ```bash
-# Supabase (필수)
+# Supabase (필수) - pnpm setup이 안내해줌
+DATABASE_URL=postgresql://postgres:비밀번호@db.xxx.supabase.co:5432/postgres
 NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
-DATABASE_URL=postgresql://...
 
-# K-Code AI (선택 - 하나 이상 필요)
-DEEPSEEK_API_KEY=sk-...          # 권장 (가성비 최고)
-OPENAI_API_KEY=sk-...
-ANTHROPIC_API_KEY=sk-ant-...
+# K-Code AI (선택) - pnpm kcode --key 명령어로 설정
+GROQ_API_KEY=gsk_...             # 무료 티어 있음
+QWEN_API_KEY=sk-...              # 가장 저렴
+DEEPSEEK_API_KEY=sk-...          # 코딩 특화
 
-# 결제 - PortOne (선택)
+# 결제 (선택)
 NEXT_PUBLIC_PORTONE_MERCHANT_ID=imp...
-PORTONE_API_KEY=...
-
-# 결제 - TossPayments (선택)
-NEXT_PUBLIC_TOSS_CLIENT_KEY=...
-TOSS_SECRET_KEY=...
+NEXT_PUBLIC_TOSS_CLIENT_KEY=test_ck_...
 ```
 
 ## 스크립트
 
 ```bash
+# 처음 시작할 때
+pnpm setup            # ⭐ 설정 마법사 (이것만 하면 됨!)
+
 # 개발
 pnpm dev              # 개발 서버
 pnpm build            # 프로덕션 빌드
 
 # 데이터베이스
-pnpm db:push          # DB 스키마 적용 (개발)
-pnpm db:migrate       # DB 마이그레이션 (프로덕션)
-pnpm db:studio        # Prisma Studio (DB GUI)
+pnpm db:push          # DB 스키마 적용
+pnpm db:studio        # DB 보기 (브라우저에서)
 
-# K-Code
-pnpm cli:build        # K-Code CLI 빌드
-pnpm kcode "작업"     # K-Code 실행
-pnpm kcode --guide    # 원스탑 가이드
-pnpm ai "작업"        # kcode 별칭
+# K-Code AI
+pnpm kcode "작업"     # AI에게 코딩 시키기
+pnpm kcode -i         # AI와 대화형 코딩
+pnpm kcode --list     # 모델 목록 보기
 ```
 
 ## 폴더 구조
