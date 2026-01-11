@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { AdminLayout } from '@/onesaas-core/admin/AdminLayout'
+import { AdminLayout } from '@/onesaas-core/admin'
 
 export default function AIGuide() {
   const [activeTab, setActiveTab] = useState('overview')
