@@ -299,12 +299,12 @@ export default function DatabaseGuidePage() {
               총 <strong>3가지</strong> 정보가 필요해요!
             </p>
 
-            {/* DATABASE_URL */}
+            {/* DATABASE_URL & DIRECT_URL */}
             <div className="p-4 rounded-lg" style={{ background: 'var(--color-bg)', border: '2px solid var(--color-border)' }}>
               <div className="flex items-center gap-2 mb-3">
                 <span className="px-2 py-1 rounded text-xs font-bold" style={{ background: '#10b981', color: 'white' }}>1</span>
                 <code className="font-bold" style={{ color: 'var(--color-accent)' }}>DATABASE_URL</code>
-                <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>- 데이터베이스 연결 주소</span>
+                <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>- Connection Pooler 주소</span>
               </div>
               <div className="ml-6 space-y-2">
                 <p style={{ color: 'var(--color-text)' }}>
@@ -318,9 +318,18 @@ export default function DatabaseGuidePage() {
                     <br />
                     → 스크롤 내려서 <strong>&quot;Connection string&quot;</strong> 섹션
                     <br />
-                    → <strong>&quot;URI&quot;</strong> 탭 선택
+                    → <strong style={{ color: '#f59e0b' }}>&quot;Transaction&quot; 탭</strong> 선택 (중요!)
                     <br />
                     → 복사 버튼 클릭
+                  </p>
+                </div>
+                <div className="p-3 rounded" style={{ background: '#dbeafe', border: '1px solid #3b82f6' }}>
+                  <p className="text-sm" style={{ color: '#1e40af' }}>
+                    <strong>📌 포트 번호 확인:</strong>
+                    <br />
+                    • <strong>DATABASE_URL</strong>: 포트 <code>6543</code> + <code>?pgbouncer=true</code> (앱용)
+                    <br />
+                    • <strong>DIRECT_URL</strong>: 포트 <code>5432</code> (마이그레이션용)
                   </p>
                 </div>
                 <div className="p-3 rounded" style={{ background: '#fef3c7', border: '1px solid #f59e0b' }}>
@@ -399,8 +408,11 @@ export default function DatabaseGuidePage() {
                 .env 파일 예시:
               </p>
               <pre className="font-mono text-sm" style={{ color: '#d4d4d4' }}>
-{`DATABASE_URL="postgresql://postgres:내비밀번호@db.xxx.supabase.co:5432/postgres"
-DIRECT_URL="postgresql://postgres:내비밀번호@db.xxx.supabase.co:5432/postgres"
+{`# Connection Pooler 사용 (앱에서 사용)
+DATABASE_URL="postgresql://postgres.xxx:내비밀번호@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres?pgbouncer=true"
+
+# Direct 연결 (마이그레이션용)
+DIRECT_URL="postgresql://postgres.xxx:내비밀번호@aws-0-ap-northeast-2.pooler.supabase.com:5432/postgres"
 
 NEXT_PUBLIC_SUPABASE_URL="https://xxx.supabase.co"
 NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJhbGciOi...긴문자열"`}

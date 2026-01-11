@@ -165,7 +165,9 @@ pnpm db:migrate             # 프로덕션용
 
 ```bash
 # Supabase (필수) - pnpm setup이 안내해줌
-DATABASE_URL=postgresql://postgres:비밀번호@db.xxx.supabase.co:5432/postgres
+# Connection Pooler 사용 (포트 6543 + pgbouncer)
+DATABASE_URL=postgresql://postgres.xxx:비밀번호@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres?pgbouncer=true
+DIRECT_URL=postgresql://postgres.xxx:비밀번호@aws-0-ap-northeast-2.pooler.supabase.com:5432/postgres
 NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
 

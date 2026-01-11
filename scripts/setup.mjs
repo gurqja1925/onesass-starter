@@ -306,13 +306,51 @@ ${colors.yellow}⚠ 마지막 단계: 데이터베이스 비밀번호${colors.re
   // 환경변수 구성
   const projectRef = selectedProject.id
   const supabaseUrl = `https://${projectRef}.supabase.co`
-  const dbHost = selectedProject.database?.host || `db.${projectRef}.supabase.co`
-  const dbUrl = `postgresql://postgres.${projectRef}:${encodeURIComponent(dbPassword)}@${dbHost}:5432/postgres`
+
+  // Region을 AWS 형식으로 변환 (예: "ap-northeast-2", "us-east-1" 등)
+  const regionMap = {
+    'ap-northeast-1': 'ap-northeast-1',  // Tokyo
+    'ap-northeast-2': 'ap-northeast-2',  // Seoul
+    'ap-southeast-1': 'ap-southeast-1',  // Singapore
+    'ap-southeast-2': 'ap-southeast-2',  // Sydney
+    'ap-south-1': 'ap-south-1',          // Mumbai
+    'eu-west-1': 'eu-west-1',            // Ireland
+    'eu-west-2': 'eu-west-2',            // London
+    'eu-west-3': 'eu-west-3',            // Paris
+    'eu-central-1': 'eu-central-1',      // Frankfurt
+    'us-east-1': 'us-east-1',            // N. Virginia
+    'us-west-1': 'us-west-1',            // N. California
+    'us-west-2': 'us-west-2',            // Oregon
+    'sa-east-1': 'sa-east-1',            // São Paulo
+  }
+
+  // Supabase API에서 반환하는 region 형식에 따라 처리
+  let awsRegion = selectedProject.region
+  // "Northeast Asia (Seoul)" 같은 형식이면 변환
+  if (selectedProject.region.includes('Seoul') || selectedProject.region.includes('ap-northeast-2')) {
+    awsRegion = 'ap-northeast-2'
+  } else if (selectedProject.region.includes('Tokyo') || selectedProject.region.includes('ap-northeast-1')) {
+    awsRegion = 'ap-northeast-1'
+  } else if (selectedProject.region.includes('Singapore') || selectedProject.region.includes('ap-southeast-1')) {
+    awsRegion = 'ap-southeast-1'
+  } else if (regionMap[selectedProject.region]) {
+    awsRegion = regionMap[selectedProject.region]
+  }
+
+  // Connection Pooler URL 생성
+  const poolerHost = `aws-0-${awsRegion}.pooler.supabase.com`
+  const encodedPassword = encodeURIComponent(dbPassword)
+
+  // DATABASE_URL: Pooler 사용 (앱에서 사용, port 6543, pgbouncer=true)
+  const databaseUrl = `postgresql://postgres.${projectRef}:${encodedPassword}@${poolerHost}:6543/postgres?pgbouncer=true`
+
+  // DIRECT_URL: 직접 연결 (마이그레이션용, port 5432)
+  const directUrl = `postgresql://postgres.${projectRef}:${encodedPassword}@${poolerHost}:5432/postgres`
 
   const env = {
     ...existingEnv,
-    DATABASE_URL: dbUrl,
-    DIRECT_URL: dbUrl,
+    DATABASE_URL: databaseUrl,
+    DIRECT_URL: directUrl,
     NEXT_PUBLIC_SUPABASE_URL: supabaseUrl,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: anonKey.api_key,
   }
@@ -323,6 +361,7 @@ ${colors.yellow}⚠ 마지막 단계: 데이터베이스 비밀번호${colors.re
   ${colors.dim}프로젝트:${colors.reset} ${selectedProject.name}
   ${colors.dim}URL:${colors.reset} ${supabaseUrl}
   ${colors.dim}Region:${colors.reset} ${selectedProject.region}
+  ${colors.dim}Pooler:${colors.reset} ${poolerHost}
 `)
 
   return env
@@ -540,20 +579,25 @@ ${colors.cyan}━━━━━━━━━━━━━━━━━━━━━━
 ${colors.cyan}  필요한 정보 찾기 (총 3개)${colors.reset}
 ${colors.cyan}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${colors.reset}
 
-${colors.green}1. DATABASE_URL${colors.reset} - 데이터베이스 연결 주소
+${colors.green}1. DATABASE_URL & DIRECT_URL${colors.reset} - 데이터베이스 연결 주소
 
    찾는 위치:
    ┌─────────────────────────────────────────────────┐
    │  왼쪽 메뉴 "Settings" (톱니바퀴) 클릭           │
    │  → "Database" 클릭                              │
    │  → 스크롤 내려서 "Connection string" 섹션       │
-   │  → "URI" 탭 선택                                │
+   │  → ${colors.yellow}"Transaction" 탭${colors.reset} 선택 (DATABASE_URL용)        │
    │  → 복사 버튼 클릭                               │
    └─────────────────────────────────────────────────┘
 
-   형식: postgresql://postgres:${colors.red}[비밀번호]${colors.reset}@db.xxx.supabase.co:5432/postgres
+   ${colors.cyan}DATABASE_URL (앱에서 사용):${colors.reset}
+   postgresql://postgres.xxx:${colors.red}[비밀번호]${colors.reset}@aws-0-xxx.pooler.supabase.com:${colors.yellow}6543${colors.reset}/postgres?pgbouncer=true
+
+   ${colors.cyan}DIRECT_URL (마이그레이션용):${colors.reset}
+   postgresql://postgres.xxx:${colors.red}[비밀번호]${colors.reset}@aws-0-xxx.pooler.supabase.com:${colors.yellow}5432${colors.reset}/postgres
 
    ${colors.yellow}⚠ [YOUR-PASSWORD] 부분을 3단계에서 입력한 비밀번호로 바꿔야 해요!${colors.reset}
+   ${colors.dim}(Transaction 탭 = 6543 포트 + pgbouncer, Session 탭 = 5432 포트)${colors.reset}
 
 ${colors.green}2. NEXT_PUBLIC_SUPABASE_URL${colors.reset} - Supabase 프로젝트 URL
 
