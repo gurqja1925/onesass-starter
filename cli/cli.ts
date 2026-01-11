@@ -13,6 +13,7 @@ import { config } from 'dotenv';
 config(); // .env 파일 로드
 
 import { CodingAgent, runCodingTask, type TokenUsage } from './agent/coding';
+import { LLM } from './llm';
 import { AVAILABLE_MODELS, getApiKey, saveApiKey } from './models';
 import type { TaskLog } from './types';
 import { createRequire } from 'module';
@@ -456,7 +457,7 @@ ${prevResult}
   },
 ];
 
-async function runPipeline(prompt: string) {
+async function runPipeline(prompt: string, reasonerContext?: string) {
   const apiKey = getApiKey();
   if (!apiKey) {
     console.log(`${c.red}✕${c.reset} DEEPSEEK_API_KEY가 필요합니다`);
@@ -490,7 +491,7 @@ ${c.bold}${c.cyan}╔═══════════════════�
     console.log(`${'─'.repeat(50)}`);
 
     const stageStart = Date.now();
-    const stagePrompt = stage.promptTemplate(prompt, prevResult);
+    const stagePrompt = `${reasonerContext ? reasonerContext + '\n\n' : ''}${stage.promptTemplate(prompt, prevResult)}`;
 
     try {
       const result = await runCodingTask(stagePrompt, {
@@ -577,7 +578,7 @@ ${c.green}╔══════════════════════�
   }
 }
 
-async function runDevPipeline(prompt: string) {
+async function runDevPipeline(prompt: string, reasonerContext?: string) {
   const apiKey = getApiKey();
   if (!apiKey) {
     console.log(`${c.red}✕${c.reset} DEEPSEEK_API_KEY가 필요합니다`);
@@ -611,7 +612,7 @@ ${c.bold}${c.cyan}╔═══════════════════�
     console.log(`${'─'.repeat(50)}`);
 
     const stageStart = Date.now();
-    const stagePrompt = stage.promptTemplate(prompt, prevResult);
+    const stagePrompt = `${reasonerContext ? reasonerContext + '\n\n' : ''}${stage.promptTemplate(prompt, prevResult)}`;
 
     try {
       const result = await runCodingTask(stagePrompt, {
@@ -1038,7 +1039,71 @@ ${c.dim}더 자세한 정보: https://onesaas.kr/docs${c.reset}
 
 async function main() {
   const args = process.argv.slice(2);
-  const isDevPrompt = (text: string) => /개발/.test(text);
+  type ReasonerDecision = {
+    pipeline: 'dev' | 'standard';
+    plan: string;
+    guide: string;
+    priorityFiles: string[];
+  };
+
+  const parseReasonerDecision = (raw: string): ReasonerDecision | null => {
+    const trimmed = raw.trim();
+    const jsonMatch = trimmed.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return null;
+    try {
+      const data = JSON.parse(jsonMatch[0]);
+      if (data && (data.pipeline === 'dev' || data.pipeline === 'standard') && data.plan) {
+        return {
+          pipeline: data.pipeline,
+          plan: String(data.plan),
+          guide: String(data.guide || ''),
+          priorityFiles: Array.isArray(data.priority_files)
+            ? data.priority_files.map((item: unknown) => String(item))
+            : [],
+        };
+      }
+    } catch {}
+    return null;
+  };
+
+  const getReasonerDecision = async (text: string): Promise<ReasonerDecision | null> => {
+    const model = AVAILABLE_MODELS.find(m => m.id === 'deepseek-reasoner');
+    const apiKey = getApiKey('deepseek');
+    if (!model || !apiKey) return null;
+
+    const llm = new LLM({
+      model: model.model,
+      apiKey,
+      maxTokens: model.maxTokens,
+      baseUrl: model.baseUrl,
+      provider: model.provider,
+    });
+
+    const prompt = `당신은 요청 의도를 분류하고 계획/가이드를 작성하는 에이전트입니다.
+다음 요청을 읽고 JSON만 반환하세요.
+
+요청: ${text}
+
+규칙:
+- pipeline: "dev" 또는 "standard"
+- dev: 기능 개발/구현/수정이 포함된 요청
+- standard: 정보 제공/설명/분석/리뷰 중심 요청
+- plan: 구현/응답 계획 요약 (불릿 3~6개)
+- guide: 사용자가 기대하는 출력/결과 가이드 (짧게)
+- priority_files: 먼저 읽어야 할 핵심 문서 경로 3~7개 (중요도 순)
+
+출력 예시:
+{
+  "pipeline": "dev",
+  "plan": "- ...",
+  "guide": "...",
+  "priority_files": ["README.md", "onesaas.json"]
+}`;
+
+    const response = await llm.ask([{ role: 'user', content: prompt }]);
+    if (!response.content) return null;
+    return parseReasonerDecision(response.content);
+  };
 
   // 도움말
   if (args.includes('-h') || args.includes('--help')) {
@@ -1149,10 +1214,19 @@ async function main() {
   if (multi || prompts.length > 1) {
     // 멀티 태스크 모드
     await runMultiTasks(prompts, modelId);
-  } else if (prompts.length === 1 && isDevPrompt(prompts[0])) {
-    await runDevPipeline(prompts[0]);
-  } else if (pipeline) {
-    await runPipeline(prompts[0]);
+  } else if (prompts.length === 1) {
+    const decision = await getReasonerDecision(prompts[0]);
+    const reasonerContext = decision
+      ? `[리지너 계획]\n${decision.plan}\n\n[리지너 가이드]\n${decision.guide}\n\n[리지너 우선 문서]\n${decision.priorityFiles.join('\n')}`
+      : '';
+
+    if (decision?.pipeline === 'dev') {
+      await runDevPipeline(prompts[0], reasonerContext);
+    } else if (pipeline) {
+      await runPipeline(prompts[0], reasonerContext);
+    } else {
+      await runSingle(prompts[0], modelId);
+    }
   } else {
     await runSingle(prompts[0], modelId);
   }

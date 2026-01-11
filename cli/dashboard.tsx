@@ -214,11 +214,11 @@ function TaskList({ tasks }: { tasks: Task[] }) {
         let icon = '○';
         let iconColor = 'gray';
         let statusText = '';
+        const prog = task.progress || 0;
 
         if (task.status === 'running') {
           icon = '◐';
           iconColor = 'yellow';
-          const prog = task.progress || 0;
           statusText = ` ${Math.round(prog * 100)}%`;
         } else if (task.status === 'completed') {
           icon = '●';
@@ -230,10 +230,15 @@ function TaskList({ tasks }: { tasks: Task[] }) {
         }
 
         return (
-          <Box key={task.id}>
-            <Text color={iconColor}>{icon}</Text>
-            <Text> [{task.id}] {task.prompt.slice(0, 35)}</Text>
-            <Text color="gray">{statusText} {dur}s</Text>
+          <Box key={task.id} flexDirection="column">
+            <Box>
+              <Text color={iconColor}>{icon}</Text>
+              <Text> [{task.id}] {task.prompt.slice(0, 35)}</Text>
+              <Text color="gray">{statusText} {dur}s</Text>
+            </Box>
+            <Box marginLeft={2}>
+              <ProgressBar value={prog} width={18} color={task.status === 'completed' ? 'green' : 'yellow'} />
+            </Box>
           </Box>
         );
       })}

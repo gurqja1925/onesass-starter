@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { DashboardLayout } from '@/components/layouts/DashboardLayout'
+import { AdminLayout } from '@/onesaas-core/admin/AdminLayout'
 
 export default function AIGuide() {
   const [activeTab, setActiveTab] = useState('overview')
@@ -16,7 +16,7 @@ export default function AIGuide() {
   ]
 
   return (
-    <DashboardLayout title="AI 설정 가이드">
+    <AdminLayout>
       <div className="max-w-4xl mx-auto">
         {/* 헤더 */}
         <div className="mb-8">
@@ -450,7 +450,7 @@ try {
           </div>
         </div>
       </div>
-    </DashboardLayout>
+    </AdminLayout>
   )
 }
 

@@ -62,6 +62,26 @@ export const AVAILABLE_MODELS: ModelInfo[] = [
     },
     releaseDate: '2025-01-10',
   },
+  {
+    id: 'deepseek-reasoner',
+    name: 'DeepSeek Reasoner (V3.2)',
+    provider: 'deepseek',
+    model: 'deepseek-reasoner',
+    description: '의도 분류/계획 수립용. (thinking 3.2)',
+    maxTokens: 8192,
+    contextWindow: 128000,
+    inputPrice: 0.55,
+    outputPrice: 2.19,
+    baseUrl: 'https://api.deepseek.com',
+    capabilities: {
+      vision: false,
+      functionCalling: false,
+      streaming: true,
+      json: true,
+      reasoning: true,
+    },
+    releaseDate: '2025-01-20',
+  },
   // OpenAI
   {
     id: 'gpt-4o',
