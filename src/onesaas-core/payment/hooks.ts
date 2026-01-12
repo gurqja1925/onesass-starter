@@ -40,6 +40,7 @@ interface SubscriptionParams {
 
 interface PaymentResult {
   success: boolean
+  paymentId?: string
   orderId?: string
   customerKey?: string
   error?: string

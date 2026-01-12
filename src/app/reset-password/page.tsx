@@ -18,6 +18,12 @@ export default function ResetPasswordPage() {
     // 세션 확인
     const checkSession = async () => {
       const supabase = createClient()
+      if (!supabase) {
+        setIsError(true)
+        setMessage('Supabase client not available')
+        return
+      }
+
       const { data: { session } } = await supabase.auth.getSession()
 
       if (!session) {
@@ -52,6 +58,10 @@ export default function ResetPasswordPage() {
 
     try {
       const supabase = createClient()
+      if (!supabase) {
+        throw new Error('Supabase client not available')
+      }
+
       const { error } = await supabase.auth.updateUser({
         password: password
       })

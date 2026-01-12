@@ -90,7 +90,7 @@ export default function AuthModal({ isOpen, onClose, redirectUrl = '/service' }:
   }
 
   const handleSocialLogin = async (provider: 'google' | 'kakao' | 'github') => {
-    await signInWithProvider(provider, { redirectTo: redirectUrl })
+    await signInWithProvider(provider)
   }
 
   const modalContent = (

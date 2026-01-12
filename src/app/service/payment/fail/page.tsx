@@ -1,11 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { DashboardLayout } from '@/components/layouts/DashboardLayout'
 import Link from 'next/link'
 
-export default function PaymentFailPage() {
+function PaymentFailContent() {
   const searchParams = useSearchParams()
   const [errorInfo, setErrorInfo] = useState({
     code: '',
@@ -79,5 +79,13 @@ export default function PaymentFailPage() {
         </div>
       </div>
     </DashboardLayout>
+  )
+}
+
+export default function PaymentFailPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <PaymentFailContent />
+    </Suspense>
   )
 }

@@ -40,6 +40,9 @@ export default function SettingsPage() {
 
     try {
       const supabase = createClient()
+      if (!supabase) {
+        throw new Error('Supabase client not available')
+      }
 
       // Supabase user_metadata 업데이트
       const { error } = await supabase.auth.updateUser({
@@ -76,6 +79,10 @@ export default function SettingsPage() {
 
     try {
       const supabase = createClient()
+      if (!supabase) {
+        throw new Error('Supabase client not available')
+      }
+
       const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
         redirectTo: `${window.location.origin}/reset-password`,
       })

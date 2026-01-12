@@ -1,11 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { DashboardLayout } from '@/components/layouts/DashboardLayout'
 import Link from 'next/link'
 
-export default function SubscriptionSuccessPage() {
+function SubscriptionSuccessContent() {
   const searchParams = useSearchParams()
   const [subscriptionInfo, setSubscriptionInfo] = useState({
     planName: '',
@@ -85,5 +85,14 @@ export default function SubscriptionSuccessPage() {
         </div>
       </div>
     </DashboardLayout>
+  )
+}
+
+
+export default function SubscriptionSuccessPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SubscriptionSuccessContent />
+    </Suspense>
   )
 }

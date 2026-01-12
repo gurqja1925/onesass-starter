@@ -6,6 +6,6 @@
 
 export * from './config'
 export * from './portone'
-export * from './tosspay'
+export * from './toss-payments'
 export * from './hooks'
 export * from './components'

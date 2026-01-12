@@ -1,12 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { DashboardLayout } from '@/components/layouts/DashboardLayout'
 import { formatPrice } from '@/onesaas-core/payment/config'
 import Link from 'next/link'
 
-export default function PaymentSuccessPage() {
+function PaymentSuccessContent() {
   const searchParams = useSearchParams()
   const [paymentInfo, setPaymentInfo] = useState({
     orderId: '',
@@ -88,5 +88,14 @@ export default function PaymentSuccessPage() {
         </div>
       </div>
     </DashboardLayout>
+  )
+}
+
+
+export default function PaymentSuccessPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <PaymentSuccessContent />
+    </Suspense>
   )
 }
