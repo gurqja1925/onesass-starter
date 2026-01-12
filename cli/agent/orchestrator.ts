@@ -289,10 +289,10 @@ JSON만 응답하세요.`;
 
     this.conversationHistory.push({ role: Role.USER, content: prompt });
 
-    const response = await this.deepseekLLM.chat({
-      messages: this.conversationHistory,
-      systemPrompt: 'You are a code verification expert. Always respond in JSON format.',
-    });
+    const response = await this.deepseekLLM.ask(
+      this.conversationHistory,
+      [{ role: Role.SYSTEM, content: 'You are a code verification expert. Always respond in JSON format.' }]
+    );
 
     const verifyContent = response.content || '';
     this.conversationHistory.push({ role: Role.ASSISTANT, content: verifyContent });
@@ -341,10 +341,10 @@ JSON만 응답하세요.`;
 
     this.conversationHistory.push({ role: Role.USER, content: prompt });
 
-    const response = await this.deepseekLLM.chat({
-      messages: this.conversationHistory,
-      systemPrompt: 'You are a technical report writer. Always respond in JSON format.',
-    });
+    const response = await this.deepseekLLM.ask(
+      this.conversationHistory,
+      [{ role: Role.SYSTEM, content: 'You are a technical report writer. Always respond in JSON format.' }]
+    );
 
     const reportContent = response.content || '';
     try {
