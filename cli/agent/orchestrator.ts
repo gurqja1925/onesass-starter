@@ -156,10 +156,11 @@ JSON만 응답하세요.`;
       [{ role: Role.SYSTEM, content: 'You are a task analysis expert. Always respond in JSON format.' }]
     );
 
-    this.conversationHistory.push({ role: Role.ASSISTANT, content: response.content });
+    const content = response.content || '';
+    this.conversationHistory.push({ role: Role.ASSISTANT, content });
 
     try {
-      const understanding = JSON.parse(response.content.replace(/```json\n?|```/g, ''));
+      const understanding = JSON.parse(content.replace(/```json\n?|```/g, ''));
       this.emit({
         type: 'log',
         message: `✓ 작업 이해 완료: ${understanding.summary}`,
@@ -209,10 +210,11 @@ JSON만 응답하세요.`;
       [{ role: Role.SYSTEM, content: 'You are an execution planning expert. Always respond in JSON format.' }]
     );
 
-    this.conversationHistory.push({ role: Role.ASSISTANT, content: response.content });
+    const planContent = response.content || '';
+    this.conversationHistory.push({ role: Role.ASSISTANT, content: planContent });
 
     try {
-      const plan = JSON.parse(response.content.replace(/```json\n?|```/g, ''));
+      const plan = JSON.parse(planContent.replace(/```json\n?|```/g, ''));
       this.emit({
         type: 'log',
         message: `✓ 실행 계획 완료: ${plan.steps.length}개 단계`,
@@ -292,10 +294,11 @@ JSON만 응답하세요.`;
       systemPrompt: 'You are a code verification expert. Always respond in JSON format.',
     });
 
-    this.conversationHistory.push({ role: Role.ASSISTANT, content: response.content });
+    const verifyContent = response.content || '';
+    this.conversationHistory.push({ role: Role.ASSISTANT, content: verifyContent });
 
     try {
-      const verification = JSON.parse(response.content.replace(/```json\n?|```/g, ''));
+      const verification = JSON.parse(verifyContent.replace(/```json\n?|```/g, ''));
       this.emit({
         type: 'log',
         message: verification.success ? '✓ 검증 성공' : '⚠ 검증 실패',
@@ -343,8 +346,9 @@ JSON만 응답하세요.`;
       systemPrompt: 'You are a technical report writer. Always respond in JSON format.',
     });
 
+    const reportContent = response.content || '';
     try {
-      const reportData = JSON.parse(response.content.replace(/```json\n?|```/g, ''));
+      const reportData = JSON.parse(reportContent.replace(/```json\n?|```/g, ''));
 
       const report: ExecutionReport = {
         task,
