@@ -92,7 +92,7 @@ async function main() {
     data: [
       { userId: adminUser.id, plan: 'enterprise', planName: 'Enterprise 연간', amount: 960000, status: 'active', currentPeriodStart: now, currentPeriodEnd: oneMonthLater },
       { userId: proUser.id, plan: 'pro', planName: 'Pro 월간', amount: 30000, status: 'active', currentPeriodStart: now, currentPeriodEnd: oneMonthLater },
-      { userId: freeUser.id, plan: 'free', planName: 'Free', amount: 0, status: 'active', currentPeriodStart: now },
+      { userId: freeUser.id, plan: 'free', planName: 'Free', amount: 0, status: 'active', currentPeriodStart: now, currentPeriodEnd: oneMonthLater },
       { userId: sampleUsers[0].id, plan: 'pro', planName: 'Pro 월간', amount: 30000, status: 'active', currentPeriodStart: now, currentPeriodEnd: oneMonthLater },
       { userId: sampleUsers[2].id, plan: 'pro', planName: 'Pro 월간', amount: 30000, status: 'active', currentPeriodStart: now, currentPeriodEnd: oneMonthLater },
       { userId: sampleUsers[3].id, plan: 'enterprise', planName: 'Enterprise 연간', amount: 960000, status: 'active', currentPeriodStart: now, currentPeriodEnd: oneMonthLater },
