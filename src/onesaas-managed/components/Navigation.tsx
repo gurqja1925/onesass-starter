@@ -44,6 +44,18 @@ export default function Navigation() {
     loadTheme(theme, mode)
   }, [])
 
+  // 로그인 상태 확인
+  useEffect(() => {
+    fetch('/api/auth/session')
+      .then(res => res.json())
+      .then(data => {
+        if (data.user) {
+          setIsLoggedIn(true)
+        }
+      })
+      .catch(() => {})
+  }, [])
+
   // 메뉴 아이템 (DEV_MODE일 때만 쇼케이스, 문서 표시)
   const menuItems = [
     ...(DEV_MODE ? [{ href: '/showcase', label: '쇼케이스' }] : []),
@@ -120,14 +132,16 @@ export default function Navigation() {
 
             {/* Auth Buttons & Admin */}
             <div className="hidden md:flex items-center gap-2 ml-2">
-              {/* 관리자 링크 - 오른쪽에 배치 */}
-              <Link
-                href="/admin"
-                className="px-4 py-2 text-sm font-medium"
-                style={{ color: 'var(--color-text-secondary)' }}
-              >
-                관리자
-              </Link>
+              {/* 관리자 링크 - 로그인했을 때만 표시 */}
+              {isLoggedIn && (
+                <Link
+                  href="/admin"
+                  className="px-4 py-2 text-sm font-medium"
+                  style={{ color: 'var(--color-text-secondary)' }}
+                >
+                  관리자
+                </Link>
+              )}
               {isLoggedIn ? (
                 <>
                   <button
