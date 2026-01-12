@@ -66,3 +66,72 @@ export async function GET(request: NextRequest) {
     )
   }
 }
+
+// 구독 수정 (연장/취소/상태변경)
+export async function PUT(request: NextRequest) {
+  const auth = await requireAdmin(request)
+  if (auth instanceof NextResponse) return auth
+
+  try {
+    const { id, action, days, plan, status } = await request.json()
+
+    if (!id) {
+      return NextResponse.json({ error: 'ID가 필요합니다' }, { status: 400 })
+    }
+
+    const subscription = await prisma.subscription.findUnique({ where: { id } })
+    if (!subscription) {
+      return NextResponse.json({ error: '구독을 찾을 수 없습니다' }, { status: 404 })
+    }
+
+    let updateData: Record<string, unknown> = {}
+
+    // 구독 연장
+    if (action === 'extend' && days) {
+      const currentEnd = new Date(subscription.currentPeriodEnd || new Date())
+      const newEnd = new Date(currentEnd.getTime() + days * 24 * 60 * 60 * 1000)
+      updateData = {
+        currentPeriodEnd: newEnd,
+        status: 'active', // 연장하면 활성화
+        canceledAt: null,
+      }
+    }
+    // 구독 취소
+    else if (action === 'cancel') {
+      updateData = {
+        status: 'canceled',
+        canceledAt: new Date(),
+      }
+    }
+    // 구독 재활성화
+    else if (action === 'reactivate') {
+      updateData = {
+        status: 'active',
+        canceledAt: null,
+      }
+    }
+    // 플랜 변경
+    else if (plan) {
+      updateData = { plan }
+    }
+    // 상태 변경
+    else if (status) {
+      updateData = { status }
+    }
+
+    const updated = await prisma.subscription.update({
+      where: { id },
+      data: updateData,
+      include: {
+        user: {
+          select: { id: true, email: true, name: true },
+        },
+      },
+    })
+
+    return NextResponse.json(updated)
+  } catch (error) {
+    console.error('Failed to update subscription:', error)
+    return NextResponse.json({ error: '구독 수정에 실패했습니다' }, { status: 500 })
+  }
+}

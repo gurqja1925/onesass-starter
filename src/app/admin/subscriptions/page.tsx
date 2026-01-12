@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { AdminLayout } from '@/onesaas-core/admin'
-import { Card, CardContent, CardHeader, CardTitle } from '@/onesaas-core/ui/Card'
+import { Card, CardContent } from '@/onesaas-core/ui/Card'
 import { Button } from '@/onesaas-core/ui/Button'
 
 interface Subscription {
@@ -28,6 +28,12 @@ export default function SubscriptionsPage() {
   const [total, setTotal] = useState(0)
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [stats, setStats] = useState({ active: 0, canceled: 0, expired: 0, trial: 0 })
+
+  // 모달 상태
+  const [showExtendModal, setShowExtendModal] = useState(false)
+  const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null)
+  const [extendDays, setExtendDays] = useState(30)
+  const [processing, setProcessing] = useState(false)
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -76,6 +82,100 @@ export default function SubscriptionsPage() {
     const now = new Date()
     const diff = Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
     return diff
+  }
+
+  // 연장 모달 열기
+  const handleExtendClick = (sub: Subscription) => {
+    setSelectedSubscription(sub)
+    setExtendDays(30)
+    setShowExtendModal(true)
+  }
+
+  // 구독 연장
+  const handleExtend = async () => {
+    if (!selectedSubscription) return
+
+    setProcessing(true)
+    try {
+      const res = await fetch('/api/admin/subscriptions', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: selectedSubscription.id,
+          action: 'extend',
+          days: extendDays,
+        }),
+      })
+
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || '연장에 실패했습니다')
+      }
+
+      alert(`구독이 ${extendDays}일 연장되었습니다`)
+      setShowExtendModal(false)
+      fetchData()
+    } catch (error) {
+      alert(error instanceof Error ? error.message : '오류가 발생했습니다')
+    } finally {
+      setProcessing(false)
+    }
+  }
+
+  // 구독 취소
+  const handleCancel = async (sub: Subscription) => {
+    if (!confirm(`${sub.user.name || sub.user.email}의 구독을 취소하시겠습니까?`)) {
+      return
+    }
+
+    try {
+      const res = await fetch('/api/admin/subscriptions', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: sub.id,
+          action: 'cancel',
+        }),
+      })
+
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || '취소에 실패했습니다')
+      }
+
+      alert('구독이 취소되었습니다')
+      fetchData()
+    } catch (error) {
+      alert(error instanceof Error ? error.message : '오류가 발생했습니다')
+    }
+  }
+
+  // 구독 재활성화
+  const handleReactivate = async (sub: Subscription) => {
+    if (!confirm(`${sub.user.name || sub.user.email}의 구독을 재활성화하시겠습니까?`)) {
+      return
+    }
+
+    try {
+      const res = await fetch('/api/admin/subscriptions', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: sub.id,
+          action: 'reactivate',
+        }),
+      })
+
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || '재활성화에 실패했습니다')
+      }
+
+      alert('구독이 재활성화되었습니다')
+      fetchData()
+    } catch (error) {
+      alert(error instanceof Error ? error.message : '오류가 발생했습니다')
+    }
   }
 
   return (
@@ -164,6 +264,10 @@ export default function SubscriptionsPage() {
             <div className="p-8 text-center" style={{ color: 'var(--color-text-secondary)' }}>
               로딩 중...
             </div>
+          ) : subscriptions.length === 0 ? (
+            <div className="p-8 text-center" style={{ color: 'var(--color-text-secondary)' }}>
+              구독이 없습니다
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -224,20 +328,33 @@ export default function SubscriptionsPage() {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          {sub.status === 'active' && (
-                            <button
-                              className="px-3 py-1 text-sm rounded mr-2"
-                              style={{ background: 'var(--color-bg)', color: 'var(--color-text)' }}
-                            >
-                              연장
-                            </button>
+                          {(sub.status === 'active' || sub.status === 'trial') && (
+                            <>
+                              <button
+                                onClick={() => handleExtendClick(sub)}
+                                className="px-3 py-1 text-sm rounded mr-2"
+                                style={{ background: 'var(--color-bg)', color: 'var(--color-text)' }}
+                              >
+                                연장
+                              </button>
+                              {!sub.canceledAt && (
+                                <button
+                                  onClick={() => handleCancel(sub)}
+                                  className="px-3 py-1 text-sm rounded"
+                                  style={{ background: '#ef4444', color: 'white' }}
+                                >
+                                  취소
+                                </button>
+                              )}
+                            </>
                           )}
-                          {sub.status === 'active' && !sub.canceledAt && (
+                          {(sub.status === 'canceled' || sub.status === 'expired') && (
                             <button
+                              onClick={() => handleReactivate(sub)}
                               className="px-3 py-1 text-sm rounded"
-                              style={{ background: '#ef4444', color: 'white' }}
+                              style={{ background: '#10b981', color: 'white' }}
                             >
-                              취소
+                              재활성화
                             </button>
                           )}
                         </td>
@@ -273,6 +390,82 @@ export default function SubscriptionsPage() {
           </div>
         )}
       </div>
+
+      {/* 연장 모달 */}
+      {showExtendModal && selectedSubscription && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div
+            className="w-full max-w-md rounded-xl p-6"
+            style={{ background: 'var(--color-bg-secondary)' }}
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold" style={{ color: 'var(--color-text)' }}>
+                구독 연장
+              </h2>
+              <button
+                onClick={() => setShowExtendModal(false)}
+                className="text-2xl"
+                style={{ color: 'var(--color-text-secondary)' }}
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>사용자</p>
+                <p className="font-medium" style={{ color: 'var(--color-text)' }}>
+                  {selectedSubscription.user.name || selectedSubscription.user.email}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>현재 만료일</p>
+                <p className="font-medium" style={{ color: 'var(--color-text)' }}>
+                  {formatDate(selectedSubscription.currentPeriodEnd)}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm mb-2" style={{ color: 'var(--color-text-secondary)' }}>
+                  연장 기간
+                </label>
+                <div className="flex gap-2">
+                  {[7, 30, 90, 365].map((days) => (
+                    <button
+                      key={days}
+                      onClick={() => setExtendDays(days)}
+                      className="px-4 py-2 rounded-lg text-sm font-medium"
+                      style={{
+                        background: extendDays === days ? 'var(--color-accent)' : 'var(--color-bg)',
+                        color: extendDays === days ? 'var(--color-bg)' : 'var(--color-text)',
+                      }}
+                    >
+                      {days === 365 ? '1년' : `${days}일`}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-4">
+                <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>새 만료일</p>
+                <p className="font-medium text-lg" style={{ color: 'var(--color-accent)' }}>
+                  {formatDate(new Date(new Date(selectedSubscription.currentPeriodEnd).getTime() + extendDays * 24 * 60 * 60 * 1000).toISOString())}
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-2 mt-6">
+                <Button variant="secondary" onClick={() => setShowExtendModal(false)} disabled={processing}>
+                  취소
+                </Button>
+                <Button onClick={handleExtend} disabled={processing}>
+                  {processing ? '처리 중...' : '연장하기'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   )
 }

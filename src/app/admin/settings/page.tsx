@@ -45,9 +45,14 @@ export default function SettingsPage() {
   }, [fetchSettings, mounted])
 
   const handleSave = async () => {
+    if (isDemoMode) {
+      alert('데모 모드에서는 설정을 저장할 수 없습니다')
+      return
+    }
+
     setSaving(true)
     try {
-      await fetch('/api/admin/settings', {
+      const res = await fetch('/api/admin/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -58,10 +63,18 @@ export default function SettingsPage() {
           },
         }),
       })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || '저장에 실패했습니다')
+      }
+
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
     } catch (error) {
       console.error('Failed to save settings:', error)
+      alert(error instanceof Error ? error.message : '설정 저장에 실패했습니다')
     } finally {
       setSaving(false)
     }

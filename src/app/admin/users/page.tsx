@@ -33,6 +33,7 @@ export default function UsersPage() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [newUser, setNewUser] = useState({ email: '', name: '', plan: 'free', role: 'user' })
+  const [editForm, setEditForm] = useState({ name: '', plan: '', status: '', role: '' })
   const [processing, setProcessing] = useState(false)
 
   const fetchUsers = useCallback(async () => {
@@ -131,6 +132,59 @@ export default function UsersPage() {
     }
   }
 
+  // 사용자 수정
+  const handleEditUser = async () => {
+    if (!selectedUser) return
+    setProcessing(true)
+
+    try {
+      if (isDemoMode) {
+        // 데모 모드: UI만 업데이트
+        setUsers(prev => prev.map(u =>
+          u.id === selectedUser.id
+            ? { ...u, name: editForm.name, plan: editForm.plan, status: editForm.status, role: editForm.role }
+            : u
+        ))
+        setShowEditModal(false)
+        setSelectedUser(null)
+        alert('사용자가 수정되었습니다 (데모)')
+      } else {
+        // 운영 모드: API 호출
+        const res = await fetch(`/api/admin/users/${selectedUser.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(editForm),
+        })
+        const data = await res.json()
+        if (data.success) {
+          setShowEditModal(false)
+          setSelectedUser(null)
+          fetchUsers()
+          alert('사용자가 수정되었습니다')
+        } else {
+          alert(data.error || '수정 실패')
+        }
+      }
+    } catch (error) {
+      console.error('Failed to edit user:', error)
+      alert('사용자 수정 중 오류가 발생했습니다')
+    } finally {
+      setProcessing(false)
+    }
+  }
+
+  // 수정 모달 열 때 현재 값 세팅
+  const openEditModal = (user: User) => {
+    setSelectedUser(user)
+    setEditForm({
+      name: user.name || '',
+      plan: user.plan,
+      status: user.status,
+      role: user.role,
+    })
+    setShowEditModal(true)
+  }
+
   const getPlanBadge = (plan: string) => {
     const styles: Record<string, { bg: string; color: string }> = {
       free: { bg: 'var(--color-bg)', color: 'var(--color-text)' },
@@ -226,7 +280,7 @@ export default function UsersPage() {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <button
-                          onClick={() => { setSelectedUser(user); setShowEditModal(true) }}
+                          onClick={() => openEditModal(user)}
                           className="px-3 py-1 text-sm rounded mr-2"
                           style={{ background: 'var(--color-bg)', color: 'var(--color-text)' }}
                         >
@@ -308,33 +362,68 @@ export default function UsersPage() {
         </Modal>
 
         {/* 사용자 수정 모달 */}
-        <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title="사용자 정보">
+        <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title="사용자 수정">
           {selectedUser && (
             <div className="space-y-4">
               <div className="p-4 rounded-lg" style={{ background: 'var(--color-bg)' }}>
-                <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>이메일</p>
+                <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>이메일 (수정 불가)</p>
                 <p className="font-medium" style={{ color: 'var(--color-text)' }}>{selectedUser.email}</p>
               </div>
-              <div className="p-4 rounded-lg" style={{ background: 'var(--color-bg)' }}>
-                <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>이름</p>
-                <p className="font-medium" style={{ color: 'var(--color-text)' }}>{selectedUser.name || '-'}</p>
-              </div>
+              <Input
+                label="이름"
+                value={editForm.name}
+                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                placeholder="사용자 이름"
+              />
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 rounded-lg" style={{ background: 'var(--color-bg)' }}>
-                  <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>플랜</p>
-                  <p className="font-medium" style={{ color: 'var(--color-text)' }}>{selectedUser.plan}</p>
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text)' }}>플랜</label>
+                  <select
+                    value={editForm.plan}
+                    onChange={(e) => setEditForm({ ...editForm, plan: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-lg border"
+                    style={{ background: 'var(--color-bg-secondary)', color: 'var(--color-text)', borderColor: 'var(--color-border)' }}
+                  >
+                    <option value="free">무료</option>
+                    <option value="pro">프로</option>
+                    <option value="enterprise">엔터프라이즈</option>
+                  </select>
                 </div>
-                <div className="p-4 rounded-lg" style={{ background: 'var(--color-bg)' }}>
-                  <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>상태</p>
-                  <p className="font-medium" style={{ color: 'var(--color-text)' }}>{selectedUser.status}</p>
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text)' }}>상태</label>
+                  <select
+                    value={editForm.status}
+                    onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-lg border"
+                    style={{ background: 'var(--color-bg-secondary)', color: 'var(--color-text)', borderColor: 'var(--color-border)' }}
+                  >
+                    <option value="active">활성</option>
+                    <option value="inactive">비활성</option>
+                    <option value="suspended">정지</option>
+                  </select>
                 </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text)' }}>역할</label>
+                <select
+                  value={editForm.role}
+                  onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-lg border"
+                  style={{ background: 'var(--color-bg-secondary)', color: 'var(--color-text)', borderColor: 'var(--color-border)' }}
+                >
+                  <option value="user">일반 사용자</option>
+                  <option value="admin">관리자</option>
+                </select>
               </div>
               <div className="p-4 rounded-lg" style={{ background: 'var(--color-bg)' }}>
                 <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>가입일</p>
                 <p className="font-medium" style={{ color: 'var(--color-text)' }}>{formatDate(selectedUser.createdAt)}</p>
               </div>
               <div className="flex gap-3 pt-4">
-                <Button variant="secondary" onClick={() => setShowEditModal(false)} className="flex-1">닫기</Button>
+                <Button variant="secondary" onClick={() => setShowEditModal(false)} className="flex-1" disabled={processing}>취소</Button>
+                <Button onClick={handleEditUser} className="flex-1" disabled={processing}>
+                  {processing ? '저장 중...' : '저장'}
+                </Button>
               </div>
             </div>
           )}

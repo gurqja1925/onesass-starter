@@ -69,3 +69,95 @@ export async function GET(request: NextRequest) {
     )
   }
 }
+
+// 콘텐츠 추가
+export async function POST(request: NextRequest) {
+  const auth = await requireAdmin(request)
+  if (auth instanceof NextResponse) return auth
+
+  try {
+    const { title, body, type = 'post', status = 'draft', userId } = await request.json()
+
+    if (!title) {
+      return NextResponse.json({ error: '제목을 입력해주세요' }, { status: 400 })
+    }
+
+    const content = await prisma.content.create({
+      data: {
+        title,
+        body,
+        type,
+        status,
+        userId,
+      },
+      include: {
+        user: {
+          select: { id: true, email: true, name: true },
+        },
+      },
+    })
+
+    return NextResponse.json(content, { status: 201 })
+  } catch (error) {
+    console.error('Failed to create content:', error)
+    return NextResponse.json({ error: '콘텐츠 생성에 실패했습니다' }, { status: 500 })
+  }
+}
+
+// 콘텐츠 수정
+export async function PUT(request: NextRequest) {
+  const auth = await requireAdmin(request)
+  if (auth instanceof NextResponse) return auth
+
+  try {
+    const { id, title, body, type, status } = await request.json()
+
+    if (!id) {
+      return NextResponse.json({ error: 'ID가 필요합니다' }, { status: 400 })
+    }
+
+    const content = await prisma.content.update({
+      where: { id },
+      data: {
+        ...(title && { title }),
+        ...(body !== undefined && { body }),
+        ...(type && { type }),
+        ...(status && { status }),
+      },
+      include: {
+        user: {
+          select: { id: true, email: true, name: true },
+        },
+      },
+    })
+
+    return NextResponse.json(content)
+  } catch (error) {
+    console.error('Failed to update content:', error)
+    return NextResponse.json({ error: '콘텐츠 수정에 실패했습니다' }, { status: 500 })
+  }
+}
+
+// 콘텐츠 삭제
+export async function DELETE(request: NextRequest) {
+  const auth = await requireAdmin(request)
+  if (auth instanceof NextResponse) return auth
+
+  try {
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
+
+    if (!id) {
+      return NextResponse.json({ error: 'ID가 필요합니다' }, { status: 400 })
+    }
+
+    await prisma.content.delete({
+      where: { id },
+    })
+
+    return NextResponse.json({ message: '콘텐츠가 삭제되었습니다' })
+  } catch (error) {
+    console.error('Failed to delete content:', error)
+    return NextResponse.json({ error: '콘텐츠 삭제에 실패했습니다' }, { status: 500 })
+  }
+}

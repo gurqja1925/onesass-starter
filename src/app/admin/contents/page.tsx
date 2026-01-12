@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { AdminLayout } from '@/onesaas-core/admin'
-import { Card, CardContent, CardHeader, CardTitle } from '@/onesaas-core/ui/Card'
+import { Card, CardContent } from '@/onesaas-core/ui/Card'
 import { Button } from '@/onesaas-core/ui/Button'
 import { Input } from '@/onesaas-core/ui/Input'
 
@@ -16,9 +16,19 @@ interface Content {
   createdAt: string
   updatedAt: string
   user: {
+    id: string
     email: string
     name: string | null
   }
+}
+
+interface ContentForm {
+  id?: string
+  title: string
+  body: string
+  type: string
+  status: string
+  userId?: string
 }
 
 export default function ContentsPage() {
@@ -30,6 +40,18 @@ export default function ContentsPage() {
   const [typeFilter, setTypeFilter] = useState<string>('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [stats, setStats] = useState({ published: 0, draft: 0, archived: 0 })
+
+  // 모달 상태
+  const [showModal, setShowModal] = useState(false)
+  const [modalMode, setModalMode] = useState<'view' | 'add' | 'edit'>('view')
+  const [selectedContent, setSelectedContent] = useState<Content | null>(null)
+  const [formData, setFormData] = useState<ContentForm>({
+    title: '',
+    body: '',
+    type: 'post',
+    status: 'draft',
+  })
+  const [saving, setSaving] = useState(false)
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -100,6 +122,110 @@ export default function ContentsPage() {
     return text.substring(0, maxLength) + '...'
   }
 
+  // 콘텐츠 보기
+  const handleView = (content: Content) => {
+    setSelectedContent(content)
+    setModalMode('view')
+    setShowModal(true)
+  }
+
+  // 콘텐츠 추가 모달
+  const handleAdd = () => {
+    setSelectedContent(null)
+    setFormData({ title: '', body: '', type: 'post', status: 'draft' })
+    setModalMode('add')
+    setShowModal(true)
+  }
+
+  // 콘텐츠 수정 모달
+  const handleEdit = (content: Content) => {
+    setSelectedContent(content)
+    setFormData({
+      id: content.id,
+      title: content.title,
+      body: content.body,
+      type: content.type,
+      status: content.status,
+      userId: content.userId,
+    })
+    setModalMode('edit')
+    setShowModal(true)
+  }
+
+  // 콘텐츠 저장 (추가/수정)
+  const handleSave = async () => {
+    if (!formData.title.trim()) {
+      alert('제목을 입력해주세요')
+      return
+    }
+
+    setSaving(true)
+    try {
+      const method = modalMode === 'add' ? 'POST' : 'PUT'
+      const res = await fetch('/api/admin/contents', {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      })
+
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || '저장에 실패했습니다')
+      }
+
+      alert(modalMode === 'add' ? '콘텐츠가 추가되었습니다' : '콘텐츠가 수정되었습니다')
+      setShowModal(false)
+      fetchData()
+    } catch (error) {
+      alert(error instanceof Error ? error.message : '오류가 발생했습니다')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // 콘텐츠 삭제
+  const handleDelete = async (content: Content) => {
+    if (!confirm(`"${content.title}" 콘텐츠를 삭제하시겠습니까?`)) {
+      return
+    }
+
+    try {
+      const res = await fetch(`/api/admin/contents?id=${content.id}`, {
+        method: 'DELETE',
+      })
+
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || '삭제에 실패했습니다')
+      }
+
+      alert('콘텐츠가 삭제되었습니다')
+      fetchData()
+    } catch (error) {
+      alert(error instanceof Error ? error.message : '오류가 발생했습니다')
+    }
+  }
+
+  // 상태 변경
+  const handleStatusChange = async (content: Content, newStatus: string) => {
+    try {
+      const res = await fetch('/api/admin/contents', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: content.id, status: newStatus }),
+      })
+
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err.error || '상태 변경에 실패했습니다')
+      }
+
+      fetchData()
+    } catch (error) {
+      alert(error instanceof Error ? error.message : '오류가 발생했습니다')
+    }
+  }
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -113,7 +239,7 @@ export default function ContentsPage() {
               사용자가 생성한 콘텐츠를 관리하세요
             </p>
           </div>
-          <Button>+ 콘텐츠 추가</Button>
+          <Button onClick={handleAdd}>+ 콘텐츠 추가</Button>
         </div>
 
         {/* 통계 카드 */}
@@ -198,6 +324,12 @@ export default function ContentsPage() {
               로딩 중...
             </CardContent>
           </Card>
+        ) : filteredContents.length === 0 ? (
+          <Card>
+            <CardContent className="p-8 text-center" style={{ color: 'var(--color-text-secondary)' }}>
+              콘텐츠가 없습니다
+            </CardContent>
+          </Card>
         ) : (
           <div className="grid gap-4">
             {filteredContents.map((content) => {
@@ -234,25 +366,28 @@ export default function ContentsPage() {
                           {truncateText(content.body, 150)}
                         </p>
                         <div className="flex items-center gap-4 text-xs" style={{ color: 'var(--color-text-secondary)' }}>
-                          <span>작성자: {content.user.name || content.user.email}</span>
+                          <span>작성자: {content.user?.name || content.user?.email || '알 수 없음'}</span>
                           <span>생성: {formatDate(content.createdAt)}</span>
                           <span>수정: {formatDate(content.updatedAt)}</span>
                         </div>
                       </div>
                       <div className="flex gap-2 flex-shrink-0">
                         <button
+                          onClick={() => handleView(content)}
                           className="px-3 py-1 text-sm rounded"
                           style={{ background: 'var(--color-bg)', color: 'var(--color-text)' }}
                         >
                           보기
                         </button>
                         <button
+                          onClick={() => handleEdit(content)}
                           className="px-3 py-1 text-sm rounded"
                           style={{ background: 'var(--color-accent)', color: 'var(--color-bg)' }}
                         >
                           수정
                         </button>
                         <button
+                          onClick={() => handleDelete(content)}
                           className="px-3 py-1 text-sm rounded"
                           style={{ background: '#ef4444', color: 'white' }}
                         >
@@ -290,6 +425,149 @@ export default function ContentsPage() {
           </div>
         )}
       </div>
+
+      {/* 모달 */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div
+            className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl p-6"
+            style={{ background: 'var(--color-bg-secondary)' }}
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold" style={{ color: 'var(--color-text)' }}>
+                {modalMode === 'view' ? '콘텐츠 보기' : modalMode === 'add' ? '콘텐츠 추가' : '콘텐츠 수정'}
+              </h2>
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-2xl"
+                style={{ color: 'var(--color-text-secondary)' }}
+              >
+                ×
+              </button>
+            </div>
+
+            {modalMode === 'view' && selectedContent ? (
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>제목</label>
+                  <p className="mt-1" style={{ color: 'var(--color-text)' }}>{selectedContent.title}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>유형</label>
+                  <p className="mt-1" style={{ color: 'var(--color-text)' }}>{getTypeLabel(selectedContent.type)}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>상태</label>
+                  <div className="mt-1 flex gap-2">
+                    {['draft', 'published', 'archived'].map((status) => (
+                      <button
+                        key={status}
+                        onClick={() => handleStatusChange(selectedContent, status)}
+                        className="px-3 py-1 rounded text-sm"
+                        style={{
+                          background: selectedContent.status === status ? getStatusBadge(status).bg : 'var(--color-bg)',
+                          color: selectedContent.status === status ? 'white' : 'var(--color-text)',
+                        }}
+                      >
+                        {getStatusBadge(status).label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>내용</label>
+                  <p className="mt-1 whitespace-pre-wrap" style={{ color: 'var(--color-text)' }}>{selectedContent.body}</p>
+                </div>
+                <div className="flex gap-4 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                  <span>작성자: {selectedContent.user?.name || selectedContent.user?.email}</span>
+                  <span>생성: {formatDate(selectedContent.createdAt)}</span>
+                </div>
+                <div className="flex justify-end gap-2 mt-6">
+                  <Button variant="secondary" onClick={() => setShowModal(false)}>닫기</Button>
+                  <Button onClick={() => handleEdit(selectedContent)}>수정하기</Button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>
+                    제목 *
+                  </label>
+                  <Input
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    placeholder="콘텐츠 제목을 입력하세요"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>
+                    유형
+                  </label>
+                  <select
+                    value={formData.type}
+                    onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg"
+                    style={{
+                      background: 'var(--color-bg)',
+                      color: 'var(--color-text)',
+                      border: '1px solid var(--color-border)',
+                    }}
+                  >
+                    <option value="post">게시글</option>
+                    <option value="page">페이지</option>
+                    <option value="document">문서</option>
+                    <option value="template">템플릿</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>
+                    상태
+                  </label>
+                  <select
+                    value={formData.status}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg"
+                    style={{
+                      background: 'var(--color-bg)',
+                      color: 'var(--color-text)',
+                      border: '1px solid var(--color-border)',
+                    }}
+                  >
+                    <option value="draft">임시저장</option>
+                    <option value="published">게시됨</option>
+                    <option value="archived">보관됨</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>
+                    내용
+                  </label>
+                  <textarea
+                    value={formData.body}
+                    onChange={(e) => setFormData({ ...formData, body: e.target.value })}
+                    placeholder="콘텐츠 내용을 입력하세요"
+                    rows={8}
+                    className="w-full px-3 py-2 rounded-lg resize-none"
+                    style={{
+                      background: 'var(--color-bg)',
+                      color: 'var(--color-text)',
+                      border: '1px solid var(--color-border)',
+                    }}
+                  />
+                </div>
+                <div className="flex justify-end gap-2 mt-6">
+                  <Button variant="secondary" onClick={() => setShowModal(false)} disabled={saving}>
+                    취소
+                  </Button>
+                  <Button onClick={handleSave} disabled={saving}>
+                    {saving ? '저장 중...' : modalMode === 'add' ? '추가' : '저장'}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </AdminLayout>
   )
 }
