@@ -5,8 +5,7 @@
 
 import { NextResponse } from 'next/server'
 import { put, del } from '@vercel/blob'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { createClient } from '@/lib/supabase/server'
 
 // 허용된 MIME 타입
 const ALLOWED_TYPES = [
@@ -22,8 +21,10 @@ const MAX_SIZE = 5 * 1024 * 1024
 
 export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
       return NextResponse.json({ success: false, error: '로그인이 필요합니다' }, { status: 401 })
     }
 
@@ -52,7 +53,7 @@ export async function POST(request: Request) {
     }
 
     // 파일명 생성 (user-id/folder/timestamp-originalname)
-    const userId = session.user.id || session.user.email || 'anonymous'
+    const userId = user.id || user.email || 'anonymous'
     const timestamp = Date.now()
     const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
     const pathname = `${userId}/${folder}/${timestamp}-${safeName}`
@@ -83,8 +84,10 @@ export async function POST(request: Request) {
 // 파일 삭제
 export async function DELETE(request: Request) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
       return NextResponse.json({ success: false, error: '로그인이 필요합니다' }, { status: 401 })
     }
 
@@ -95,7 +98,7 @@ export async function DELETE(request: Request) {
     }
 
     // 사용자의 파일인지 확인
-    const userId = session.user.id || session.user.email || ''
+    const userId = user.id || user.email || ''
     if (!url.includes(`/${userId}/`)) {
       return NextResponse.json({ success: false, error: '권한이 없습니다' }, { status: 403 })
     }
