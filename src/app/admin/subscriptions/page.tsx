@@ -2,23 +2,49 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { AdminLayout } from '@/onesaas-core/admin'
-import { Card, CardContent } from '@/onesaas-core/ui/Card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/onesaas-core/ui/Card'
 import { Button } from '@/onesaas-core/ui/Button'
 
 interface Subscription {
   id: string
   userId: string
   plan: string
+  planName: string
+  amount: number
+  billingCycle: string
   status: string
+  startDate: string
   currentPeriodStart: string
   currentPeriodEnd: string
+  nextBillingDate: string | null
+  cancelAtPeriodEnd: boolean
   canceledAt: string | null
   trialEnd: string | null
   createdAt: string
   user: {
+    id: string
     email: string
     name: string | null
   }
+}
+
+interface SubscriptionStats {
+  byStatus: {
+    [key: string]: {
+      count: number
+      revenue: number
+    }
+  }
+  byPlan: {
+    [key: string]: {
+      count: number
+      revenue: number
+    }
+  }
+  mrr: number
+  activeCount: number
+  trialCount: number
+  canceledCount: number
 }
 
 export default function SubscriptionsPage() {
@@ -26,29 +52,77 @@ export default function SubscriptionsPage() {
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
   const [statusFilter, setStatusFilter] = useState<string>('all')
-  const [stats, setStats] = useState({ active: 0, canceled: 0, expired: 0, trial: 0 })
+  const [planFilter, setPlanFilter] = useState<string>('all')
+  const [year, setYear] = useState<string>(new Date().getFullYear().toString())
+  const [month, setMonth] = useState<string>((new Date().getMonth() + 1).toString())
+  const [stats, setStats] = useState<SubscriptionStats | null>(null)
+  const [processing, setProcessing] = useState<string | null>(null)
 
-  // 모달 상태
-  const [showExtendModal, setShowExtendModal] = useState(false)
-  const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null)
-  const [extendDays, setExtendDays] = useState(30)
-  const [processing, setProcessing] = useState(false)
+  // 연도 목록
+  const currentYear = new Date().getFullYear()
+  const currentMonth = new Date().getMonth() + 1
+  const years = Array.from({ length: currentYear - 2023 }, (_, i) => 2024 + i)
+  const months = Array.from({ length: 12 }, (_, i) => i + 1)
 
   const fetchData = useCallback(async () => {
     setLoading(true)
+
     try {
-      const res = await fetch(`/api/admin/subscriptions?page=${page}&limit=20${statusFilter !== 'all' ? `&status=${statusFilter}` : ''}`)
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: '50',
+        ...(statusFilter !== 'all' && { status: statusFilter }),
+        ...(planFilter !== 'all' && { plan: planFilter }),
+        ...(year && { year }),
+        ...(month !== 'all' && { month })
+      })
+
+      const res = await fetch(`/api/admin/subscriptions?${params}`)
       const data = await res.json()
+
       setSubscriptions(data.subscriptions || [])
-      setTotal(data.total || 0)
-      setStats(data.stats || { active: 0, canceled: 0, expired: 0, trial: 0 })
+      setTotal(data.pagination?.total || 0)
+      setTotalPages(data.pagination?.totalPages || 0)
+      setStats(data.stats)
     } catch (error) {
       console.error('Failed to fetch subscriptions:', error)
     } finally {
       setLoading(false)
     }
-  }, [page, statusFilter])
+  }, [page, statusFilter, planFilter, year, month])
+
+  const handleCancelSubscription = async (subscriptionId: string) => {
+    if (!confirm('이 구독을 취소하시겠습니까? 현재 기간 종료 시 자동으로 해지됩니다.')) {
+      return
+    }
+
+    setProcessing(subscriptionId)
+    try {
+      const res = await fetch('/api/subscription/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subscriptionId,
+          reason: '관리자 취소',
+          immediate: false
+        })
+      })
+
+      const data = await res.json()
+      if (data.success) {
+        alert('구독이 취소되었습니다.')
+        fetchData()
+      } else {
+        alert(data.error || '취소 실패')
+      }
+    } catch (error) {
+      alert('구독 취소 중 오류가 발생했습니다.')
+    } finally {
+      setProcessing(null)
+    }
+  }
 
   useEffect(() => {
     fetchData()
@@ -84,100 +158,6 @@ export default function SubscriptionsPage() {
     return diff
   }
 
-  // 연장 모달 열기
-  const handleExtendClick = (sub: Subscription) => {
-    setSelectedSubscription(sub)
-    setExtendDays(30)
-    setShowExtendModal(true)
-  }
-
-  // 구독 연장
-  const handleExtend = async () => {
-    if (!selectedSubscription) return
-
-    setProcessing(true)
-    try {
-      const res = await fetch('/api/admin/subscriptions', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: selectedSubscription.id,
-          action: 'extend',
-          days: extendDays,
-        }),
-      })
-
-      if (!res.ok) {
-        const err = await res.json()
-        throw new Error(err.error || '연장에 실패했습니다')
-      }
-
-      alert(`구독이 ${extendDays}일 연장되었습니다`)
-      setShowExtendModal(false)
-      fetchData()
-    } catch (error) {
-      alert(error instanceof Error ? error.message : '오류가 발생했습니다')
-    } finally {
-      setProcessing(false)
-    }
-  }
-
-  // 구독 취소
-  const handleCancel = async (sub: Subscription) => {
-    if (!confirm(`${sub.user.name || sub.user.email}의 구독을 취소하시겠습니까?`)) {
-      return
-    }
-
-    try {
-      const res = await fetch('/api/admin/subscriptions', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: sub.id,
-          action: 'cancel',
-        }),
-      })
-
-      if (!res.ok) {
-        const err = await res.json()
-        throw new Error(err.error || '취소에 실패했습니다')
-      }
-
-      alert('구독이 취소되었습니다')
-      fetchData()
-    } catch (error) {
-      alert(error instanceof Error ? error.message : '오류가 발생했습니다')
-    }
-  }
-
-  // 구독 재활성화
-  const handleReactivate = async (sub: Subscription) => {
-    if (!confirm(`${sub.user.name || sub.user.email}의 구독을 재활성화하시겠습니까?`)) {
-      return
-    }
-
-    try {
-      const res = await fetch('/api/admin/subscriptions', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: sub.id,
-          action: 'reactivate',
-        }),
-      })
-
-      if (!res.ok) {
-        const err = await res.json()
-        throw new Error(err.error || '재활성화에 실패했습니다')
-      }
-
-      alert('구독이 재활성화되었습니다')
-      fetchData()
-    } catch (error) {
-      alert(error instanceof Error ? error.message : '오류가 발생했습니다')
-    }
-  }
-
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -191,12 +171,69 @@ export default function SubscriptionsPage() {
           </p>
         </div>
 
+        {/* 연도/월 및 플랜 필터 */}
+        <div className="flex gap-4 items-center flex-wrap">
+          <div>
+            <label className="text-sm font-medium mr-2" style={{ color: 'var(--color-text)' }}>연도:</label>
+            <select
+              value={year}
+              onChange={(e) => { setYear(e.target.value); setPage(1) }}
+              className="px-4 py-2 rounded-lg border"
+              style={{
+                background: 'var(--color-bg-secondary)',
+                border: '1px solid var(--color-border)',
+                color: 'var(--color-text)'
+              }}
+            >
+              {years.map(y => (
+                <option key={y} value={y}>{y}년</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="text-sm font-medium mr-2" style={{ color: 'var(--color-text)' }}>월:</label>
+            <select
+              value={month}
+              onChange={(e) => { setMonth(e.target.value); setPage(1) }}
+              className="px-4 py-2 rounded-lg border"
+              style={{
+                background: 'var(--color-bg-secondary)',
+                border: '1px solid var(--color-border)',
+                color: 'var(--color-text)'
+              }}
+            >
+              <option value="all">전체</option>
+              {months.map(m => (
+                <option key={m} value={m}>{m}월</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="text-sm font-medium mr-2" style={{ color: 'var(--color-text)' }}>플랜:</label>
+            <select
+              value={planFilter}
+              onChange={(e) => { setPlanFilter(e.target.value); setPage(1) }}
+              className="px-4 py-2 rounded-lg border"
+              style={{
+                background: 'var(--color-bg-secondary)',
+                border: '1px solid var(--color-border)',
+                color: 'var(--color-text)'
+              }}
+            >
+              <option value="all">전체</option>
+              <option value="starter">Starter</option>
+              <option value="pro">Pro</option>
+              <option value="enterprise">Enterprise</option>
+            </select>
+          </div>
+        </div>
+
         {/* 통계 카드 */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardContent className="text-center py-6">
               <p className="text-3xl font-bold" style={{ color: '#10b981' }}>
-                {stats.active}
+                {stats?.activeCount || 0}
               </p>
               <p className="text-sm mt-1" style={{ color: 'var(--color-text-secondary)' }}>
                 활성 구독
@@ -205,8 +242,18 @@ export default function SubscriptionsPage() {
           </Card>
           <Card>
             <CardContent className="text-center py-6">
+              <p className="text-3xl font-bold" style={{ color: 'var(--color-accent)' }}>
+                ₩{(stats?.mrr || 0).toLocaleString()}
+              </p>
+              <p className="text-sm mt-1" style={{ color: 'var(--color-text-secondary)' }}>
+                MRR (월간 반복 수익)
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="text-center py-6">
               <p className="text-3xl font-bold" style={{ color: '#f59e0b' }}>
-                {stats.trial}
+                {stats?.trialCount || 0}
               </p>
               <p className="text-sm mt-1" style={{ color: 'var(--color-text-secondary)' }}>
                 체험 중
@@ -216,20 +263,10 @@ export default function SubscriptionsPage() {
           <Card>
             <CardContent className="text-center py-6">
               <p className="text-3xl font-bold" style={{ color: '#ef4444' }}>
-                {stats.canceled}
+                {stats?.canceledCount || 0}
               </p>
               <p className="text-sm mt-1" style={{ color: 'var(--color-text-secondary)' }}>
                 취소됨
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="text-center py-6">
-              <p className="text-3xl font-bold" style={{ color: '#6b7280' }}>
-                {stats.expired}
-              </p>
-              <p className="text-sm mt-1" style={{ color: 'var(--color-text-secondary)' }}>
-                만료됨
               </p>
             </CardContent>
           </Card>
@@ -264,10 +301,6 @@ export default function SubscriptionsPage() {
             <div className="p-8 text-center" style={{ color: 'var(--color-text-secondary)' }}>
               로딩 중...
             </div>
-          ) : subscriptions.length === 0 ? (
-            <div className="p-8 text-center" style={{ color: 'var(--color-text-secondary)' }}>
-              구독이 없습니다
-            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -275,9 +308,11 @@ export default function SubscriptionsPage() {
                   <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
                     <th className="text-left px-6 py-4 text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>사용자</th>
                     <th className="text-left px-6 py-4 text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>플랜</th>
+                    <th className="text-left px-6 py-4 text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>금액</th>
+                    <th className="text-left px-6 py-4 text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>주기</th>
                     <th className="text-left px-6 py-4 text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>상태</th>
                     <th className="text-left px-6 py-4 text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>시작일</th>
-                    <th className="text-left px-6 py-4 text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>만료일</th>
+                    <th className="text-left px-6 py-4 text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>다음 결제일</th>
                     <th className="text-left px-6 py-4 text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>남은 기간</th>
                     <th className="text-right px-6 py-4 text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>액션</th>
                   </tr>
@@ -296,26 +331,41 @@ export default function SubscriptionsPage() {
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <span
-                            className="px-2 py-1 rounded text-xs font-medium"
-                            style={planBadge}
-                          >
-                            {sub.plan}
-                          </span>
+                          <div>
+                            <span
+                              className="px-2 py-1 rounded text-xs font-medium"
+                              style={planBadge}
+                            >
+                              {sub.planName}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 font-medium" style={{ color: 'var(--color-text)' }}>
+                          ₩{sub.amount.toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4" style={{ color: 'var(--color-text-secondary)' }}>
+                          {sub.billingCycle === 'monthly' ? '월간' : '연간'}
                         </td>
                         <td className="px-6 py-4">
-                          <span
-                            className="px-2 py-1 rounded text-xs font-medium"
-                            style={{ background: statusBadge.bg, color: statusBadge.color }}
-                          >
-                            {statusBadge.label}
-                          </span>
+                          <div>
+                            <span
+                              className="px-2 py-1 rounded text-xs font-medium"
+                              style={{ background: statusBadge.bg, color: statusBadge.color }}
+                            >
+                              {statusBadge.label}
+                            </span>
+                            {sub.cancelAtPeriodEnd && (
+                              <p className="text-xs mt-1" style={{ color: '#ef4444' }}>
+                                기간 종료 시 해지 예정
+                              </p>
+                            )}
+                          </div>
                         </td>
                         <td className="px-6 py-4" style={{ color: 'var(--color-text-secondary)' }}>
-                          {formatDate(sub.currentPeriodStart)}
+                          {formatDate(sub.startDate)}
                         </td>
                         <td className="px-6 py-4" style={{ color: 'var(--color-text-secondary)' }}>
-                          {formatDate(sub.currentPeriodEnd)}
+                          {sub.nextBillingDate ? formatDate(sub.nextBillingDate) : '-'}
                         </td>
                         <td className="px-6 py-4">
                           <span
@@ -328,33 +378,14 @@ export default function SubscriptionsPage() {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          {(sub.status === 'active' || sub.status === 'trial') && (
-                            <>
-                              <button
-                                onClick={() => handleExtendClick(sub)}
-                                className="px-3 py-1 text-sm rounded mr-2"
-                                style={{ background: 'var(--color-bg)', color: 'var(--color-text)' }}
-                              >
-                                연장
-                              </button>
-                              {!sub.canceledAt && (
-                                <button
-                                  onClick={() => handleCancel(sub)}
-                                  className="px-3 py-1 text-sm rounded"
-                                  style={{ background: '#ef4444', color: 'white' }}
-                                >
-                                  취소
-                                </button>
-                              )}
-                            </>
-                          )}
-                          {(sub.status === 'canceled' || sub.status === 'expired') && (
+                          {sub.status === 'active' && !sub.cancelAtPeriodEnd && (
                             <button
-                              onClick={() => handleReactivate(sub)}
-                              className="px-3 py-1 text-sm rounded"
-                              style={{ background: '#10b981', color: 'white' }}
+                              onClick={() => handleCancelSubscription(sub.id)}
+                              disabled={processing === sub.id}
+                              className="px-3 py-1 text-sm rounded disabled:opacity-50"
+                              style={{ background: '#ef4444', color: 'white' }}
                             >
-                              재활성화
+                              {processing === sub.id ? '처리중...' : '취소'}
                             </button>
                           )}
                         </td>
@@ -368,7 +399,7 @@ export default function SubscriptionsPage() {
         </Card>
 
         {/* 페이지네이션 */}
-        {total > 20 && (
+        {totalPages > 1 && (
           <div className="flex justify-center gap-2">
             <Button
               variant="secondary"
@@ -378,94 +409,18 @@ export default function SubscriptionsPage() {
               이전
             </Button>
             <span className="px-4 py-2" style={{ color: 'var(--color-text)' }}>
-              {page} / {Math.ceil(total / 20)}
+              {page} / {totalPages}
             </span>
             <Button
               variant="secondary"
               onClick={() => setPage(p => p + 1)}
-              disabled={page >= Math.ceil(total / 20)}
+              disabled={page >= totalPages}
             >
               다음
             </Button>
           </div>
         )}
       </div>
-
-      {/* 연장 모달 */}
-      {showExtendModal && selectedSubscription && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div
-            className="w-full max-w-md rounded-xl p-6"
-            style={{ background: 'var(--color-bg-secondary)' }}
-          >
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold" style={{ color: 'var(--color-text)' }}>
-                구독 연장
-              </h2>
-              <button
-                onClick={() => setShowExtendModal(false)}
-                className="text-2xl"
-                style={{ color: 'var(--color-text-secondary)' }}
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>사용자</p>
-                <p className="font-medium" style={{ color: 'var(--color-text)' }}>
-                  {selectedSubscription.user.name || selectedSubscription.user.email}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>현재 만료일</p>
-                <p className="font-medium" style={{ color: 'var(--color-text)' }}>
-                  {formatDate(selectedSubscription.currentPeriodEnd)}
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-sm mb-2" style={{ color: 'var(--color-text-secondary)' }}>
-                  연장 기간
-                </label>
-                <div className="flex gap-2">
-                  {[7, 30, 90, 365].map((days) => (
-                    <button
-                      key={days}
-                      onClick={() => setExtendDays(days)}
-                      className="px-4 py-2 rounded-lg text-sm font-medium"
-                      style={{
-                        background: extendDays === days ? 'var(--color-accent)' : 'var(--color-bg)',
-                        color: extendDays === days ? 'var(--color-bg)' : 'var(--color-text)',
-                      }}
-                    >
-                      {days === 365 ? '1년' : `${days}일`}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="pt-4">
-                <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>새 만료일</p>
-                <p className="font-medium text-lg" style={{ color: 'var(--color-accent)' }}>
-                  {formatDate(new Date(new Date(selectedSubscription.currentPeriodEnd).getTime() + extendDays * 24 * 60 * 60 * 1000).toISOString())}
-                </p>
-              </div>
-
-              <div className="flex justify-end gap-2 mt-6">
-                <Button variant="secondary" onClick={() => setShowExtendModal(false)} disabled={processing}>
-                  취소
-                </Button>
-                <Button onClick={handleExtend} disabled={processing}>
-                  {processing ? '처리 중...' : '연장하기'}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </AdminLayout>
   )
 }

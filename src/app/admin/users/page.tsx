@@ -1,12 +1,11 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { AdminLayout, useAppMode } from '@/onesaas-core/admin'
+import { AdminLayout } from '@/onesaas-core/admin'
 import { Card } from '@/onesaas-core/ui/Card'
 import { Input } from '@/onesaas-core/ui/Input'
 import { Button } from '@/onesaas-core/ui/Button'
 import { Modal } from '@/onesaas-core/ui/Modal'
-import { sampleData } from '@/lib/mode'
 
 interface User {
   id: string
@@ -18,11 +17,16 @@ interface User {
   createdAt: string
   emailVerified: string | null
   paymentCount?: number
-  aiUsageCount?: number
+}
+
+interface Subscription {
+  id: string
+  planName: string
+  status: string
+  currentPeriodEnd: string
 }
 
 export default function UsersPage() {
-  const { isDemoMode, mounted } = useAppMode()
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [total, setTotal] = useState(0)
@@ -33,28 +37,19 @@ export default function UsersPage() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [newUser, setNewUser] = useState({ email: '', name: '', plan: 'free', role: 'user' })
-  const [editForm, setEditForm] = useState({ name: '', plan: '', status: '', role: '' })
   const [processing, setProcessing] = useState(false)
+  const [editForm, setEditForm] = useState({
+    name: '',
+    plan: '',
+    status: '',
+    role: '',
+  })
+  const [userSubscription, setUserSubscription] = useState<Subscription | null>(null)
 
   const fetchUsers = useCallback(async () => {
     setLoading(true)
 
-    // 데모 모드: 샘플 데이터 사용
-    if (isDemoMode) {
-      const demoUsers = sampleData.users.map((u, i) => ({
-        ...u,
-        role: i === 0 ? 'admin' : 'user',
-        emailVerified: new Date().toISOString(),
-        paymentCount: Math.floor(Math.random() * 10),
-        aiUsageCount: Math.floor(Math.random() * 50),
-      }))
-      setUsers(demoUsers as User[])
-      setTotal(demoUsers.length)
-      setLoading(false)
-      return
-    }
-
-    // 운영 모드: API에서 실제 데이터
+    // API에서 실제 데이터
     try {
       const res = await fetch(`/api/admin/users?page=${page}&limit=10`)
       const data = await res.json()
@@ -65,13 +60,11 @@ export default function UsersPage() {
     } finally {
       setLoading(false)
     }
-  }, [page, isDemoMode])
+  }, [page])
 
   useEffect(() => {
-    if (mounted) {
-      fetchUsers()
-    }
-  }, [fetchUsers, mounted])
+    fetchUsers()
+  }, [fetchUsers])
 
   const filteredUsers = users.filter(user =>
     user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -96,85 +89,7 @@ export default function UsersPage() {
     }
   }
 
-  const handleDeleteUser = async () => {
-    if (!selectedUser) return
-    setProcessing(true)
-
-    try {
-      if (isDemoMode) {
-        // 데모 모드: UI에서만 제거
-        setUsers(prev => prev.filter(u => u.id !== selectedUser.id))
-        setShowDeleteModal(false)
-        setSelectedUser(null)
-        alert('사용자가 삭제되었습니다 (데모)')
-      } else {
-        // 운영 모드: API 호출
-        const res = await fetch(`/api/admin/users/${selectedUser.id}`, {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ permanent: false }), // 비활성화만
-        })
-        const data = await res.json()
-        if (data.success) {
-          setShowDeleteModal(false)
-          setSelectedUser(null)
-          fetchUsers()
-          alert(data.message || '사용자가 비활성화되었습니다')
-        } else {
-          alert(data.error || '삭제 실패')
-        }
-      }
-    } catch (error) {
-      console.error('Failed to delete user:', error)
-      alert('사용자 삭제 중 오류가 발생했습니다')
-    } finally {
-      setProcessing(false)
-    }
-  }
-
-  // 사용자 수정
-  const handleEditUser = async () => {
-    if (!selectedUser) return
-    setProcessing(true)
-
-    try {
-      if (isDemoMode) {
-        // 데모 모드: UI만 업데이트
-        setUsers(prev => prev.map(u =>
-          u.id === selectedUser.id
-            ? { ...u, name: editForm.name, plan: editForm.plan, status: editForm.status, role: editForm.role }
-            : u
-        ))
-        setShowEditModal(false)
-        setSelectedUser(null)
-        alert('사용자가 수정되었습니다 (데모)')
-      } else {
-        // 운영 모드: API 호출
-        const res = await fetch(`/api/admin/users/${selectedUser.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(editForm),
-        })
-        const data = await res.json()
-        if (data.success) {
-          setShowEditModal(false)
-          setSelectedUser(null)
-          fetchUsers()
-          alert('사용자가 수정되었습니다')
-        } else {
-          alert(data.error || '수정 실패')
-        }
-      }
-    } catch (error) {
-      console.error('Failed to edit user:', error)
-      alert('사용자 수정 중 오류가 발생했습니다')
-    } finally {
-      setProcessing(false)
-    }
-  }
-
-  // 수정 모달 열 때 현재 값 세팅
-  const openEditModal = (user: User) => {
+  const handleOpenEditModal = async (user: User) => {
     setSelectedUser(user)
     setEditForm({
       name: user.name || '',
@@ -182,7 +97,77 @@ export default function UsersPage() {
       status: user.status,
       role: user.role,
     })
+
+    // 구독 정보 가져오기
+    try {
+      const res = await fetch(`/api/admin/users/${user.id}/subscription`)
+      const data = await res.json()
+      if (data.subscription) {
+        setUserSubscription(data.subscription)
+      } else {
+        setUserSubscription(null)
+      }
+    } catch (error) {
+      console.error('Failed to fetch subscription:', error)
+      setUserSubscription(null)
+    }
+
     setShowEditModal(true)
+  }
+
+  const handleUpdateUser = async () => {
+    if (!selectedUser) return
+    setProcessing(true)
+
+    try {
+      const res = await fetch(`/api/admin/users/${selectedUser.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editForm),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setShowEditModal(false)
+        setSelectedUser(null)
+        fetchUsers()
+        alert('사용자 정보가 업데이트되었습니다')
+      } else {
+        alert(data.error || '수정 실패')
+      }
+    } catch (error) {
+      console.error('Failed to update user:', error)
+      alert('사용자 정보 수정 중 오류가 발생했습니다')
+    } finally {
+      setProcessing(false)
+    }
+  }
+
+  const handleDeleteUser = async () => {
+    if (!selectedUser) return
+    setProcessing(true)
+
+    try {
+      // API 호출
+      const res = await fetch(`/api/admin/users/${selectedUser.id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ permanent: false }), // 비활성화만
+      })
+      const data = await res.json()
+      if (data.success) {
+        setShowDeleteModal(false)
+        setSelectedUser(null)
+        fetchUsers()
+        alert(data.message || '사용자가 비활성화되었습니다')
+      } else {
+        alert(data.error || '삭제 실패')
+      }
+    } catch (error) {
+      console.error('Failed to delete user:', error)
+      alert('사용자 삭제 중 오류가 발생했습니다')
+    } finally {
+      setProcessing(false)
+    }
   }
 
   const getPlanBadge = (plan: string) => {
@@ -248,7 +233,6 @@ export default function UsersPage() {
                     <th className="text-left px-6 py-4 text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>플랜</th>
                     <th className="text-left px-6 py-4 text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>상태</th>
                     <th className="text-left px-6 py-4 text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>가입일</th>
-                    <th className="text-left px-6 py-4 text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>활동</th>
                     <th className="text-right px-6 py-4 text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>액션</th>
                   </tr>
                 </thead>
@@ -275,12 +259,9 @@ export default function UsersPage() {
                       <td className="px-6 py-4" style={{ color: 'var(--color-text-secondary)' }}>
                         {formatDate(user.createdAt)}
                       </td>
-                      <td className="px-6 py-4 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-                        결제 {user.paymentCount || 0}회 / AI {user.aiUsageCount || 0}회
-                      </td>
                       <td className="px-6 py-4 text-right">
                         <button
-                          onClick={() => openEditModal(user)}
+                          onClick={() => handleOpenEditModal(user)}
                           className="px-3 py-1 text-sm rounded mr-2"
                           style={{ background: 'var(--color-bg)', color: 'var(--color-text)' }}
                         >
@@ -362,66 +343,86 @@ export default function UsersPage() {
         </Modal>
 
         {/* 사용자 수정 모달 */}
-        <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title="사용자 수정">
+        <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title="사용자 정보 수정">
           {selectedUser && (
             <div className="space-y-4">
-              <div className="p-4 rounded-lg" style={{ background: 'var(--color-bg)' }}>
-                <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>이메일 (수정 불가)</p>
-                <p className="font-medium" style={{ color: 'var(--color-text)' }}>{selectedUser.email}</p>
+              <div className="p-3 rounded-lg" style={{ background: 'var(--color-bg)', border: '1px solid var(--color-border)' }}>
+                <p className="text-xs mb-1" style={{ color: 'var(--color-text-secondary)' }}>이메일</p>
+                <p className="text-sm font-medium" style={{ color: 'var(--color-text)' }}>{selectedUser.email}</p>
               </div>
+
               <Input
                 label="이름"
                 value={editForm.name}
                 onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                placeholder="사용자 이름"
+                placeholder="이름 입력"
               />
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text)' }}>플랜</label>
-                  <select
-                    value={editForm.plan}
-                    onChange={(e) => setEditForm({ ...editForm, plan: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-lg border"
-                    style={{ background: 'var(--color-bg-secondary)', color: 'var(--color-text)', borderColor: 'var(--color-border)' }}
-                  >
-                    <option value="free">무료</option>
-                    <option value="pro">프로</option>
-                    <option value="enterprise">엔터프라이즈</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text)' }}>상태</label>
-                  <select
-                    value={editForm.status}
-                    onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-lg border"
-                    style={{ background: 'var(--color-bg-secondary)', color: 'var(--color-text)', borderColor: 'var(--color-border)' }}
-                  >
-                    <option value="active">활성</option>
-                    <option value="inactive">비활성</option>
-                    <option value="suspended">정지</option>
-                  </select>
-                </div>
-              </div>
+
               <div>
                 <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text)' }}>역할</label>
                 <select
                   value={editForm.role}
                   onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-lg border"
+                  className="w-full px-3 py-2 text-sm rounded-lg border"
                   style={{ background: 'var(--color-bg-secondary)', color: 'var(--color-text)', borderColor: 'var(--color-border)' }}
                 >
                   <option value="user">일반 사용자</option>
                   <option value="admin">관리자</option>
                 </select>
               </div>
-              <div className="p-4 rounded-lg" style={{ background: 'var(--color-bg)' }}>
-                <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>가입일</p>
-                <p className="font-medium" style={{ color: 'var(--color-text)' }}>{formatDate(selectedUser.createdAt)}</p>
+
+              <div>
+                <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text)' }}>플랜</label>
+                <select
+                  value={editForm.plan}
+                  onChange={(e) => setEditForm({ ...editForm, plan: e.target.value })}
+                  className="w-full px-3 py-2 text-sm rounded-lg border"
+                  style={{ background: 'var(--color-bg-secondary)', color: 'var(--color-text)', borderColor: 'var(--color-border)' }}
+                >
+                  <option value="free">무료</option>
+                  <option value="starter">Starter</option>
+                  <option value="pro">Pro</option>
+                  <option value="enterprise">Enterprise</option>
+                </select>
               </div>
-              <div className="flex gap-3 pt-4">
-                <Button variant="secondary" onClick={() => setShowEditModal(false)} className="flex-1" disabled={processing}>취소</Button>
-                <Button onClick={handleEditUser} className="flex-1" disabled={processing}>
+
+              <div>
+                <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text)' }}>상태</label>
+                <select
+                  value={editForm.status}
+                  onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
+                  className="w-full px-3 py-2 text-sm rounded-lg border"
+                  style={{ background: 'var(--color-bg-secondary)', color: 'var(--color-text)', borderColor: 'var(--color-border)' }}
+                >
+                  <option value="active">활성</option>
+                  <option value="inactive">비활성</option>
+                  <option value="suspended">정지</option>
+                </select>
+              </div>
+
+              {userSubscription && (
+                <div className="p-3 rounded-lg" style={{ background: 'var(--color-bg)', border: '1px solid var(--color-border)' }}>
+                  <p className="text-xs mb-2" style={{ color: 'var(--color-text-secondary)' }}>구독 정보</p>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span style={{ color: 'var(--color-text-secondary)' }}>플랜:</span>
+                      <span style={{ color: 'var(--color-text)' }}>{userSubscription.planName}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span style={{ color: 'var(--color-text-secondary)' }}>상태:</span>
+                      <span style={{ color: 'var(--color-text)' }}>{userSubscription.status}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span style={{ color: 'var(--color-text-secondary)' }}>만료일:</span>
+                      <span style={{ color: 'var(--color-text)' }}>{formatDate(userSubscription.currentPeriodEnd)}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-2">
+                <Button variant="secondary" onClick={() => setShowEditModal(false)} className="flex-1" size="sm">취소</Button>
+                <Button onClick={handleUpdateUser} className="flex-1" disabled={processing} size="sm">
                   {processing ? '저장 중...' : '저장'}
                 </Button>
               </div>
