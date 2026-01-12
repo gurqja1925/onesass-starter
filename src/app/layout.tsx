@@ -1,9 +1,13 @@
 import type { Metadata } from 'next'
+import Script from 'next/script'
 import './globals.css'
 import Navigation from '@/onesaas-managed/components/Navigation'
 import Footer from '@/onesaas-managed/components/Footer'
 import { AuthProvider } from '@/onesaas-core/auth/provider'
 import { TemplateProvider } from '@/onesaas-core/templates/TemplateProvider'
+
+// Google Analytics
+const gaId = process.env.NEXT_PUBLIC_GA_ID
 
 // SEO 메타데이터 (환경 변수에서 읽음 - AI 생성 SEO 지원)
 const appName = process.env.NEXT_PUBLIC_APP_NAME || 'OneSaaS'
@@ -46,6 +50,25 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ko">
+      <head>
+        {/* Google Analytics */}
+        {gaId && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
+              strategy="afterInteractive"
+            />
+            <Script id="google-analytics" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${gaId}');
+              `}
+            </Script>
+          </>
+        )}
+      </head>
       <body style={{ background: 'var(--color-bg)', color: 'var(--color-text)' }}>
         <AuthProvider>
           <TemplateProvider>
