@@ -101,6 +101,22 @@ export default function AdminPage() {
           </p>
         </div>
 
+        {/* 관리자 권한 안내 */}
+        <div className="p-4 rounded-xl border" style={{ background: 'rgba(234, 179, 8, 0.1)', borderColor: 'rgba(234, 179, 8, 0.3)' }}>
+          <div className="flex items-start gap-3">
+            <span className="text-xl">👑</span>
+            <div>
+              <h4 className="font-bold mb-1" style={{ color: '#facc15' }}>관리자 권한 안내</h4>
+              <p className="text-sm" style={{ color: 'var(--color-text)' }}>
+                <strong style={{ color: '#fde047' }}>처음 가입한 사용자가 관리자(Admin)입니다.</strong>
+              </p>
+              <p className="text-xs mt-1" style={{ color: 'var(--color-text-secondary)' }}>
+                이 페이지는 관리자만 접근 가능합니다. 사용자 관리, 결제 현황, 통계를 확인하고 관리할 수 있습니다.
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* 주요 통계 */}
         <DashboardStats />
 
