@@ -61,32 +61,24 @@ export default function AuthModal({ isOpen, onClose, redirectUrl = '/service' }:
       if (signUpError) {
         setError('로그인/회원가입에 실패했습니다. 다시 시도해주세요.')
         setLoading(false)
-      } else {
-        // 이메일 저장 처리
-        if (typeof window !== 'undefined') {
-          if (rememberEmail) {
-            localStorage.setItem(SAVED_EMAIL_KEY, email)
-            localStorage.setItem(REMEMBER_EMAIL_KEY, 'true')
-          } else {
-            localStorage.removeItem(SAVED_EMAIL_KEY)
-            localStorage.removeItem(REMEMBER_EMAIL_KEY)
-          }
-        }
-        window.location.href = redirectUrl
+        return
       }
-    } else {
-      // 이메일 저장 처리
-      if (typeof window !== 'undefined') {
-        if (rememberEmail) {
-          localStorage.setItem(SAVED_EMAIL_KEY, email)
-          localStorage.setItem(REMEMBER_EMAIL_KEY, 'true')
-        } else {
-          localStorage.removeItem(SAVED_EMAIL_KEY)
-          localStorage.removeItem(REMEMBER_EMAIL_KEY)
-        }
-      }
-      window.location.href = redirectUrl
     }
+
+    // 이메일 저장 처리
+    if (typeof window !== 'undefined') {
+      if (rememberEmail) {
+        localStorage.setItem(SAVED_EMAIL_KEY, email)
+        localStorage.setItem(REMEMBER_EMAIL_KEY, 'true')
+      } else {
+        localStorage.removeItem(SAVED_EMAIL_KEY)
+        localStorage.removeItem(REMEMBER_EMAIL_KEY)
+      }
+    }
+
+    // 세션이 완전히 저장될 때까지 약간 기다림
+    await new Promise(resolve => setTimeout(resolve, 500))
+    window.location.href = redirectUrl
   }
 
   const handleSocialLogin = async (provider: 'google' | 'kakao' | 'github') => {
