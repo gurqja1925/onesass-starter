@@ -3,22 +3,47 @@
  *
  * - demo: 로그인 없이 샘플 데이터로 체험
  * - production: 실제 운영 모드 (인증 필요)
+ *
+ * 모드 결정 우선순위:
+ * 1. 환경변수 NEXT_PUBLIC_DEMO_MODE (서버/클라이언트 공통)
+ * 2. 로컬스토리지 (클라이언트 오버라이드, 개발용)
  */
 
 export type AppMode = 'demo' | 'production'
 
+// 환경변수에서 기본 모드 확인
+function getEnvMode(): AppMode {
+  // NEXT_PUBLIC_DEMO_MODE=true 이면 demo, 그 외에는 production
+  return process.env.NEXT_PUBLIC_DEMO_MODE === 'true' ? 'demo' : 'production'
+}
+
 // 클라이언트에서 모드 확인
 export function getAppMode(): AppMode {
+  // 환경변수 기본값
+  const envMode = getEnvMode()
+
+  // 환경변수가 production이면 무조건 production (보안)
+  if (envMode === 'production') {
+    return 'production'
+  }
+
+  // 환경변수가 demo인 경우에만 로컬스토리지 오버라이드 허용
   if (typeof window !== 'undefined') {
     const stored = localStorage.getItem('app_mode')
     if (stored === 'production') return 'production'
   }
-  // 기본값: demo
+
   return 'demo'
 }
 
-// 모드 변경
+// 모드 변경 (데모 모드일 때만 가능)
 export function setAppMode(mode: AppMode): void {
+  // 환경변수가 production이면 변경 불가
+  if (getEnvMode() === 'production') {
+    console.warn('운영 모드에서는 앱 모드를 변경할 수 없습니다.')
+    return
+  }
+
   if (typeof window !== 'undefined') {
     localStorage.setItem('app_mode', mode)
     // 페이지 새로고침으로 변경 적용
@@ -34,6 +59,11 @@ export function isDemoMode(): boolean {
 // 운영 모드인지 확인
 export function isProductionMode(): boolean {
   return getAppMode() === 'production'
+}
+
+// 환경변수 기반 데모 모드 확인 (서버 사이드용)
+export function isEnvDemoMode(): boolean {
+  return process.env.NEXT_PUBLIC_DEMO_MODE === 'true'
 }
 
 // 샘플 데이터 생성 함수들
