@@ -2,46 +2,17 @@
 
 
 
-
-
-
 'use client'
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
-import { Menu, X, Sun, Moon, Palette, ChevronDown } from 'lucide-react'
+import { Menu, X, Sun, Moon } from 'lucide-react'
 import { loadTheme, type ThemeId } from '@/onesaas-core/plugins'
 import { getAppName, getAppInitial } from '@/lib/branding'
 
 // 개발자 모드 (데모/쇼케이스용) - 배포 시 false로 설정
 const DEV_MODE = process.env.NEXT_PUBLIC_DEV_MODE === 'true'
-
-// 테마 목록
-const THEMES: { id: ThemeId; name: string; colors: string[] }[] = [
-  // 기본 테마 10개
-  { id: 'neon', name: '네온', colors: ['#0a0a0a', '#00ff88'] },
-  { id: 'minimal', name: '미니멀', colors: ['#ffffff', '#000000'] },
-  { id: 'luxury', name: '럭셔리', colors: ['#1a1a2e', '#d4af37'] },
-  { id: 'playful', name: '플레이풀', colors: ['#fef3c7', '#f472b6'] },
-  { id: 'brutalist', name: '브루탈리스트', colors: ['#f5f5f5', '#000000'] },
-  { id: 'corporate', name: '코퍼레이트', colors: ['#1e293b', '#3b82f6'] },
-  { id: 'startup', name: '스타트업', colors: ['#0f172a', '#8b5cf6'] },
-  { id: 'fintech', name: '핀테크', colors: ['#0a1929', '#00d9ff'] },
-  { id: 'healthcare', name: '헬스케어', colors: ['#ecfdf5', '#10b981'] },
-  { id: 'ecommerce', name: '이커머스', colors: ['#18181b', '#f97316'] },
-  // 특이한 테마 10개
-  { id: 'retrowave', name: '레트로웨이브', colors: ['#0f0015', '#ff00ff'] },
-  { id: 'cyberpunk', name: '사이버펑크', colors: ['#020617', '#ff0080'] },
-  { id: 'aurora', name: '오로라', colors: ['#001a0f', '#10b981'] },
-  { id: 'tokyo', name: '도쿄 나이트', colors: ['#1a1b26', '#ff9e64'] },
-  { id: 'forest', name: '포레스트', colors: ['#0d1f0d', '#7cb668'] },
-  { id: 'ocean', name: '딥 오션', colors: ['#001020', '#38bdf8'] },
-  { id: 'sunset', name: '선셋', colors: ['#1c0a00', '#fb923c'] },
-  { id: 'space', name: '스페이스', colors: ['#0a0014', '#a855f7'] },
-  { id: 'candy', name: '캔디', colors: ['#2d0a14', '#f472b6'] },
-  { id: 'terminal', name: '터미널', colors: ['#000000', '#00ff00'] },
-]
 
 export default function Navigation() {
   const pathname = usePathname()
@@ -49,15 +20,6 @@ export default function Navigation() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [currentTheme, setCurrentTheme] = useState<ThemeId>('neon')
   const [themeMode, setThemeMode] = useState<'light' | 'dark'>('dark')
-  const [showThemeDropdown, setShowThemeDropdown] = useState(false)
-
-  // 테마 변경
-  const handleThemeChange = (themeId: ThemeId) => {
-    setCurrentTheme(themeId)
-    loadTheme(themeId, themeMode)
-    localStorage.setItem('onesaas-theme', themeId)
-    setShowThemeDropdown(false)
-  }
 
   // 모드 변경
   const toggleMode = () => {
@@ -78,19 +40,9 @@ export default function Navigation() {
     loadTheme(theme, mode)
   }, [])
 
-  // 외부 클릭 시 드롭다운 닫기
-  useEffect(() => {
-    const handleClickOutside = () => setShowThemeDropdown(false)
-    if (showThemeDropdown) {
-      document.addEventListener('click', handleClickOutside)
-      return () => document.removeEventListener('click', handleClickOutside)
-    }
-  }, [showThemeDropdown])
-
   // 메뉴 아이템 (DEV_MODE일 때만 쇼케이스, 문서 표시)
   const menuItems = [
     ...(DEV_MODE ? [{ href: '/showcase', label: '쇼케이스' }] : []),
-    { href: '/admin', label: '관리자' },
     ...(DEV_MODE ? [{ href: '/docs', label: '문서' }] : []),
   ]
 
@@ -142,102 +94,26 @@ export default function Navigation() {
 
           {/* Right Side */}
           <div className="flex items-center gap-2">
-            {/* Theme Controls - Desktop */}
-            <div className="hidden md:flex items-center gap-2">
-              {/* 라이트/다크 토글 */}
-              <button
-                onClick={toggleMode}
-                className="p-2 rounded-lg transition-colors hover:opacity-80"
-                style={{ background: 'var(--color-bg-secondary)', color: 'var(--color-text)' }}
-                title={themeMode === 'dark' ? '라이트 모드' : '다크 모드'}
-              >
-                {themeMode === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-              </button>
+            {/* 라이트/다크 토글 - Desktop */}
+            <button
+              onClick={toggleMode}
+              className="hidden md:flex p-2 rounded-lg transition-colors hover:opacity-80"
+              style={{ background: 'var(--color-bg-secondary)', color: 'var(--color-text)' }}
+              title={themeMode === 'dark' ? '라이트 모드' : '다크 모드'}
+            >
+              {themeMode === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </button>
 
-              {/* 테마 선택 - DEV_MODE일 때만 표시 */}
-              {DEV_MODE && (
-                <div className="relative">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setShowThemeDropdown(!showThemeDropdown) }}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors hover:opacity-80"
-                    style={{ background: 'var(--color-bg-secondary)', color: 'var(--color-text)' }}
-                  >
-                    <Palette className="w-4 h-4" />
-                    <span className="text-sm hidden lg:inline">{THEMES.find(t => t.id === currentTheme)?.name}</span>
-                    <ChevronDown className={`w-4 h-4 transition-transform ${showThemeDropdown ? 'rotate-180' : ''}`} />
-                  </button>
-
-                  {showThemeDropdown && (
-                    <div
-                      className="absolute right-0 top-full mt-2 p-4 rounded-xl shadow-2xl z-50 w-[480px] max-h-[70vh] overflow-y-auto"
-                      style={{ background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)' }}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <h4 className="text-sm font-semibold mb-3" style={{ color: 'var(--color-text)' }}>
-                        🎨 테마 선택 (20가지)
-                      </h4>
-
-                      {/* 기본 테마 */}
-                      <p className="text-xs mb-2" style={{ color: 'var(--color-text-secondary)' }}>기본 테마</p>
-                      <div className="grid grid-cols-5 gap-2 mb-4">
-                        {THEMES.slice(0, 10).map(theme => (
-                          <button
-                            key={theme.id}
-                            onClick={() => handleThemeChange(theme.id)}
-                            className={`p-2 rounded-lg text-center transition-all hover:scale-105 ${currentTheme === theme.id ? 'ring-2' : ''}`}
-                            style={{
-                              background: 'var(--color-bg)',
-                              border: '1px solid var(--color-border)',
-                              ['--tw-ring-color' as string]: currentTheme === theme.id ? 'var(--color-accent)' : undefined,
-                            }}
-                            title={theme.name}
-                          >
-                            <div className="flex justify-center gap-1 mb-1">
-                              {theme.colors.map((color, i) => (
-                                <div key={i} className="w-3 h-3 rounded-full" style={{ background: color }} />
-                              ))}
-                            </div>
-                            <p className="text-[10px] font-medium truncate" style={{ color: 'var(--color-text)' }}>
-                              {theme.name}
-                            </p>
-                          </button>
-                        ))}
-                      </div>
-
-                      {/* 특이한 테마 */}
-                      <p className="text-xs mb-2" style={{ color: 'var(--color-text-secondary)' }}>특별 테마</p>
-                      <div className="grid grid-cols-5 gap-2">
-                        {THEMES.slice(10).map(theme => (
-                          <button
-                            key={theme.id}
-                            onClick={() => handleThemeChange(theme.id)}
-                            className={`p-2 rounded-lg text-center transition-all hover:scale-105 ${currentTheme === theme.id ? 'ring-2' : ''}`}
-                            style={{
-                              background: 'var(--color-bg)',
-                              border: '1px solid var(--color-border)',
-                              ['--tw-ring-color' as string]: currentTheme === theme.id ? 'var(--color-accent)' : undefined,
-                            }}
-                            title={theme.name}
-                          >
-                            <div className="flex justify-center gap-1 mb-1">
-                              {theme.colors.map((color, i) => (
-                                <div key={i} className="w-3 h-3 rounded-full" style={{ background: color }} />
-                              ))}
-                            </div>
-                            <p className="text-[10px] font-medium truncate" style={{ color: 'var(--color-text)' }}>
-                              {theme.name}
-                            </p>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Auth Buttons */}
+            {/* Auth Buttons & Admin */}
             <div className="hidden md:flex items-center gap-2 ml-2">
+              {/* 관리자 링크 - 오른쪽에 배치 */}
+              <Link
+                href="/admin"
+                className="px-4 py-2 text-sm font-medium"
+                style={{ color: 'var(--color-text-secondary)' }}
+              >
+                관리자
+              </Link>
               {isLoggedIn ? (
                 <>
                   <button
@@ -315,53 +191,17 @@ export default function Navigation() {
                 </button>
               </div>
 
-              {/* 테마 선택 - DEV_MODE일 때만 표시 */}
-              {DEV_MODE && (
-                <div className="px-4 max-h-48 overflow-y-auto">
-                  <p className="text-xs mb-2" style={{ color: 'var(--color-text-secondary)' }}>기본 테마</p>
-                  <div className="grid grid-cols-5 gap-1 mb-3">
-                    {THEMES.slice(0, 10).map(theme => (
-                      <button
-                        key={theme.id}
-                        onClick={() => { handleThemeChange(theme.id); setIsMenuOpen(false) }}
-                        className={`p-1.5 rounded-lg text-center ${currentTheme === theme.id ? 'ring-2' : ''}`}
-                        style={{
-                          background: 'var(--color-bg-secondary)',
-                          ['--tw-ring-color' as string]: currentTheme === theme.id ? 'var(--color-accent)' : undefined,
-                        }}
-                      >
-                        <div className="flex justify-center gap-0.5 mb-0.5">
-                          {theme.colors.map((color, i) => (
-                            <div key={i} className="w-2 h-2 rounded-full" style={{ background: color }} />
-                          ))}
-                        </div>
-                        <p className="text-[8px] truncate" style={{ color: 'var(--color-text)' }}>{theme.name}</p>
-                      </button>
-                    ))}
-                  </div>
-                  <p className="text-xs mb-2" style={{ color: 'var(--color-text-secondary)' }}>특별 테마</p>
-                  <div className="grid grid-cols-5 gap-1">
-                    {THEMES.slice(10).map(theme => (
-                      <button
-                        key={theme.id}
-                        onClick={() => { handleThemeChange(theme.id); setIsMenuOpen(false) }}
-                        className={`p-1.5 rounded-lg text-center ${currentTheme === theme.id ? 'ring-2' : ''}`}
-                        style={{
-                          background: 'var(--color-bg-secondary)',
-                          ['--tw-ring-color' as string]: currentTheme === theme.id ? 'var(--color-accent)' : undefined,
-                        }}
-                      >
-                        <div className="flex justify-center gap-0.5 mb-0.5">
-                          {theme.colors.map((color, i) => (
-                            <div key={i} className="w-2 h-2 rounded-full" style={{ background: color }} />
-                          ))}
-                        </div>
-                        <p className="text-[8px] truncate" style={{ color: 'var(--color-text)' }}>{theme.name}</p>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <div className="my-2" style={{ borderTop: '1px solid var(--color-border)' }} />
+
+              {/* 관리자 링크 - Mobile */}
+              <Link
+                href="/admin"
+                onClick={() => setIsMenuOpen(false)}
+                className="px-4 py-3 rounded-lg font-medium"
+                style={{ color: 'var(--color-text)' }}
+              >
+                관리자
+              </Link>
 
               <div className="my-2" style={{ borderTop: '1px solid var(--color-border)' }} />
 
