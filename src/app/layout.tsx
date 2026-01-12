@@ -9,6 +9,9 @@ import { TemplateProvider } from '@/onesaas-core/templates/TemplateProvider'
 // Google Analytics
 const gaId = process.env.NEXT_PUBLIC_GA_ID
 
+// Google Search Console 인증
+const googleSiteVerification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
+
 // SEO 메타데이터 (환경 변수에서 읽음 - AI 생성 SEO 지원)
 const appName = process.env.NEXT_PUBLIC_APP_NAME || 'OneSaaS'
 const seoTitle = process.env.NEXT_PUBLIC_SEO_TITLE || appName // AI 생성 SEO 타이틀
@@ -52,6 +55,9 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+  verification: googleSiteVerification ? {
+    google: googleSiteVerification,
+  } : undefined,
 }
 
 export default function RootLayout({
