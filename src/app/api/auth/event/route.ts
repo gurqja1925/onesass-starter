@@ -55,11 +55,18 @@ export async function POST(request: NextRequest) {
         })
 
         // 무료 구독 생성
+        const now = new Date()
+        const oneMonthLater = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+
         await prisma.subscription.create({
           data: {
             userId: supabaseUser.id,
             plan: 'free',
+            planName: 'Free',
+            amount: 0,
             status: 'active',
+            currentPeriodStart: now,
+            currentPeriodEnd: oneMonthLater,
           },
         })
       } catch (dbError) {
