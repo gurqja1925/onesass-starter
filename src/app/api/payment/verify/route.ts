@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
 
     // 중복 결제 방지 (이미 처리된 결제인지 확인)
     const existingPayment = await prisma.payment.findFirst({
-      where: { transactionId: impUid },
+      where: { paymentKey: impUid },
     })
 
     if (existingPayment) {
@@ -163,9 +163,12 @@ export async function POST(request: NextRequest) {
         amount: amount,
         currency: 'KRW',
         status: 'completed',
+        type: plan ? 'subscription' : 'onetime',
         method: paymentInfo.pay_method || 'card',
         provider: 'portone',
-        transactionId: impUid,
+        paymentKey: impUid,
+        orderId: merchantUid,
+        orderName: description || plan || '결제',
         description: description || plan || '결제',
         metadata: {
           merchantUid,
@@ -190,6 +193,8 @@ export async function POST(request: NextRequest) {
           where: { id: existingSubscription.id },
           data: {
             plan,
+            planName: plan === 'pro' ? 'Pro 월간' : plan === 'premium' ? 'Premium 월간' : 'Enterprise 월간',
+            amount: PLAN_PRICES[plan] || amount,
             status: 'active',
             currentPeriodStart: new Date(),
             currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30일 후
@@ -201,6 +206,8 @@ export async function POST(request: NextRequest) {
           data: {
             userId,
             plan,
+            planName: plan === 'pro' ? 'Pro 월간' : plan === 'premium' ? 'Premium 월간' : 'Enterprise 월간',
+            amount: PLAN_PRICES[plan] || amount,
             status: 'active',
             currentPeriodStart: new Date(),
             currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
