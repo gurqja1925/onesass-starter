@@ -27,7 +27,12 @@
     "template:apply": "node scripts/template.mjs apply",
     "cli:build": "tsup",
     "kcode": "node cli-dist/cli.mjs",
-    "ai": "node cli-dist/cli.mjs"
+    "ai": "node cli-dist/cli.mjs",
+    "kcode:package": "pnpm cli:build && node scripts/package-kcode.mjs",
+    "kcode:publish:patch": "pnpm kcode:package && cd packages/kcode && npm version patch && npm publish --access public",
+    "kcode:publish:minor": "pnpm kcode:package && cd packages/kcode && npm version minor && npm publish --access public",
+    "kcode:publish:major": "pnpm kcode:package && cd packages/kcode && npm version major && npm publish --access public",
+    "kcode:publish:dry": "pnpm kcode:package && cd packages/kcode && npm publish --dry-run"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^0.0.40",

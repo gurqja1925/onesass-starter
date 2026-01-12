@@ -33,10 +33,10 @@ export function getAdminConfig(): AdminConfig {
     features: {
       analytics: true,
       userManagement: true,
-      contentManagement: true,
+      contentManagement: false,  // 콘텐츠 관리 비활성화
       payments: true,
       subscriptions: true,
-      aiUsage: true,
+      aiUsage: false,  // AI 사용량 비활성화
       logs: true,
       settings: true,
     },
@@ -85,6 +85,20 @@ export function getAdminMenuItems(): AdminMenuItem[] {
       label: '결제 관리',
       icon: '💳',
       href: '/admin/payments',
+      enabled: config.features.payments,
+    },
+    {
+      id: 'payment-settings',
+      label: '결제 설정',
+      icon: '⚙️',
+      href: '/admin/payment-settings',
+      enabled: config.features.payments,
+    },
+    {
+      id: 'pricing',
+      label: '프라이싱 설정',
+      icon: '💰',
+      href: '/admin/pricing',
       enabled: config.features.payments,
     },
     {

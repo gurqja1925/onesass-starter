@@ -1,20 +1,23 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
+import { ReactNode } from 'react'
 import Navigation from '@/onesaas-managed/components/Navigation'
 import Footer from '@/onesaas-managed/components/Footer'
 
-export default function ConditionalLayout({ children }: { children: React.ReactNode }) {
+interface ConditionalLayoutProps {
+  children: ReactNode
+}
+
+export function ConditionalLayout({ children }: ConditionalLayoutProps) {
   const pathname = usePathname()
 
-  // Navigation과 Footer를 표시하지 않을 경로들
-  const hideNavAndFooter =
-    pathname?.startsWith('/service') ||
-    pathname?.startsWith('/dashboard') ||
-    pathname?.startsWith('/admin') ||
-    pathname === '/login' ||
-    pathname === '/signup' ||
-    pathname === '/reset-password'
+  // DashboardLayout을 사용하는 경로들 (Navigation/Footer 숨김)
+  const hideNavAndFooter = pathname?.startsWith('/dashboard') ||
+                          pathname?.startsWith('/admin') ||
+                          pathname?.startsWith('/service') ||
+                          pathname === '/login' ||
+                          pathname === '/signup'
 
   if (hideNavAndFooter) {
     return <>{children}</>
@@ -23,7 +26,9 @@ export default function ConditionalLayout({ children }: { children: React.ReactN
   return (
     <>
       <Navigation />
-      {children}
+      <main className="pt-16 min-h-screen">
+        {children}
+      </main>
       <Footer />
     </>
   )

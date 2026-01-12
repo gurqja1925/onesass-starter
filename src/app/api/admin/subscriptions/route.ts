@@ -16,13 +16,38 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
     const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '20')
+    const limit = parseInt(searchParams.get('limit') || '50')
     const status = searchParams.get('status')
+    const plan = searchParams.get('plan')
+    const year = searchParams.get('year')
+    const month = searchParams.get('month')
     const skip = (page - 1) * limit
 
-    const where = status ? { status } : {}
+    // 날짜 필터링 조건 구성
+    let dateFilter = {}
+    if (year) {
+      const yearNum = parseInt(year)
+      const startDate = new Date(yearNum, month ? parseInt(month) - 1 : 0, 1)
+      const endDate = month
+        ? new Date(yearNum, parseInt(month), 0, 23, 59, 59)
+        : new Date(yearNum, 11, 31, 23, 59, 59)
 
-    const [subscriptions, total, statsData] = await Promise.all([
+      dateFilter = {
+        createdAt: {
+          gte: startDate,
+          lte: endDate
+        }
+      }
+    }
+
+    // 필터 조건 구성
+    const where = {
+      ...dateFilter,
+      ...(status && { status }),
+      ...(plan && { plan })
+    }
+
+    const [subscriptions, total, statusStats, planStats] = await Promise.all([
       prisma.subscription.findMany({
         where,
         skip,
@@ -41,22 +66,72 @@ export async function GET(request: NextRequest) {
       prisma.subscription.count({ where }),
       prisma.subscription.groupBy({
         by: ['status'],
-        _count: true,
+        where,
+        _count: {
+          id: true
+        },
+        _sum: {
+          amount: true
+        }
       }),
+      prisma.subscription.groupBy({
+        by: ['plan'],
+        where,
+        _count: {
+          id: true
+        },
+        _sum: {
+          amount: true
+        }
+      })
     ])
 
-    const stats = statsData.reduce((acc, item) => {
-      acc[item.status] = item._count
-      return acc
-    }, { active: 0, canceled: 0, expired: 0, trial: 0 } as Record<string, number>)
+    // MRR (월간 반복 수익) 계산
+    const activeSubscriptions = await prisma.subscription.findMany({
+      where: {
+        status: { in: ['active', 'trial'] }
+      },
+      select: {
+        amount: true,
+        billingCycle: true
+      }
+    })
+
+    const mrr = activeSubscriptions.reduce((sum, sub) => {
+      const monthlyAmount = sub.billingCycle === 'yearly'
+        ? Math.round(sub.amount / 12)
+        : sub.amount
+      return sum + monthlyAmount
+    }, 0)
 
     return NextResponse.json({
       subscriptions,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-      stats,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      },
+      stats: {
+        byStatus: statusStats.reduce((acc, item) => {
+          acc[item.status] = {
+            count: item._count.id,
+            revenue: item._sum.amount || 0
+          }
+          return acc
+        }, {} as Record<string, { count: number; revenue: number }>),
+        byPlan: planStats.reduce((acc, item) => {
+          acc[item.plan] = {
+            count: item._count.id,
+            revenue: item._sum.amount || 0
+          }
+          return acc
+        }, {} as Record<string, { count: number; revenue: number }>),
+        mrr,
+        activeCount: statusStats.find(s => s.status === 'active')?._count.id || 0,
+        trialCount: statusStats.find(s => s.status === 'trial')?._count.id || 0,
+        canceledCount: statusStats.find(s => s.status === 'canceled')?._count.id || 0
+      }
     })
   } catch (error) {
     console.error('Failed to fetch subscriptions:', error)

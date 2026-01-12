@@ -18,7 +18,7 @@ export const plugins: PluginsConfig = {
   theme: {
     // 활성 테마: minimal, neon, luxury, playful, brutalist,
     //           corporate, startup, fintech, healthcare, ecommerce
-    active: 'neon',
+    active: 'brutalist',
 
     // 모드: light, dark, system (시스템 설정 따름)
     mode: 'dark',

@@ -93,7 +93,7 @@ export async function POST(
 
   try {
     const { id } = await params
-    const { action, reason } = await request.json()
+    const { action, reason, amount: refundAmount } = await request.json()
 
     if (action !== 'refund') {
       return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
@@ -111,17 +111,46 @@ export async function POST(
       return NextResponse.json({ error: 'Only completed payments can be refunded' }, { status: 400 })
     }
 
-    // 데모 모드에서는 실제 PG 환불 없이 상태만 변경
-    // 운영 모드에서는 PortOne API로 환불 요청 필요
+    // 환불 금액 결정 (전액 환불 또는 부분 환불)
+    const finalRefundAmount = refundAmount || payment.amount
+
+    if (finalRefundAmount > payment.amount - payment.refundedAmount) {
+      return NextResponse.json({ error: 'Refund amount exceeds remaining amount' }, { status: 400 })
+    }
+
+    // TODO: 운영 모드에서는 TossPayments API로 환불 요청 필요
+    // const tossRefundResponse = await fetch('https://api.tosspayments.com/v1/payments/{paymentKey}/cancel', {
+    //   method: 'POST',
+    //   headers: {
+    //     'Authorization': `Basic ${Buffer.from(process.env.TOSS_SECRET_KEY + ':').toString('base64')}`,
+    //     'Content-Type': 'application/json'
+    //   },
+    //   body: JSON.stringify({
+    //     cancelReason: reason,
+    //     cancelAmount: finalRefundAmount
+    //   })
+    // })
+
+    const now = new Date()
+    const totalRefunded = payment.refundedAmount + finalRefundAmount
+    const isFullRefund = totalRefunded >= payment.amount
 
     const updatedPayment = await prisma.payment.update({
       where: { id },
       data: {
-        status: 'refunded',
+        status: isFullRefund ? 'refunded' : 'completed',
+        refundedAmount: totalRefunded,
+        refundedAt: isFullRefund ? now : payment.refundedAt,
         metadata: {
           ...(payment.metadata as object),
-          refundedAt: new Date().toISOString(),
-          refundReason: reason,
+          refunds: [
+            ...((payment.metadata as any)?.refunds || []),
+            {
+              amount: finalRefundAmount,
+              reason,
+              refundedAt: now.toISOString()
+            }
+          ]
         },
       },
     })
@@ -130,11 +159,12 @@ export async function POST(
     await prisma.analytics.create({
       data: {
         type: 'refund',
-        value: payment.amount,
+        value: finalRefundAmount,
         metadata: {
           paymentId: id,
           userId: payment.userId,
           reason,
+          isFullRefund
         },
       },
     })
@@ -142,7 +172,7 @@ export async function POST(
     return NextResponse.json({
       success: true,
       payment: updatedPayment,
-      message: '환불이 처리되었습니다',
+      message: isFullRefund ? '전액 환불이 처리되었습니다' : '부분 환불이 처리되었습니다',
     })
   } catch (error) {
     console.error('Failed to process refund:', error)

@@ -1,10 +1,9 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { AdminLayout, useAppMode } from '@/onesaas-core/admin'
+import { AdminLayout } from '@/onesaas-core/admin'
 import { Card, CardContent, CardHeader, CardTitle } from '@/onesaas-core/ui/Card'
 import { Button } from '@/onesaas-core/ui/Button'
-import { sampleData } from '@/lib/mode'
 
 interface Payment {
   id: string
@@ -12,8 +11,11 @@ interface Payment {
   amount: number
   currency: string
   status: string
+  type: string
   method: string | null
   description: string | null
+  orderName: string | null
+  refundedAmount: number
   createdAt: string
   user: {
     id: string
@@ -23,73 +25,98 @@ interface Payment {
 }
 
 interface PaymentStats {
-  [key: string]: {
-    count: number
-    total: number
+  totalAmount: number
+  totalRefunded: number
+  totalCount: number
+  byStatus: {
+    [key: string]: {
+      count: number
+      amount: number
+    }
+  }
+  byType: {
+    [key: string]: {
+      count: number
+      amount: number
+    }
   }
 }
 
+interface PricingPlan {
+  id: string
+  name: string
+  price: number
+  yearlyPrice: number
+  features: string[]
+  popular: boolean
+}
+
 export default function PaymentsPage() {
-  const { isDemoMode, mounted } = useAppMode()
   const [payments, setPayments] = useState<Payment[]>([])
   const [loading, setLoading] = useState(true)
-  const [total, setTotal] = useState(0)
-  const [page, setPage] = useState(1)
-  const [stats, setStats] = useState<PaymentStats>({})
+  const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 50, totalPages: 0 })
+  const [stats, setStats] = useState<PaymentStats | null>(null)
   const [filter, setFilter] = useState<string>('all')
+  const [typeFilter, setTypeFilter] = useState<string>('all')
+  const [year, setYear] = useState<string>(new Date().getFullYear().toString())
+  const [month, setMonth] = useState<string>('all')
   const [processing, setProcessing] = useState<string | null>(null)
+  const [pricingPlans, setPricingPlans] = useState<PricingPlan[]>([])
+
+  // 연도 목록 생성 (2024년부터 현재까지)
+  const currentYear = new Date().getFullYear()
+  const years = Array.from({ length: currentYear - 2023 }, (_, i) => 2024 + i)
+
+  // 월 목록
+  const months = Array.from({ length: 12 }, (_, i) => i + 1)
 
   const fetchPayments = useCallback(async () => {
     setLoading(true)
 
-    // 데모 모드: 샘플 데이터 사용
-    if (isDemoMode) {
-      const demoPayments = sampleData.payments.map((p, i) => ({
-        id: p.id,
-        userId: `user-${i}`,
-        amount: p.amount,
-        currency: 'KRW',
-        status: p.status,
-        method: p.method,
-        description: `${['Pro 플랜', 'Enterprise 플랜', '추가 크레딧'][i % 3]} 결제`,
-        createdAt: p.createdAt,
-        user: {
-          id: `user-${i}`,
-          email: `${p.user.toLowerCase().replace(/\s/g, '')}@example.com`,
-          name: p.user,
-        },
-      }))
-      setPayments(demoPayments as Payment[])
-      setTotal(demoPayments.length)
-      setStats({
-        completed: { count: 2, total: 128000 },
-        pending: { count: 1, total: 299000 },
-        refunded: { count: 1, total: 29000 },
-      })
-      setLoading(false)
-      return
-    }
-
-    // 운영 모드: API에서 실제 데이터
     try {
-      const statusParam = filter !== 'all' ? `&status=${filter}` : ''
-      const res = await fetch(`/api/admin/payments?page=${page}&limit=20${statusParam}`)
+      const params = new URLSearchParams({
+        page: pagination.page.toString(),
+        limit: '50',
+        ...(filter !== 'all' && { status: filter }),
+        ...(typeFilter !== 'all' && { type: typeFilter }),
+        ...(year && { year }),
+        ...(month !== 'all' && { month })
+      })
+
+      const res = await fetch(`/api/admin/payments?${params}`)
       const data = await res.json()
-      setPayments(data.payments || [])
-      setTotal(data.total || 0)
-      setStats(data.stats || {})
+
+      if (data.success) {
+        setPayments(data.data.payments || [])
+        setPagination(data.data.pagination)
+        setStats(data.data.stats)
+      }
     } catch (error) {
       console.error('Failed to fetch payments:', error)
     } finally {
       setLoading(false)
     }
-  }, [page, filter, isDemoMode])
+  }, [pagination.page, filter, typeFilter, year, month])
+
+  const fetchPricingPlans = useCallback(async () => {
+    try {
+      const res = await fetch('/api/pricing')
+      const data = await res.json()
+      if (data.success) {
+        setPricingPlans(data.plans || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch pricing plans:', error)
+    }
+  }, [])
 
   useEffect(() => {
-    if (mounted) {
-      fetchPayments()
-    }
-  }, [fetchPayments, mounted])
+    fetchPayments()
+  }, [fetchPayments])
+
+  useEffect(() => {
+    fetchPricingPlans()
+  }, [fetchPricingPlans])
 
   // 환불 처리
   const handleRefund = async (paymentId: string) => {
@@ -97,26 +124,18 @@ export default function PaymentsPage() {
 
     setProcessing(paymentId)
     try {
-      if (isDemoMode) {
-        // 데모 모드: UI만 업데이트
-        setPayments(prev =>
-          prev.map(p => p.id === paymentId ? { ...p, status: 'refunded' } : p)
-        )
-        alert('환불이 처리되었습니다 (데모)')
+      // API 호출
+      const res = await fetch(`/api/admin/payments/${paymentId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'refund', reason: '관리자 환불' }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        fetchPayments()
+        alert('환불이 처리되었습니다')
       } else {
-        // 운영 모드: API 호출
-        const res = await fetch(`/api/admin/payments/${paymentId}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'refund', reason: '관리자 환불' }),
-        })
-        const data = await res.json()
-        if (data.success) {
-          fetchPayments()
-          alert('환불이 처리되었습니다')
-        } else {
-          alert(data.error || '환불 처리 실패')
-        }
+        alert(data.error || '환불 처리 실패')
       }
     } catch {
       alert('환불 처리 중 오류가 발생했습니다')
@@ -129,22 +148,15 @@ export default function PaymentsPage() {
   const handleConfirm = async (paymentId: string) => {
     setProcessing(paymentId)
     try {
-      if (isDemoMode) {
-        setPayments(prev =>
-          prev.map(p => p.id === paymentId ? { ...p, status: 'completed' } : p)
-        )
-        alert('결제가 확인되었습니다 (데모)')
-      } else {
-        const res = await fetch(`/api/admin/payments/${paymentId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: 'completed' }),
-        })
-        const data = await res.json()
-        if (data.success) {
-          fetchPayments()
-          alert('결제가 확인되었습니다')
-        }
+      const res = await fetch(`/api/admin/payments/${paymentId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'completed' }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        fetchPayments()
+        alert('결제가 확인되었습니다')
       }
     } catch {
       alert('처리 중 오류가 발생했습니다')
@@ -153,10 +165,13 @@ export default function PaymentsPage() {
     }
   }
 
-  const totalRevenue = stats.completed?.total || 0
-  const pendingAmount = stats.pending?.total || 0
-  const refundedAmount = stats.refunded?.total || 0
-  const completedCount = stats.completed?.count || 0
+  const totalRevenue = stats?.totalAmount || 0
+  const totalRefunded = stats?.totalRefunded || 0
+  const totalCount = stats?.totalCount || 0
+  const completedCount = stats?.byStatus?.completed?.count || 0
+  const pendingAmount = stats?.byStatus?.pending?.amount || 0
+  const onetimeCount = stats?.byType?.onetime?.count || 0
+  const subscriptionCount = stats?.byType?.subscription?.count || 0
 
   const getStatusBadge = (status: string) => {
     const styles: Record<string, { bg: string; color: string; label: string }> = {
@@ -185,6 +200,45 @@ export default function PaymentsPage() {
           </p>
         </div>
 
+        {/* 연도/월 필터 */}
+        <div className="flex gap-4 items-center">
+          <div>
+            <label className="text-sm font-medium mr-2" style={{ color: 'var(--color-text)' }}>연도:</label>
+            <select
+              value={year}
+              onChange={(e) => { setYear(e.target.value); setPagination(p => ({ ...p, page: 1 })) }}
+              className="px-4 py-2 rounded-lg border"
+              style={{
+                background: 'var(--color-bg-secondary)',
+                border: '1px solid var(--color-border)',
+                color: 'var(--color-text)'
+              }}
+            >
+              {years.map(y => (
+                <option key={y} value={y}>{y}년</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="text-sm font-medium mr-2" style={{ color: 'var(--color-text)' }}>월:</label>
+            <select
+              value={month}
+              onChange={(e) => { setMonth(e.target.value); setPagination(p => ({ ...p, page: 1 })) }}
+              className="px-4 py-2 rounded-lg border"
+              style={{
+                background: 'var(--color-bg-secondary)',
+                border: '1px solid var(--color-border)',
+                color: 'var(--color-text)'
+              }}
+            >
+              <option value="all">전체</option>
+              {months.map(m => (
+                <option key={m} value={m}>{m}월</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
         {/* 통계 카드 */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
@@ -199,18 +253,8 @@ export default function PaymentsPage() {
           </Card>
           <Card>
             <CardContent className="text-center py-6">
-              <p className="text-3xl font-bold" style={{ color: '#f59e0b' }}>
-                ₩{pendingAmount.toLocaleString()}
-              </p>
-              <p className="text-sm mt-1" style={{ color: 'var(--color-text-secondary)' }}>
-                대기 중
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="text-center py-6">
-              <p className="text-3xl font-bold" style={{ color: '#6b7280' }}>
-                ₩{refundedAmount.toLocaleString()}
+              <p className="text-3xl font-bold" style={{ color: '#ef4444' }}>
+                ₩{totalRefunded.toLocaleString()}
               </p>
               <p className="text-sm mt-1" style={{ color: 'var(--color-text-secondary)' }}>
                 환불액
@@ -220,36 +264,73 @@ export default function PaymentsPage() {
           <Card>
             <CardContent className="text-center py-6">
               <p className="text-3xl font-bold" style={{ color: 'var(--color-accent)' }}>
-                {completedCount}
+                {totalCount}
               </p>
               <p className="text-sm mt-1" style={{ color: 'var(--color-text-secondary)' }}>
-                완료 건수
+                총 결제 건수
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="text-center py-6">
+              <p className="text-2xl font-bold" style={{ color: '#6b7280' }}>
+                💳 {onetimeCount} / 🔄 {subscriptionCount}
+              </p>
+              <p className="text-sm mt-1" style={{ color: 'var(--color-text-secondary)' }}>
+                일반 / 구독
               </p>
             </CardContent>
           </Card>
         </div>
 
         {/* 필터 */}
-        <div className="flex gap-2">
-          {[
-            { value: 'all', label: '전체' },
-            { value: 'completed', label: '완료' },
-            { value: 'pending', label: '대기' },
-            { value: 'failed', label: '실패' },
-            { value: 'refunded', label: '환불' },
-          ].map(({ value, label }) => (
-            <button
-              key={value}
-              onClick={() => { setFilter(value); setPage(1) }}
-              className="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-              style={{
-                background: filter === value ? 'var(--color-accent)' : 'var(--color-bg-secondary)',
-                color: filter === value ? 'var(--color-bg)' : 'var(--color-text)',
-              }}
-            >
-              {label}
-            </button>
-          ))}
+        <div className="flex gap-4">
+          <div>
+            <p className="text-sm font-medium mb-2" style={{ color: 'var(--color-text)' }}>상태 필터</p>
+            <div className="flex gap-2">
+              {[
+                { value: 'all', label: '전체' },
+                { value: 'completed', label: '완료' },
+                { value: 'pending', label: '대기' },
+                { value: 'failed', label: '실패' },
+                { value: 'refunded', label: '환불' },
+              ].map(({ value, label }) => (
+                <button
+                  key={value}
+                  onClick={() => { setFilter(value); setPagination(p => ({ ...p, page: 1 })) }}
+                  className="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                  style={{
+                    background: filter === value ? 'var(--color-accent)' : 'var(--color-bg-secondary)',
+                    color: filter === value ? 'var(--color-bg)' : 'var(--color-text)',
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className="text-sm font-medium mb-2" style={{ color: 'var(--color-text)' }}>유형 필터</p>
+            <div className="flex gap-2">
+              {[
+                { value: 'all', label: '전체' },
+                { value: 'onetime', label: '💳 일반' },
+                { value: 'subscription', label: '🔄 구독' },
+              ].map(({ value, label }) => (
+                <button
+                  key={value}
+                  onClick={() => { setTypeFilter(value); setPagination(p => ({ ...p, page: 1 })) }}
+                  className="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                  style={{
+                    background: typeFilter === value ? 'var(--color-accent)' : 'var(--color-bg-secondary)',
+                    color: typeFilter === value ? 'var(--color-bg)' : 'var(--color-text)',
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* 결제 내역 테이블 */}
@@ -264,9 +345,10 @@ export default function PaymentsPage() {
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
                     <th className="text-left px-6 py-4 text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>사용자</th>
-                    <th className="text-left px-6 py-4 text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>설명</th>
+                    <th className="text-left px-6 py-4 text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>주문명</th>
+                    <th className="text-left px-6 py-4 text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>유형</th>
                     <th className="text-left px-6 py-4 text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>금액</th>
-                    <th className="text-left px-6 py-4 text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>결제수단</th>
+                    <th className="text-left px-6 py-4 text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>환불</th>
                     <th className="text-left px-6 py-4 text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>상태</th>
                     <th className="text-left px-6 py-4 text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>날짜</th>
                     <th className="text-right px-6 py-4 text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>액션</th>
@@ -283,11 +365,18 @@ export default function PaymentsPage() {
                             <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>{payment.user.email}</p>
                           </div>
                         </td>
-                        <td className="px-6 py-4" style={{ color: 'var(--color-text)' }}>{payment.description || '-'}</td>
+                        <td className="px-6 py-4" style={{ color: 'var(--color-text)' }}>{payment.orderName || payment.description || '-'}</td>
+                        <td className="px-6 py-4">
+                          <span className="text-sm">
+                            {payment.type === 'onetime' ? '💳 일반' : '🔄 구독'}
+                          </span>
+                        </td>
                         <td className="px-6 py-4 font-medium" style={{ color: 'var(--color-text)' }}>
                           ₩{payment.amount.toLocaleString()}
                         </td>
-                        <td className="px-6 py-4" style={{ color: 'var(--color-text-secondary)' }}>{payment.method || '-'}</td>
+                        <td className="px-6 py-4" style={{ color: payment.refundedAmount > 0 ? '#ef4444' : 'var(--color-text-secondary)' }}>
+                          {payment.refundedAmount > 0 ? `₩${payment.refundedAmount.toLocaleString()}` : '-'}
+                        </td>
                         <td className="px-6 py-4">
                           <span
                             className="px-2 py-1 rounded text-xs font-medium"
@@ -298,7 +387,7 @@ export default function PaymentsPage() {
                         </td>
                         <td className="px-6 py-4" style={{ color: 'var(--color-text-secondary)' }}>{formatDate(payment.createdAt)}</td>
                         <td className="px-6 py-4 text-right">
-                          {payment.status === 'completed' && (
+                          {payment.status === 'completed' && payment.refundedAmount < payment.amount && (
                             <button
                               onClick={() => handleRefund(payment.id)}
                               disabled={processing === payment.id}
@@ -329,22 +418,22 @@ export default function PaymentsPage() {
         </Card>
 
         {/* 페이지네이션 */}
-        {total > 20 && (
+        {pagination.totalPages > 1 && (
           <div className="flex justify-center gap-2">
             <Button
               variant="secondary"
-              onClick={() => setPage(p => Math.max(1, p - 1))}
-              disabled={page === 1}
+              onClick={() => setPagination(p => ({ ...p, page: Math.max(1, p.page - 1) }))}
+              disabled={pagination.page === 1}
             >
               이전
             </Button>
             <span className="px-4 py-2" style={{ color: 'var(--color-text)' }}>
-              {page} / {Math.ceil(total / 20)}
+              {pagination.page} / {pagination.totalPages}
             </span>
             <Button
               variant="secondary"
-              onClick={() => setPage(p => p + 1)}
-              disabled={page >= Math.ceil(total / 20)}
+              onClick={() => setPagination(p => ({ ...p, page: p.page + 1 }))}
+              disabled={pagination.page >= pagination.totalPages}
             >
               다음
             </Button>
@@ -360,46 +449,81 @@ export default function PaymentsPage() {
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between p-4 rounded-lg" style={{ background: 'var(--color-bg)' }}>
                 <div>
-                  <p className="font-medium" style={{ color: 'var(--color-text)' }}>PortOne</p>
-                  <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>카드, 계좌이체, 간편결제</p>
+                  <p className="font-medium" style={{ color: 'var(--color-text)' }}>TossPayments</p>
+                  <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>카드, 토스페이, 간편결제</p>
+                  <p className="text-xs mt-1" style={{ color: '#f59e0b' }}>
+                    ⚠️ 테스트 모드 - 실제 결제 전 실제 키로 변경 필요
+                  </p>
                 </div>
                 <span className="px-3 py-1 rounded text-sm font-medium" style={{ background: '#10b981', color: 'white' }}>
                   연결됨
                 </span>
               </div>
-              <div className="flex items-center justify-between p-4 rounded-lg" style={{ background: 'var(--color-bg)' }}>
-                <div>
-                  <p className="font-medium" style={{ color: 'var(--color-text)' }}>토스페이먼츠</p>
-                  <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>카드, 토스페이</p>
-                </div>
-                <Button size="sm" variant="secondary">연결하기</Button>
+              <div className="p-4 rounded-lg" style={{ background: 'var(--color-bg-secondary)' }}>
+                <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                  <strong>결제 유형:</strong> 일반결제, 정기결제(구독) 지원<br />
+                  <strong>테스트 키:</strong> test_ck_D5GePWvyJnrK0W0k6q8gLzN97Eoq<br />
+                  <strong>프로덕션:</strong> .env 파일에서 실제 키로 변경 후 배포
+                </p>
               </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>구독 플랜 관리</CardTitle>
+              <CardTitle>관련 메뉴</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {[
-                { name: '무료', price: 0 },
-                { name: '프로', price: 9900 },
-                { name: '엔터프라이즈', price: 99000 },
-              ].map((plan) => (
-                <div
-                  key={plan.name}
-                  className="flex items-center justify-between p-4 rounded-lg"
-                  style={{ background: 'var(--color-bg)' }}
-                >
-                  <div>
-                    <p className="font-medium" style={{ color: 'var(--color-text)' }}>{plan.name}</p>
+            <CardContent className="space-y-3">
+              <button
+                onClick={() => window.location.href = '/admin/subscriptions'}
+                className="w-full flex items-center justify-between p-4 rounded-lg transition-all hover:opacity-80"
+                style={{ background: 'var(--color-bg)', border: '1px solid var(--color-border)' }}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">🔄</span>
+                  <div className="text-left">
+                    <p className="font-medium" style={{ color: 'var(--color-text)' }}>구독 관리</p>
+                    <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                      활성 구독 및 구독자 관리
+                    </p>
                   </div>
-                  <p className="font-bold" style={{ color: 'var(--color-accent)' }}>
-                    ₩{plan.price.toLocaleString()}/월
-                  </p>
                 </div>
-              ))}
+                <span style={{ color: 'var(--color-text-secondary)' }}>→</span>
+              </button>
+
+              <button
+                onClick={() => window.location.href = '/admin/pricing'}
+                className="w-full flex items-center justify-between p-4 rounded-lg transition-all hover:opacity-80"
+                style={{ background: 'var(--color-bg)', border: '1px solid var(--color-border)' }}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">💰</span>
+                  <div className="text-left">
+                    <p className="font-medium" style={{ color: 'var(--color-text)' }}>프라이싱 설정</p>
+                    <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                      가격 플랜 생성 및 편집
+                    </p>
+                  </div>
+                </div>
+                <span style={{ color: 'var(--color-text-secondary)' }}>→</span>
+              </button>
+
+              <button
+                onClick={() => window.location.href = '/admin/payment-settings'}
+                className="w-full flex items-center justify-between p-4 rounded-lg transition-all hover:opacity-80"
+                style={{ background: 'var(--color-bg)', border: '1px solid var(--color-border)' }}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">⚙️</span>
+                  <div className="text-left">
+                    <p className="font-medium" style={{ color: 'var(--color-text)' }}>결제 설정</p>
+                    <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                      환불 정책 및 결제 규칙
+                    </p>
+                  </div>
+                </div>
+                <span style={{ color: 'var(--color-text-secondary)' }}>→</span>
+              </button>
             </CardContent>
           </Card>
         </div>

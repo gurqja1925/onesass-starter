@@ -32,34 +32,91 @@ model User {
 
 // 결제 모델
 model Payment {
-  id            String   @id @default(cuid())
-  userId        String
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  amount        Int      // 원화 금액
-  currency      String   @default("KRW")
-  status        String   @default("pending") // pending, completed, failed, refunded
-  method        String?  // card, bank, kakao, naver
-  provider      String?  // portone, toss
-  transactionId String?  @unique
-  description   String?
-  metadata      Json?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscriptionId  String?  // 구독 결제인 경우 구독 ID
+  amount          Int      // 원화 금액
+  currency        String   @default("KRW")
+  status          String   @default("pending") // pending, completed, failed, refunded
+  type            String   @default("onetime") // onetime, subscription
+  method          String?  // card, bank, kakao, naver
+  provider        String   @default("tosspayments") // tosspayments
+  paymentKey      String?  @unique // TossPayments 결제 키
+  orderId         String?  @unique // 주문 번호
+  orderName       String?  // 주문명
+  refundedAmount  Int      @default(0) // 환불 금액
+  refundedAt      DateTime? // 환불 일시
+  description     String?
+  metadata        Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 // 구독 모델
 model Subscription {
-  id            String    @id @default(cuid())
-  userId        String
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  plan          String    // free, pro, enterprise
-  status        String    @default("active") // active, canceled, expired, trial
-  currentPeriodStart DateTime @default(now())
-  currentPeriodEnd   DateTime?
-  canceledAt    DateTime?
-  trialEnd      DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                  String    @id @default(cuid())
+  userId              String
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // 플랜 정보
+  plan                String    // starter, pro, enterprise
+  planName            String    // "Pro 월간 구독"
+  amount              Int       // 월 결제 금액
+  currency            String    @default("KRW")
+  billingCycle        String    @default("monthly") // monthly, yearly
+
+  // 상태
+  status              String    @default("active") // active, canceled, expired, past_due, trial
+
+  // 날짜 정보
+  startDate           DateTime  @default(now()) // 구독 시작일
+  currentPeriodStart  DateTime  @default(now()) // 현재 결제 주기 시작
+  currentPeriodEnd    DateTime  // 현재 결제 주기 종료
+  nextBillingDate     DateTime? // 다음 결제 예정일
+  billingDay          Int       @default(1) // 매월 결제일 (1-28)
+  trialStart          DateTime? // 체험 시작일
+  trialEnd            DateTime? // 체험 종료일
+
+  // 취소 정보
+  cancelAtPeriodEnd   Boolean   @default(false) // 기간 종료 시 취소 여부
+  canceledAt          DateTime? // 취소 요청 일시
+  cancelReason        String?   // 취소 사유
+  endDate             DateTime? // 구독 종료일 (실제 종료)
+
+  // 결제 정보 (TossPayments)
+  billingKey          String?   @unique // TossPayments 빌링키
+  customerKey         String?   // TossPayments 고객 키
+  lastPaymentId       String?   // 마지막 결제 ID
+  lastPaymentDate     DateTime? // 마지막 결제 일시
+  failedPaymentCount  Int       @default(0) // 결제 실패 횟수
+
+  // 플랜 변경 예약
+  scheduledPlanChange String?   // 변경 예정 플랜
+  planChangeDate      DateTime? // 플랜 변경 예정일
+
+  // 메타데이터
+  metadata            Json?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@index([userId, status])
+  @@index([nextBillingDate])
+}
+
+// 프라이싱 플랜 모델
+model PricingPlan {
+  id          String   @id @default(cuid())
+  name        String   // 플랜 이름 (예: "Starter", "Pro", "Enterprise")
+  price       Int      // 월간 가격 (원)
+  yearlyPrice Int      // 연간 가격 (원)
+  features    String[] // 기능 목록
+  popular     Boolean  @default(false) // 인기 플랜 여부
+  active      Boolean  @default(true) // 활성화 여부
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([active])
 }
 
 // AI 사용량 모델

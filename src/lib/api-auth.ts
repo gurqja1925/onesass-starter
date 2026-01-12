@@ -5,11 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-// Supabase 클라이언트 (서버 사이드용)
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+import { createClient } from '@/lib/supabase/route'
 
 /**
  * 인증 결과 타입
@@ -59,25 +55,11 @@ export async function verifyAuth(request: NextRequest): Promise<AuthResult> {
   }
 
   try {
-    // Authorization 헤더에서 토큰 추출
-    const authHeader = request.headers.get('authorization')
-    const token = authHeader?.replace('Bearer ', '')
+    // Supabase 클라이언트 생성 (쿠키에서 자동으로 세션 읽기)
+    const supabase = createClient(request)
 
-    // 쿠키에서 Supabase 세션 토큰 추출
-    const supabaseToken = request.cookies.get('sb-access-token')?.value || token
-
-    if (!supabaseToken) {
-      return {
-        authenticated: false,
-        user: null,
-        isAdmin: false,
-        error: '인증 토큰이 없습니다',
-      }
-    }
-
-    // Supabase로 토큰 검증
-    const supabase = createClient(supabaseUrl, supabaseAnonKey)
-    const { data: { user }, error } = await supabase.auth.getUser(supabaseToken)
+    // 현재 사용자 가져오기
+    const { data: { user }, error } = await supabase.auth.getUser()
 
     if (error || !user) {
       return {

@@ -1,9 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { AdminLayout, DashboardStats, RecentActivity, useAppMode, Activity } from '@/onesaas-core/admin'
+import { AdminLayout, DashboardStats, RecentActivity, Activity } from '@/onesaas-core/admin'
 import { Card, CardContent, CardHeader, CardTitle } from '@/onesaas-core/ui/Card'
-import { sampleData } from '@/lib/mode'
 
 interface TopUser {
   id: string
@@ -20,7 +19,6 @@ interface RevenueData {
 }
 
 export default function AdminPage() {
-  const { isDemoMode, mounted } = useAppMode()
   const [activities, setActivities] = useState<Activity[]>([])
   const [topUsers, setTopUsers] = useState<TopUser[]>([])
   const [revenueData, setRevenueData] = useState<RevenueData[]>([])
@@ -28,33 +26,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true)
 
   const fetchDashboardData = useCallback(async () => {
-    // 데모 모드: 샘플 데이터 사용
-    if (isDemoMode) {
-      setActivities(sampleData.activities as Activity[])
-      setTopUsers(sampleData.users.map(u => ({
-        id: u.id,
-        email: u.email,
-        name: u.name,
-        plan: u.plan,
-        paymentCount: Math.floor(Math.random() * 10),
-        aiUsageCount: Math.floor(Math.random() * 50),
-      })))
-      // 최근 7일 샘플 매출 데이터
-      const last7Days = Array.from({ length: 7 }, (_, i) => ({
-        date: new Date(Date.now() - i * 86400000).toISOString().split('T')[0],
-        value: Math.floor(Math.random() * 15) + 5,
-      })).reverse()
-      setRevenueData(last7Days)
-      setPlanStats([
-        { plan: 'free', count: 850 },
-        { plan: 'pro', count: 320 },
-        { plan: 'enterprise', count: 64 },
-      ])
-      setLoading(false)
-      return
-    }
-
-    // 운영 모드: API에서 실제 데이터 가져오기
+    // API에서 실제 데이터 가져오기
     try {
       const [activitiesRes, usersRes, analyticsRes] = await Promise.all([
         fetch('/api/admin/activities?limit=8'),
@@ -75,13 +47,11 @@ export default function AdminPage() {
     } finally {
       setLoading(false)
     }
-  }, [isDemoMode])
+  }, [])
 
   useEffect(() => {
-    if (mounted) {
-      fetchDashboardData()
-    }
-  }, [fetchDashboardData, mounted])
+    fetchDashboardData()
+  }, [fetchDashboardData])
 
   const totalPlanUsers = planStats.reduce((sum, p) => sum + p.count, 0)
   const maxRevenue = Math.max(...revenueData.map(d => d.value), 1)
@@ -243,7 +213,7 @@ export default function AdminPage() {
                           {user.name || user.email.split('@')[0]}
                         </p>
                         <p className="text-xs truncate" style={{ color: 'var(--color-text-secondary)' }}>
-                          AI {user.aiUsageCount}회 / 결제 {user.paymentCount}회
+                          결제 {user.paymentCount}회
                         </p>
                       </div>
                       <span
@@ -273,8 +243,6 @@ export default function AdminPage() {
                   { href: '/admin/users', icon: '👥', label: '사용자 관리' },
                   { href: '/admin/payments', icon: '💳', label: '결제 관리' },
                   { href: '/admin/subscriptions', icon: '📋', label: '구독 관리' },
-                  { href: '/admin/ai-usage', icon: '🤖', label: 'AI 사용량' },
-                  { href: '/admin/contents', icon: '📝', label: '콘텐츠 관리' },
                   { href: '/admin/analytics', icon: '📈', label: '통계' },
                   { href: '/admin/logs', icon: '📜', label: '활동 로그' },
                   { href: '/admin/settings', icon: '⚙️', label: '설정' },

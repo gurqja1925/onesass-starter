@@ -1,134 +1,13 @@
-# OneSaaS Starter - AI 개발 가이드
-
-> AI와 함께 한국어로 개발하세요!
-
----
-
-## AI 개발 도구 선택
-
-OneSaaS는 두 가지 AI 코딩 도구를 지원합니다. 원하는 방식을 선택하세요!
-
-### 옵션 1: K-Code (내장) - 권장
-
-**K-Code**는 OneSaaS에 내장된 한국어 특화 AI 코딩 어시스턴트입니다.
-
-```bash
-# 설치 필요 없음! 바로 사용
-pnpm kcode "로그인 페이지에 네이버 로그인 추가해줘"
-pnpm kcode "관리자에 상품 관리 페이지 만들어줘"
-pnpm kcode "결제 완료 후 이메일 발송 기능 추가해줘"
-
-# Smart 모드 (복잡한 작업)
-pnpm kcode "복잡한 API 설계하고 구현해줘" --smart
-
-# 원스탑 가이드
-pnpm kcode --guide
-```
-
-**장점:**
-- 설치 불필요 (내장)
-- OneSaaS 구조 완벽 이해
-- DeepSeek V3 기반 (저렴하고 빠름)
-- 한국어 최적화
-
-**API 키 설정:**
-```bash
-pnpm kcode --key YOUR_DEEPSEEK_API_KEY
-```
-
----
-
-### 옵션 2: Claude Code (설치형)
-
-**Claude Code**는 Anthropic의 공식 AI 코딩 도구입니다.
-
-```bash
-# 1. Claude Code 설치
-npm install -g @anthropic-ai/claude-code
-
-# 2. 프로젝트에서 실행
-cd my-saas
-claude
-
-# 3. 요청하기
-> "로그인 페이지에 네이버 로그인 추가해줘"
-> "관리자에 상품 관리 페이지 만들어줘"
-```
-
-**장점:**
-- Claude Opus/Sonnet 모델 사용
-- 복잡한 추론 능력
-- 대화형 인터페이스
-
-**API 키 설정:**
-```bash
-export ANTHROPIC_API_KEY=sk-ant-...
-```
-
----
-
-### 옵션 3: Cursor IDE
-
-**Cursor**는 AI가 내장된 VS Code 포크입니다.
-
-```bash
-# 1. Cursor 설치 (https://cursor.sh)
-
-# 2. 프로젝트 열기
-cursor .
-
-# 3. Cmd+K (Mac) / Ctrl+K (Windows)로 AI에게 요청
-```
-
----
-
-## 어떤 도구를 선택할까요?
-
-| 도구 | 비용 | 추천 작업 | 필요한 것 |
-|-----|------|---------|----------|
-| **K-Code** | 💰 매우 저렴 | 간단한 수정, 파일 추가, 빠른 개발 | DeepSeek API 키 |
-| **Claude Code** | 💰💰💰 비쌈 | 복잡한 로직, 고난이도 개발, 대규모 리팩토링 | Anthropic API 키 |
-| **Cursor** | 💰💰 중간 | 실시간 편집, 비주얼 작업 | Cursor 구독 |
-
-### K-Code vs Claude Code 상세 비교
-
-| 항목 | K-Code | Claude Code |
-|-----|--------|-------------|
-| **비용** | ~$0.001/작업 (매우 저렴) | ~$0.10/작업 (100배 비쌈) |
-| **속도** | 빠름 | 보통 |
-| **적합한 작업** | 버튼 추가, 페이지 생성, 간단한 API | 복잡한 알고리즘, 대규모 리팩토링 |
-| **OneSaaS 이해도** | 완벽 (전용 설계) | 좋음 |
-| **한국어** | 최적화됨 | 지원됨 |
-
-### 추천 워크플로우
-
-```
-일반 작업 (90%) → K-Code 사용
-  "버튼 추가해줘"
-  "새 페이지 만들어줘"
-  "API 엔드포인트 추가해줘"
-
-복잡한 작업 (10%) → Claude Code 사용
-  "전체 인증 시스템 리팩토링해줘"
-  "복잡한 결제 로직 설계해줘"
-  "대규모 마이그레이션 진행해줘"
-```
-
-**초보자 추천:** K-Code로 시작하세요! 이미 설치되어 있고, 저렴하며, OneSaaS 구조를 완벽히 이해합니다.
-
----
-
 ## 프로젝트 개요
 
 **OneSaaS Starter**는 한국 초보자를 위한 SaaS 템플릿입니다.
 
 ### 핵심 기능
-- **12개 업종별 랜딩 템플릿** - SaaS, 부동산, 교육, 피트니스, 레스토랑, 의료, 여행, 금융, 에이전시, 이커머스, 이벤트
 - **인증 시스템** - 이메일, Google, 카카오, GitHub
 - **결제 시스템** - PortOne, TossPayments (한국형)
 - **관리자 대시보드** - 통계, 사용자 관리, Chart.js
 - **400+ UI 컴포넌트** - 버튼, 카드, 모달, 폼 등
-- **10개 테마** - 다크/라이트 모드 지원
+- **70개 테마** - 다크/라이트 모드 지원
 
 ---
 
@@ -197,8 +76,6 @@ git push                    # 푸시 → 자동 배포!
 
 ### 3. 프로젝트 업데이트
 ```bash
-onesaas update              # OneSaaS CLI로 업데이트
-# 또는 수동으로:
 git fetch origin
 git merge origin/main
 ```
@@ -233,10 +110,6 @@ pnpm db:push                # 스키마 적용
 pnpm db:migrate             # 마이그레이션
 pnpm db:studio              # Prisma Studio
 
-# K-Code
-pnpm kcode "작업"           # AI 코딩
-pnpm kcode --guide          # 가이드
-pnpm kcode --smart "작업"   # Smart 모드
 ```
 
 ---
@@ -269,9 +142,7 @@ my-saas/
 │       ├── routes.ts          # 라우팅 설정
 │       └── theme.ts           # 테마 설정
 │
-├── cli/                       # K-Code CLI 소스
-├── cli-dist/                  # K-Code 빌드 결과
-├── prisma/                    # DB 스키마
+|── prisma/                    # DB 스키마
 └── public/                    # 정적 파일
 ```
 
@@ -370,19 +241,6 @@ export default function HomePage() {
 }
 ```
 
-**사용 가능한 템플릿:**
-- `LandingSaaS`, `LandingStartup`
-- `LandingRealEstate` (부동산)
-- `LandingEducation` (교육/학원)
-- `LandingFitness` (피트니스)
-- `LandingRestaurant` (레스토랑)
-- `LandingHealthcare` (의료/병원)
-- `LandingTravel` (여행)
-- `LandingFinance` (금융/핀테크)
-- `LandingAgency` (에이전시)
-- `LandingEcommerce` (이커머스)
-- `LandingEvent` (이벤트/웨딩)
-
 ### 3. API 엔드포인트 추가
 
 ```tsx
@@ -450,16 +308,6 @@ pnpm build
 # .env 파일의 DATABASE_URL 확인
 # Supabase Connection Pooling URL 사용
 ```
-
-### K-Code 실행 안됨
-```bash
-# CLI 빌드 필요
-pnpm cli:build
-
-# API 키 확인
-pnpm kcode --list
-```
-
 ---
 
 ## 참고 링크

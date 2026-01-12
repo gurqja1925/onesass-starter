@@ -14,23 +14,6 @@
     "version": "1.1.0",
     "source": "https://github.com/johunsang/onesass-starter"
   },
-  "landingTemplates": {
-    "available": [
-      "saas",
-      "startup",
-      "real-estate",
-      "education",
-      "fitness",
-      "restaurant",
-      "healthcare",
-      "travel",
-      "finance",
-      "agency",
-      "ecommerce",
-      "event"
-    ],
-    "active": "saas"
-  },
   "theme": {
     "id": "neon",
     "mode": "dark",
@@ -48,7 +31,10 @@
     },
     "payment": {
       "enabled": true,
-      "provider": "portone"
+      "provider": "tosspayments",
+      "mode": "test",
+      "features": ["onetime", "subscription", "refund"],
+      "note": "⚠️ 테스트 모드 - 실제 결제 전 TossPayments 실제 키로 변경 필요"
     },
     "admin": {
       "enabled": true

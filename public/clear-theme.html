@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>테마 초기화</title>
+</head>
+<body>
+    <h1>테마 설정 초기화 중...</h1>
+    <script>
+        // 모든 테마 관련 localStorage 삭제
+        localStorage.removeItem('onesaas-theme');
+        localStorage.removeItem('onesaas_theme');
+        localStorage.removeItem('onesaas_mode');
+        localStorage.removeItem('onesaas-template-selections');
+        alert('테마 설정이 초기화되었습니다!');
+        window.location.href = '/';
+    </script>
+</body>
+</html>

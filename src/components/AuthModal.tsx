@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { useAuth } from '@/onesaas-core/auth/provider'
 import { getEnabledProviders, PROVIDER_META } from '@/onesaas-core/auth/config'
+import { getAppName, getAppIcon } from '@/lib/branding'
 
 interface AuthModalProps {
   isOpen: boolean
@@ -28,6 +29,8 @@ export default function AuthModal({ isOpen, onClose, redirectUrl = '/service' }:
   const hasEmail = providers.includes('email')
   const hasSocial = providers.some((p) => p !== 'email')
   const socialProviders = providers.filter((p) => p !== 'email')
+  const appName = getAppName()
+  const appIcon = getAppIcon()
 
   useEffect(() => {
     setMounted(true)
@@ -118,6 +121,7 @@ export default function AuthModal({ isOpen, onClose, redirectUrl = '/service' }:
         >
           <X className="w-5 h-5" />
         </button>
+
 
         {/* Social Login */}
         {hasSocial && (

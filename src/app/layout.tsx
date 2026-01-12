@@ -1,24 +1,18 @@
 import type { Metadata } from 'next'
-import Script from 'next/script'
 import './globals.css'
 import Navigation from '@/onesaas-managed/components/Navigation'
 import Footer from '@/onesaas-managed/components/Footer'
 import { AuthProvider } from '@/onesaas-core/auth/provider'
 import { TemplateProvider } from '@/onesaas-core/templates/TemplateProvider'
-
-// Google Analytics
-const gaId = process.env.NEXT_PUBLIC_GA_ID
-
-// Google Search Console 인증
-const googleSiteVerification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
+import { ThemeProvider } from '@/onesaas-core/themes/ThemeProvider'
+import { ConditionalLayout } from '@/components/ConditionalLayout'
+import { ThemeSync } from '@/components/ThemeSync'
 
 // SEO 메타데이터 (환경 변수에서 읽음 - AI 생성 SEO 지원)
 const appName = process.env.NEXT_PUBLIC_APP_NAME || 'OneSaaS'
 const seoTitle = process.env.NEXT_PUBLIC_SEO_TITLE || appName // AI 생성 SEO 타이틀
 const appDescription = process.env.NEXT_PUBLIC_APP_DESCRIPTION || '클릭 몇 번으로 완성하는 SaaS'
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
-const logoPath = process.env.NEXT_PUBLIC_LOGO_PATH || ''
-const ogImagePath = process.env.NEXT_PUBLIC_OG_IMAGE_PATH || ''
 
 export const metadata: Metadata = {
   title: {
@@ -29,13 +23,6 @@ export const metadata: Metadata = {
   keywords: process.env.NEXT_PUBLIC_SEO_KEYWORDS?.split(',') || ['SaaS', '스타트업', '웹서비스'],
   authors: [{ name: process.env.NEXT_PUBLIC_COMPANY_NAME || appName }],
   creator: process.env.NEXT_PUBLIC_COMPANY_NAME || appName,
-  icons: {
-    icon: [
-      { url: '/favicon.ico', sizes: 'any' },
-      { url: '/favicon.png', type: 'image/png' },
-    ],
-    apple: '/favicon.png',
-  },
   openGraph: {
     type: 'website',
     locale: 'ko_KR',
@@ -43,21 +30,16 @@ export const metadata: Metadata = {
     siteName: appName,
     title: seoTitle,
     description: appDescription,
-    images: ogImagePath ? [{ url: ogImagePath, width: 1200, height: 630, alt: appName }] : undefined,
   },
   twitter: {
     card: 'summary_large_image',
     title: seoTitle,
     description: appDescription,
-    images: ogImagePath ? [ogImagePath] : undefined,
   },
   robots: {
     index: true,
     follow: true,
   },
-  verification: googleSiteVerification ? {
-    google: googleSiteVerification,
-  } : undefined,
 }
 
 export default function RootLayout({
@@ -66,36 +48,47 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="ko">
-      <head>
-        {/* Google Analytics */}
-        {gaId && (
-          <>
-            <Script
-              src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
-              strategy="afterInteractive"
-            />
-            <Script id="google-analytics" strategy="afterInteractive">
-              {`
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                gtag('js', new Date());
-                gtag('config', '${gaId}');
-              `}
-            </Script>
-          </>
-        )}
-      </head>
-      <body style={{ background: 'var(--color-bg)', color: 'var(--color-text)' }}>
-        <AuthProvider>
-          <TemplateProvider>
-            <Navigation />
-            <main className="pt-16 min-h-screen">
-              {children}
-            </main>
-            <Footer />
-          </TemplateProvider>
-        </AuthProvider>
+    <html lang="ko" style={{
+      colorScheme: 'dark',
+    }}>
+      <body style={{
+        background: '#09090b',
+        color: '#fafafa',
+        fontFamily: "'Space Grotesk', 'Pretendard', sans-serif"
+      }}>
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            :root {
+              --color-bg: #09090b !important;
+              --color-bg-secondary: #18181b !important;
+              --color-text: #fafafa !important;
+              --color-text-secondary: #a1a1aa !important;
+              --color-accent: #00ff88 !important;
+              --color-accent-hover: #00cc6a !important;
+              --color-border: #27272a !important;
+              --color-success: #22c55e !important;
+              --color-warning: #f59e0b !important;
+              --color-error: #ef4444 !important;
+              --color-info: #3b82f6 !important;
+              --font-display: 'Space Grotesk', 'Pretendard', sans-serif !important;
+              --font-body: 'Pretendard', -apple-system, sans-serif !important;
+              --font-mono: 'JetBrains Mono', monospace !important;
+              --radius: 8px !important;
+              --radius-sm: 4px !important;
+              --radius-lg: 16px !important;
+              --radius-full: 9999px !important;
+            }
+          `
+        }} />
+        <ThemeProvider defaultTheme="neon" defaultMode="dark" persistSettings={false}>
+          <AuthProvider>
+            <TemplateProvider>
+              <ConditionalLayout>
+                {children}
+              </ConditionalLayout>
+            </TemplateProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

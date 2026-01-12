@@ -4,22 +4,33 @@
  * 관리자 컴포넌트
  */
 
-import { ReactNode } from 'react'
+import { ReactNode, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { getAdminMenuItems } from './config'
 import { useAdminAuth, useAdminStats, useAppMode } from './hooks'
+import { useAuth } from '../auth/provider'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card'
 import { Loading } from '../ui/Loading'
+import AuthModal from '@/components/AuthModal'
 
 /**
  * 관리자 레이아웃
  */
 export function AdminLayout({ children }: { children: ReactNode }) {
-  const { isAdmin, loading } = useAdminAuth()
-  const { isDemoMode, mounted } = useAppMode()
+  const router = useRouter()
+  const { user, isAdmin, loading } = useAdminAuth()
   const pathname = usePathname()
   const menuItems = getAdminMenuItems()
+  const { signOut } = useAuth()
+  const [showAuthModal, setShowAuthModal] = useState(false)
+
+  // 로그인하지 않았으면 모달 표시
+  useEffect(() => {
+    if (!loading && !user) {
+      setShowAuthModal(true)
+    }
+  }, [loading, user])
 
   if (loading) {
     return (
@@ -34,32 +45,51 @@ export function AdminLayout({ children }: { children: ReactNode }) {
 
   if (!isAdmin) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center"
-        style={{ background: 'var(--color-bg)' }}
-      >
-        <Card>
-          <CardContent className="text-center py-12">
-            <p className="text-6xl mb-4">🔒</p>
-            <h1
-              className="text-2xl font-bold mb-2"
-              style={{ color: 'var(--color-text)' }}
-            >
-              접근 권한이 없습니다
-            </h1>
-            <p style={{ color: 'var(--color-text-secondary)' }}>
-              관리자 권한이 필요한 페이지입니다
-            </p>
-            <Link
-              href="/"
-              className="inline-block mt-6 px-6 py-2 rounded-lg font-medium"
-              style={{ background: 'var(--color-accent)', color: 'var(--color-bg)' }}
-            >
-              홈으로 돌아가기
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
+      <>
+        <div
+          className="min-h-screen flex items-center justify-center"
+          style={{ background: 'var(--color-bg)' }}
+        >
+          <Card>
+            <CardContent className="text-center py-12">
+              <p className="text-6xl mb-4">🔒</p>
+              <h1
+                className="text-2xl font-bold mb-2"
+                style={{ color: 'var(--color-text)' }}
+              >
+                접근 권한이 없습니다
+              </h1>
+              <p className="mb-6" style={{ color: 'var(--color-text-secondary)' }}>
+                {user ? '어드민 권한이 필요한 페이지입니다' : '어드민 로그인이 필요합니다'}
+              </p>
+              <div className="flex gap-3 justify-center">
+                {!user ? (
+                  <button
+                    onClick={() => setShowAuthModal(true)}
+                    className="inline-block px-6 py-2 rounded-lg font-medium"
+                    style={{ background: 'var(--color-accent)', color: 'var(--color-bg)' }}
+                  >
+                    로그인
+                  </button>
+                ) : (
+                  <Link
+                    href="/"
+                    className="inline-block px-6 py-2 rounded-lg font-medium"
+                    style={{ background: 'var(--color-bg-secondary)', color: 'var(--color-text)' }}
+                  >
+                    홈으로 돌아가기
+                  </Link>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        <AuthModal
+          isOpen={showAuthModal}
+          onClose={() => setShowAuthModal(false)}
+          redirectUrl="/admin"
+        />
+      </>
     )
   }
 
@@ -75,50 +105,79 @@ export function AdminLayout({ children }: { children: ReactNode }) {
       >
         <div className="p-6">
           <Link href="/admin" className="flex items-center gap-2">
-            <span className="text-2xl">⚙️</span>
+            <span className="text-xl">⚙️</span>
             <span
-              className="text-xl font-bold"
+              className="text-lg font-bold"
               style={{ color: 'var(--color-accent)' }}
             >
               관리자
             </span>
           </Link>
-          {mounted && isDemoMode && (
-            <div
-              className="mt-3 px-3 py-2 rounded-lg text-xs font-medium flex items-center gap-2"
-              style={{ background: '#fef3c7', color: '#92400e' }}
-            >
-              <span>🎮</span>
-              <span>데모 모드</span>
-            </div>
-          )}
         </div>
 
-        <nav className="px-4 py-2">
+        <nav className="px-4 py-2 flex-1">
           {menuItems.map((item) => {
             const isActive = pathname === item.href
             return (
               <Link
                 key={item.id}
                 href={item.href}
-                className="flex items-center gap-3 px-4 py-3 rounded-lg mb-1 transition-colors"
+                className="flex items-center gap-3 px-4 py-2.5 rounded-lg mb-1 transition-colors text-sm"
                 style={{
                   background: isActive ? 'var(--color-accent)' : 'transparent',
                   color: isActive ? 'var(--color-bg)' : 'var(--color-text)',
                 }}
               >
-                <span>{item.icon}</span>
+                <span className="text-base">{item.icon}</span>
                 <span>{item.label}</span>
               </Link>
             )
           })}
         </nav>
+
+        {/* 하단 메뉴 */}
+        <div className="px-4 py-4 border-t space-y-2" style={{ borderColor: 'var(--color-border)' }}>
+          <Link
+            href="/service"
+            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors hover:bg-opacity-10 text-sm"
+            style={{
+              background: 'transparent',
+              color: 'var(--color-text)',
+              textAlign: 'left',
+            }}
+          >
+            <span className="text-base">🏠</span>
+            <span>서비스</span>
+          </Link>
+          <button
+            onClick={async () => {
+              await signOut()
+              router.push('/')
+            }}
+            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors hover:bg-opacity-10 text-sm"
+            style={{
+              background: 'transparent',
+              color: 'var(--color-text)',
+              textAlign: 'left',
+            }}
+          >
+            <span className="text-base">🚪</span>
+            <span>로그아웃</span>
+          </button>
+        </div>
       </aside>
 
       {/* 메인 콘텐츠 */}
       <main className="flex-1 p-8 overflow-auto">
         {children}
       </main>
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        redirectUrl="/admin"
+      />
     </div>
   )
 }
