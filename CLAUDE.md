@@ -132,6 +132,52 @@ cursor .
 
 ---
 
+## 🚨 로컬 개발 환경 설정 (필수!)
+
+> **배포 후 로컬에서 개발하려면 반드시 먼저 해주세요!**
+
+OneSaaS로 배포한 후 로컬에서 개발하려면 환경변수가 필요합니다.
+Vercel CLI를 사용하면 **한 번에** 모든 환경변수를 가져올 수 있습니다.
+
+### 1단계: 프로젝트 클론
+
+```bash
+git clone https://github.com/내계정/내프로젝트.git
+cd 내프로젝트
+pnpm install
+```
+
+### 2단계: 환경변수 가져오기 (핵심!)
+
+```bash
+# Vercel CLI 설치 (처음 한 번만)
+npm install -g vercel
+
+# Vercel 계정 연결 (처음 한 번만)
+vercel link
+
+# 환경변수 다운로드 (.env.local 자동 생성!)
+vercel env pull .env.local
+```
+
+### 3단계: 개발 서버 실행
+
+```bash
+pnpm dev
+# http://localhost:3000 에서 확인!
+```
+
+### 💡 왜 이게 필요한가요?
+
+- **DATABASE_URL** - 데이터베이스 연결 주소 (24자리 랜덤 비밀번호 포함)
+- **SUPABASE_URL/KEY** - 인증 시스템 연결 정보
+- **결제 API 키** - 결제 시스템 연결 정보
+- 기타 모든 설정값들...
+
+이 모든 값이 Vercel에 안전하게 저장되어 있고, `vercel env pull` 명령어로 한 번에 가져옵니다!
+
+---
+
 ## 원스탑 가이드
 
 ### 1. 코드 수정하기

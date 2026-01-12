@@ -53,6 +53,45 @@ http://localhost:3000 에서 확인
 
 ---
 
+## 🚨 OneSaaS로 배포한 후 로컬 개발 (필수!)
+
+> **OneSaaS 빌더(onesaas.kr)로 이미 배포했다면 이 방법을 사용하세요!**
+
+OneSaaS로 배포한 프로젝트를 로컬에서 개발하려면 환경변수가 필요합니다.
+**Vercel CLI** 명령어 하나로 모든 환경변수를 가져올 수 있습니다.
+
+```bash
+# 1. 프로젝트 클론
+git clone https://github.com/내계정/내프로젝트.git
+cd 내프로젝트
+pnpm install
+
+# 2. Vercel CLI 설치 (처음 한 번만)
+npm install -g vercel
+
+# 3. Vercel 프로젝트 연결 (처음 한 번만)
+vercel link
+
+# 4. 환경변수 가져오기 (.env.local 자동 생성!)
+vercel env pull .env.local
+
+# 5. 개발 서버 실행
+pnpm dev
+```
+
+**왜 이게 필요한가요?**
+- **DATABASE_URL** - 24자리 랜덤 비밀번호가 포함된 DB 연결 주소
+- **SUPABASE_URL/KEY** - 인증 시스템 연결 정보
+- **결제 API 키** - 결제 시스템 연결 정보
+
+이 모든 값이 Vercel에 안전하게 저장되어 있어서, `vercel env pull` 명령어로 한 번에 가져옵니다!
+
+> 💡 **`pnpm setup`과 뭐가 다른가요?**
+> - `pnpm setup`: 처음 템플릿을 클론해서 새 프로젝트를 만들 때
+> - `vercel env pull`: OneSaaS로 이미 배포한 프로젝트를 로컬에서 개발할 때
+
+---
+
 ## K-Code: AI 코딩 어시스턴트
 
 이 템플릿에는 **K-Code**가 내장되어 있습니다. 한국어로 코딩 작업을 요청하세요!
