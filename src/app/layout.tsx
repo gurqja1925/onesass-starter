@@ -14,6 +14,8 @@ const appName = process.env.NEXT_PUBLIC_APP_NAME || 'OneSaaS'
 const seoTitle = process.env.NEXT_PUBLIC_SEO_TITLE || appName // AI 생성 SEO 타이틀
 const appDescription = process.env.NEXT_PUBLIC_APP_DESCRIPTION || '클릭 몇 번으로 완성하는 SaaS'
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+const logoPath = process.env.NEXT_PUBLIC_LOGO_PATH || ''
+const ogImagePath = process.env.NEXT_PUBLIC_OG_IMAGE_PATH || ''
 
 export const metadata: Metadata = {
   title: {
@@ -24,6 +26,13 @@ export const metadata: Metadata = {
   keywords: process.env.NEXT_PUBLIC_SEO_KEYWORDS?.split(',') || ['SaaS', '스타트업', '웹서비스'],
   authors: [{ name: process.env.NEXT_PUBLIC_COMPANY_NAME || appName }],
   creator: process.env.NEXT_PUBLIC_COMPANY_NAME || appName,
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/favicon.png', type: 'image/png' },
+    ],
+    apple: '/favicon.png',
+  },
   openGraph: {
     type: 'website',
     locale: 'ko_KR',
@@ -31,11 +40,13 @@ export const metadata: Metadata = {
     siteName: appName,
     title: seoTitle,
     description: appDescription,
+    images: ogImagePath ? [{ url: ogImagePath, width: 1200, height: 630, alt: appName }] : undefined,
   },
   twitter: {
     card: 'summary_large_image',
     title: seoTitle,
     description: appDescription,
+    images: ogImagePath ? [ogImagePath] : undefined,
   },
   robots: {
     index: true,

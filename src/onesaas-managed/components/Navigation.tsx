@@ -5,11 +5,15 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { Menu, X, Sun, Moon } from 'lucide-react'
 import { loadTheme, type ThemeId } from '@/onesaas-core/plugins'
 import { getAppName, getAppInitial } from '@/lib/branding'
+
+// 로고 경로 (환경 변수에서)
+const logoPath = process.env.NEXT_PUBLIC_LOGO_PATH || ''
 
 // 개발자 모드 (데모/쇼케이스용) - 배포 시 false로 설정
 const DEV_MODE = process.env.NEXT_PUBLIC_DEV_MODE === 'true'
@@ -58,12 +62,22 @@ export default function Navigation() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <span
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold"
-              style={{ background: 'var(--color-accent)', color: 'var(--color-bg)' }}
-            >
-              {getAppInitial()}
-            </span>
+            {logoPath ? (
+              <Image
+                src={logoPath}
+                alt={getAppName()}
+                width={32}
+                height={32}
+                className="w-8 h-8 object-contain"
+              />
+            ) : (
+              <span
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold"
+                style={{ background: 'var(--color-accent)', color: 'var(--color-bg)' }}
+              >
+                {getAppInitial()}
+              </span>
+            )}
             <span
               className="font-bold text-lg"
               style={{ color: 'var(--color-text)', fontFamily: 'var(--font-display)' }}
