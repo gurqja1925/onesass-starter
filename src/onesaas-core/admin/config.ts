@@ -25,7 +25,8 @@ export interface AdminConfig {
  * - NEXT_PUBLIC_ADMIN_ENABLED: "true" | "false"
  */
 export function getAdminConfig(): AdminConfig {
-  const enabled = process.env.NEXT_PUBLIC_ADMIN_ENABLED === 'true'
+  // 기본값: true (환경 변수가 'false'가 아니면 활성화)
+  const enabled = process.env.NEXT_PUBLIC_ADMIN_ENABLED !== 'false'
 
   return {
     enabled,
