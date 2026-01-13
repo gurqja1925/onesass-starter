@@ -17,11 +17,12 @@ export const config = {
   // 기능 플래그
   features: {
     auth: {
-      enabled: true,
+      enabled: process.env.NEXT_PUBLIC_AUTH_ENABLED !== 'false',
       providers: {
-        email: true,
-        google: true,
-        kakao: true,
+        email: (process.env.NEXT_PUBLIC_AUTH_PROVIDERS || 'email').includes('email'),
+        google: (process.env.NEXT_PUBLIC_AUTH_PROVIDERS || 'email,google,kakao,github').includes('google'),
+        kakao: (process.env.NEXT_PUBLIC_AUTH_PROVIDERS || 'email,google,kakao,github').includes('kakao'),
+        github: (process.env.NEXT_PUBLIC_AUTH_PROVIDERS || 'email,google,kakao,github').includes('github'),
       },
       magicLink: false,
     },
@@ -81,6 +82,37 @@ export const config = {
       ],
     },
   ],
+
+  // 플랜별 사용량 한도
+  planLimits: {
+    free: {
+      creates: 5,      // 월 5개 생성
+      aiCalls: 10,     // 월 10회 AI 호출
+      exports: 3,      // 월 3회 내보내기
+      apiCalls: 100,   // 월 100회 API 호출
+      storage: 100,    // 100MB 저장공간
+    },
+    pro: {
+      creates: 100,    // 월 100개 생성
+      aiCalls: 500,    // 월 500회 AI 호출
+      exports: 50,     // 월 50회 내보내기
+      apiCalls: 10000, // 월 10,000회 API 호출
+      storage: 5000,   // 5GB 저장공간
+    },
+    enterprise: {
+      creates: -1,     // 무제한 (-1)
+      aiCalls: -1,     // 무제한
+      exports: -1,     // 무제한
+      apiCalls: -1,    // 무제한
+      storage: -1,     // 무제한
+    },
+  } as Record<string, {
+    creates: number
+    aiCalls: number
+    exports: number
+    apiCalls: number
+    storage: number
+  }>,
 
   // 소셜 링크
   social: {

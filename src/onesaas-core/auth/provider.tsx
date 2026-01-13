@@ -43,6 +43,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // 현재 세션 가져오기
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('🔐 AuthProvider: Session loaded', {
+        hasSession: !!session,
+        userId: session?.user?.id,
+        email: session?.user?.email,
+      })
       setSession(session)
       setUser(session?.user ?? null)
       setLoading(false)

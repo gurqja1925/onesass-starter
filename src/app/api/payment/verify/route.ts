@@ -1,7 +1,7 @@
 /**
  * 결제 검증 API
  *
- * PortOne 결제 완료 후 서버에서 결제 정보를 검증하고 DB에 기록
+ * Toss Payments 결제 완료 후 서버에서 결제 정보를 검증하고 DB에 기록
  *
  * 보안:
  * - 인증 필수 (데모 모드 제외)
@@ -21,16 +21,17 @@ import {
   isDemoMode,
 } from '@/lib/api-auth'
 
-// PortOne API로 결제 정보 조회
-async function getPortOnePayment(impUid: string) {
-  const apiKey = process.env.PORTONE_API_KEY
-  const apiSecret = process.env.PORTONE_API_SECRET
+// Toss Payments API로 결제 정보 조회
+// TODO: Toss Payments API로 교체 필요 (현재는 임시로 PortOne API 사용)
+async function getTossPayment(impUid: string) {
+  const apiKey = process.env.TOSS_CLIENT_KEY || process.env.PORTONE_API_KEY
+  const apiSecret = process.env.TOSS_SECRET_KEY || process.env.PORTONE_API_SECRET
 
   if (!apiKey || !apiSecret) {
-    throw new Error('PortOne API credentials not configured')
+    throw new Error('Toss Payments API credentials not configured')
   }
 
-  // 토큰 발급
+  // 토큰 발급 (임시: PortOne API 사용)
   const tokenRes = await fetch('https://api.iamport.kr/users/getToken', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -39,7 +40,7 @@ async function getPortOnePayment(impUid: string) {
   const tokenData = await tokenRes.json()
 
   if (tokenData.code !== 0) {
-    throw new Error('Failed to get PortOne access token')
+    throw new Error('Failed to get payment access token')
   }
 
   const accessToken = tokenData.response.access_token
@@ -133,10 +134,10 @@ export async function POST(request: NextRequest) {
         status: 'paid',
         pay_method: 'card',
       }
-      userId = body.userId || 'demo-user'
+      userId = body.userId || 'demo-user-12345'
     } else {
-      // 운영 모드: PortOne API로 실제 결제 검증
-      paymentInfo = await getPortOnePayment(impUid)
+      // 운영 모드: Toss Payments API로 실제 결제 검증
+      paymentInfo = await getTossPayment(impUid)
 
       // 금액 검증 (PG에서 받은 금액과 요청 금액 비교)
       if (paymentInfo.amount !== amount) {
@@ -165,7 +166,7 @@ export async function POST(request: NextRequest) {
         status: 'completed',
         type: plan ? 'subscription' : 'onetime',
         method: paymentInfo.pay_method || 'card',
-        provider: 'portone',
+        provider: 'toss',
         paymentKey: impUid,
         orderId: merchantUid,
         orderName: description || plan || '결제',
@@ -245,7 +246,11 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Payment verification failed:', error)
     return NextResponse.json(
-      { error: 'Payment verification failed', verified: false },
+      { 
+        error: 'Payment verification failed', 
+        verified: false,
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }

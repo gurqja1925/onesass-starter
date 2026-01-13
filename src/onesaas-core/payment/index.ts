@@ -5,7 +5,6 @@
  */
 
 export * from './config'
-export * from './portone'
 export * from './toss-payments'
 export * from './hooks'
 export * from './components'

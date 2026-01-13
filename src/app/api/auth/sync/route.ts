@@ -17,8 +17,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
-    // Prisma에서 사용자 찾기 또는 생성 (DB 에러 무시)
+    // Prisma에서 사용자 찾기 또는 생성
     try {
+      // 첫 번째 사용자인지 확인
+      const userCount = await prisma.user.count()
+      const isFirstUser = userCount === 0
+
       const user = await prisma.user.upsert({
         where: { email: supabaseUser.email! },
         update: {
@@ -32,8 +36,19 @@ export async function POST(request: NextRequest) {
           name: supabaseUser.user_metadata?.full_name || supabaseUser.user_metadata?.name || null,
           image: supabaseUser.user_metadata?.avatar_url || null,
           emailVerified: supabaseUser.email_confirmed_at ? new Date(supabaseUser.email_confirmed_at) : null,
+          role: isFirstUser ? 'admin' : 'user', // 첫 번째 사용자는 자동으로 관리자
         },
       })
+
+      // 첫 번째 사용자이고 관리자가 아니면 관리자로 업데이트
+      if (isFirstUser && user.role !== 'admin') {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { role: 'admin' }
+        })
+        user.role = 'admin'
+      }
+
       return NextResponse.json({ user })
     } catch (dbError) {
       console.warn('User sync skipped (DB not configured):', dbError)

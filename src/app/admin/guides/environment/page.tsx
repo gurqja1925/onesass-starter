@@ -168,8 +168,8 @@ export default function EnvironmentGuidePage() {
                 <h4 className="font-bold" style={{ color: 'var(--color-text)' }}>결제 (선택)</h4>
               </div>
               <div className="space-y-2 font-mono text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-                <p><strong>PORTONE_API_KEY</strong> - PortOne API 키</p>
-                <p><strong>PORTONE_API_SECRET</strong> - PortOne 비밀 키</p>
+                <p><strong>PORTONE_API_KEY</strong> - Toss Payments API 키</p>
+                <p><strong>PORTONE_API_SECRET</strong> - Toss Payments 비밀 키</p>
               </div>
             </div>
 

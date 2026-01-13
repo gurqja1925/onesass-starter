@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { useAuth } from '@/onesaas-core/auth/provider'
-import { getEnabledProviders, PROVIDER_META } from '@/onesaas-core/auth/config'
+import { PROVIDER_META, type AuthProviderType } from '@/onesaas-core/auth/config'
 import { getAppName, getAppIcon } from '@/lib/branding'
 
 interface AuthModalProps {
@@ -23,9 +23,10 @@ export default function AuthModal({ isOpen, onClose, redirectUrl = '/service' }:
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [mounted, setMounted] = useState(false)
+  const [providers, setProviders] = useState<AuthProviderType[]>(['email'])
+  const [providersLoading, setProvidersLoading] = useState(true)
 
   const { signIn, signUp, signInWithProvider } = useAuth()
-  const providers = getEnabledProviders()
   const hasEmail = providers.includes('email')
   const hasSocial = providers.some((p) => p !== 'email')
   const socialProviders = providers.filter((p) => p !== 'email')
@@ -43,9 +44,26 @@ export default function AuthModal({ isOpen, onClose, redirectUrl = '/service' }:
         setRememberEmail(true)
       }
     }
+    
+    // DB에서 활성화된 프로바이더 목록 가져오기
+    const fetchProviders = async () => {
+      try {
+        const res = await fetch('/api/auth/providers')
+        const data = await res.json()
+        if (data.providers && Array.isArray(data.providers)) {
+          setProviders(data.providers as AuthProviderType[])
+        }
+      } catch (error) {
+        console.error('Failed to fetch auth providers:', error)
+        // 에러 시 기본값(이메일만) 유지
+      } finally {
+        setProvidersLoading(false)
+      }
+    }
+    fetchProviders()
   }, [])
 
-  if (!isOpen || !mounted) return null
+  if (!isOpen || !mounted || providersLoading) return null
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -104,11 +122,11 @@ export default function AuthModal({ isOpen, onClose, redirectUrl = '/service' }:
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-6 right-6 p-2 rounded-full hover:opacity-70 transition-all z-10"
+          className="absolute top-4 right-4 p-2.5 rounded-full hover:bg-gray-600 transition-all z-10 shadow-lg hover:shadow-xl"
           style={{
-            color: '#fafafa',
-            background: '#27272a',
-            border: '1px solid #3f3f46'
+            color: '#ffffff',
+            background: '#ef4444',
+            border: '2px solid #ffffff'
           }}
         >
           <X className="w-5 h-5" />

@@ -28,6 +28,7 @@ model User {
   aiUsages      AIUsage[]
   contents      Content[]
   notes         Note[]
+  usages        Usage[]
 }
 
 // 결제 모델
@@ -180,4 +181,27 @@ model Note {
   published Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// 사용량 모델 (월별 사용량 추적)
+model Usage {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // 기간 (월별 리셋)
+  period    String   // "2024-01" 형식 (년-월)
+  
+  // 사용량 카운터
+  creates   Int      @default(0) // 생성 횟수 (콘텐츠, 프로젝트 등)
+  aiCalls   Int      @default(0) // AI API 호출 횟수
+  exports   Int      @default(0) // 내보내기 횟수
+  apiCalls  Int      @default(0) // API 호출 횟수
+  storage   Int      @default(0) // 저장 용량 (MB)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, period])
+  @@index([userId, period])
 }

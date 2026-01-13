@@ -43,6 +43,7 @@ export default function UsersPage() {
     plan: '',
     status: '',
     role: '',
+    subscriptionEndDate: '',
   })
   const [userSubscription, setUserSubscription] = useState<Subscription | null>(null)
 
@@ -91,11 +92,16 @@ export default function UsersPage() {
 
   const handleOpenEditModal = async (user: User) => {
     setSelectedUser(user)
+    // 기본 만료일: 30일 후
+    const defaultEndDate = new Date()
+    defaultEndDate.setDate(defaultEndDate.getDate() + 30)
+    
     setEditForm({
       name: user.name || '',
       plan: user.plan,
       status: user.status,
       role: user.role,
+      subscriptionEndDate: defaultEndDate.toISOString().split('T')[0],
     })
 
     // 구독 정보 가져오기
@@ -104,6 +110,13 @@ export default function UsersPage() {
       const data = await res.json()
       if (data.subscription) {
         setUserSubscription(data.subscription)
+        // 기존 만료일이 있으면 해당 값으로 설정
+        if (data.subscription.currentPeriodEnd) {
+          setEditForm(prev => ({
+            ...prev,
+            subscriptionEndDate: new Date(data.subscription.currentPeriodEnd).toISOString().split('T')[0],
+          }))
+        }
       } else {
         setUserSubscription(null)
       }
@@ -385,6 +398,26 @@ export default function UsersPage() {
                   <option value="enterprise">Enterprise</option>
                 </select>
               </div>
+
+              {/* 만료일 선택 (유료 플랜인 경우만 표시) */}
+              {editForm.plan !== 'free' && (
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text)' }}>
+                    구독 만료일
+                  </label>
+                  <input
+                    type="date"
+                    value={editForm.subscriptionEndDate}
+                    onChange={(e) => setEditForm({ ...editForm, subscriptionEndDate: e.target.value })}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="w-full px-3 py-2 text-sm rounded-lg border"
+                    style={{ background: 'var(--color-bg-secondary)', color: 'var(--color-text)', borderColor: 'var(--color-border)' }}
+                  />
+                  <p className="text-xs mt-1" style={{ color: 'var(--color-text-secondary)' }}>
+                    이 날짜까지 플랜 권한이 유지됩니다
+                  </p>
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium mb-2" style={{ color: 'var(--color-text)' }}>상태</label>

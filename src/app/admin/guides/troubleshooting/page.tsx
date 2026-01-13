@@ -304,7 +304,7 @@ export default function TroubleshootingGuidePage() {
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-xl">1️⃣</span>
                   <p className="font-medium" style={{ color: 'var(--color-text)' }}>
-                    PortOne API 키 확인
+                    Toss Payments API 키 확인
                   </p>
                 </div>
                 <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
@@ -330,7 +330,7 @@ export default function TroubleshootingGuidePage() {
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-xl">3️⃣</span>
                   <p className="font-medium" style={{ color: 'var(--color-text)' }}>
-                    PortOne 대시보드 확인
+                    Toss Payments 대시보드 확인
                   </p>
                 </div>
                 <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>

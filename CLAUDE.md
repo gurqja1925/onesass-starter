@@ -4,7 +4,7 @@
 
 ### 핵심 기능
 - **인증 시스템** - 이메일, Google, 카카오, GitHub
-- **결제 시스템** - PortOne, TossPayments (한국형)
+- **결제 시스템** - Toss Payments, TossPayments (한국형)
 - **관리자 대시보드** - 통계, 사용자 관리, Chart.js
 - **400+ UI 컴포넌트** - 버튼, 카드, 모달, 폼 등
 - **70개 테마** - 다크/라이트 모드 지원
@@ -289,7 +289,7 @@ OPENAI_API_KEY=sk-...
 ANTHROPIC_API_KEY=sk-ant-...
 
 # 결제 (선택)
-PORTONE_API_KEY=...
+TOSS_API_KEY=...
 TOSS_SECRET_KEY=...
 ```
 

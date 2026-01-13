@@ -306,7 +306,7 @@ export default function BusinessGuidePage() {
               </div>
               <div className="flex items-center gap-3 p-3 rounded-lg" style={{ background: 'var(--color-bg)' }}>
                 <span className="text-xl">☑️</span>
-                <p style={{ color: 'var(--color-text)' }}>결제 시스템을 연동했나요? (PortOne)</p>
+                <p style={{ color: 'var(--color-text)' }}>결제 시스템을 연동했나요? (Toss Payments)</p>
               </div>
               <div className="flex items-center gap-3 p-3 rounded-lg" style={{ background: 'var(--color-bg)' }}>
                 <span className="text-xl">☑️</span>

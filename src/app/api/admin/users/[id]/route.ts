@@ -60,7 +60,7 @@ export async function PATCH(
 
   try {
     const { id } = await params
-    const { name, role, plan, status } = await request.json()
+    const { name, role, plan, status, subscriptionEndDate } = await request.json()
 
     const user = await prisma.user.update({
       where: { id },
@@ -72,6 +72,65 @@ export async function PATCH(
       },
     })
 
+    // 플랜 변경 시 구독 정보도 업데이트
+    if (plan && plan !== 'free') {
+      const now = new Date()
+      // 만료일이 지정되었으면 사용, 아니면 30일 후
+      const endDate = subscriptionEndDate 
+        ? new Date(subscriptionEndDate) 
+        : new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+
+      // 기존 활성 구독이 있는지 확인
+      const existingSubscription = await prisma.subscription.findFirst({
+        where: {
+          userId: id,
+          status: { in: ['active', 'trial'] },
+        },
+      })
+
+      if (existingSubscription) {
+        // 기존 구독 업데이트
+        await prisma.subscription.update({
+          where: { id: existingSubscription.id },
+          data: {
+            plan,
+            planName: getPlanName(plan),
+            status: 'active',
+            currentPeriodStart: now,
+            currentPeriodEnd: endDate,
+            nextBillingDate: endDate,
+          },
+        })
+      } else {
+        // 새 구독 생성
+        await prisma.subscription.create({
+          data: {
+            userId: id,
+            plan,
+            planName: getPlanName(plan),
+            amount: getPlanAmount(plan),
+            status: 'active',
+            currentPeriodStart: now,
+            currentPeriodEnd: endDate,
+            nextBillingDate: endDate,
+          },
+        })
+      }
+    } else if (plan === 'free') {
+      // 무료 플랜으로 변경 시 기존 구독 취소
+      await prisma.subscription.updateMany({
+        where: {
+          userId: id,
+          status: { in: ['active', 'trial'] },
+        },
+        data: {
+          status: 'canceled',
+          canceledAt: new Date(),
+          cancelReason: '관리자에 의해 무료 플랜으로 변경',
+        },
+      })
+    }
+
     // 역할/플랜 변경 시 이벤트 기록
     if (role || plan) {
       await prisma.analytics.create({
@@ -80,7 +139,7 @@ export async function PATCH(
           value: 1,
           metadata: {
             userId: id,
-            changes: { role, plan, status },
+            changes: { role, plan, status, subscriptionEndDate },
           },
         },
       })
@@ -91,6 +150,28 @@ export async function PATCH(
     console.error('Failed to update user:', error)
     return NextResponse.json({ error: 'Failed to update user' }, { status: 500 })
   }
+}
+
+// 플랜 이름 헬퍼
+function getPlanName(plan: string): string {
+  const names: Record<string, string> = {
+    free: 'Free',
+    starter: 'Starter',
+    pro: 'Pro',
+    enterprise: 'Enterprise',
+  }
+  return names[plan] || plan
+}
+
+// 플랜 가격 헬퍼
+function getPlanAmount(plan: string): number {
+  const amounts: Record<string, number> = {
+    free: 0,
+    starter: 9900,
+    pro: 29000,
+    enterprise: 99000,
+  }
+  return amounts[plan] || 0
 }
 
 // 사용자 삭제 (비활성화)

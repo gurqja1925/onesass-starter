@@ -2,7 +2,9 @@ import { streamText, generateText } from 'ai'
 import { openai } from '@ai-sdk/openai'
 import { anthropic } from '@ai-sdk/anthropic'
 import { google } from '@ai-sdk/google'
-import { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+import { requireAuth, AuthResult } from '@/lib/api-auth'
+import { useQuota, getUserPlan } from '@/lib/usage'
 
 // 지원하는 모델 목록 (2025년 1월 최신)
 export const SUPPORTED_MODELS = {
@@ -44,7 +46,33 @@ function getModel(modelId: ModelId) {
 }
 
 export async function POST(request: NextRequest) {
+  // 인증 확인
+  const auth = await requireAuth(request)
+  if (auth instanceof NextResponse) return auth
+
+  const authResult = auth as AuthResult
+  const userId = authResult.user?.id
+
+  if (!userId) {
+    return Response.json({ error: '사용자 정보를 찾을 수 없습니다' }, { status: 401 })
+  }
+
   try {
+    // DB에서 사용자 플랜 조회
+    const userPlan = await getUserPlan(userId)
+
+    // 사용량 체크 및 증가 (AI 호출)
+    const quotaResult = await useQuota(userId, userPlan, 'aiCalls', 1)
+    
+    if (!quotaResult.success) {
+      return Response.json({ 
+        error: quotaResult.error,
+        limitReached: true,
+        current: quotaResult.current,
+        limit: quotaResult.limit,
+      }, { status: 403 })
+    }
+
     const body = await request.json()
     const { messages, model: modelId = 'gpt-4o-mini', stream = true } = body
 
@@ -95,7 +123,14 @@ export async function POST(request: NextRequest) {
         system: '당신은 친절하고 도움이 되는 AI 어시스턴트입니다. 한국어로 응답해주세요.',
       })
 
-      return Response.json({ text: result.text })
+      return Response.json({ 
+        text: result.text,
+        usage: {
+          current: quotaResult.current,
+          limit: quotaResult.limit,
+          remaining: quotaResult.remaining,
+        }
+      })
     }
   } catch (error) {
     console.error('AI Chat Error:', error)

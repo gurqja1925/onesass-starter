@@ -50,6 +50,7 @@ export const PROVIDER_META: Record<
  * 환경 변수:
  * - NEXT_PUBLIC_AUTH_ENABLED: "true" | "false"
  * - NEXT_PUBLIC_AUTH_PROVIDERS: "email,google,kakao,github"
+ * - ADMIN_AUTH_PROVIDERS: "email" (관리자용 - 기본값: email만)
  */
 export function getAuthConfig(): AuthConfig {
   const enabled = process.env.NEXT_PUBLIC_AUTH_ENABLED !== 'false'
@@ -58,6 +59,20 @@ export function getAuthConfig(): AuthConfig {
 
   return {
     enabled,
+    providers,
+  }
+}
+
+/**
+ * 관리자 인증 설정 로드
+ * 관리자는 이메일/비밀번호만 지원
+ */
+export function getAdminAuthConfig(): AuthConfig {
+  const adminProvidersEnv = process.env.ADMIN_AUTH_PROVIDERS || 'email'
+  const providers = adminProvidersEnv.split(',').map((p) => p.trim()).filter(Boolean)
+
+  return {
+    enabled: true,
     providers,
   }
 }

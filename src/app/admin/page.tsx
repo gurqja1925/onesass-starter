@@ -272,7 +272,7 @@ export default function AdminPage() {
               {[
                 { label: '서버 상태', status: 'online', statusLabel: '정상' },
                 { label: '데이터베이스', status: 'online', statusLabel: '연결됨' },
-                { label: '결제 시스템', status: 'online', statusLabel: 'PortOne' },
+                { label: '결제 시스템', status: 'online', statusLabel: 'Toss Payments' },
                 { label: 'AI 서비스', status: 'online', statusLabel: '활성화' },
               ].map((item) => (
                 <div

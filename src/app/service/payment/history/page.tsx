@@ -15,6 +15,7 @@ interface PaymentHistory {
   billingCycle?: string
   currentPeriodEnd?: string
   cancelAtPeriodEnd?: boolean
+  daysRemaining?: number
 }
 
 type ModalType = 'cancel' | 'change' | null
@@ -24,25 +25,50 @@ export default function PaymentHistoryPage() {
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState<ModalType>(null)
   const [selectedPayment, setSelectedPayment] = useState<PaymentHistory | null>(null)
+  const [subscriptionStatus, setSubscriptionStatus] = useState<any>(null)
 
-  // 결제 내역 불러오기
+  // 결제 내역 및 구독 상태 불러오기
   useEffect(() => {
-    const fetchHistory = async () => {
+    const fetchData = async () => {
       try {
-        const res = await fetch('/api/payment/history')
-        const data = await res.json()
+        // 결제 내역 가져오기
+        const historyRes = await fetch('/api/payment/history')
+        const historyData = await historyRes.json()
 
-        if (data.success) {
-          setHistory(data.history || [])
+        if (historyData.success) {
+          // 구독 상태별로 남은 기간 계산
+          const enrichedHistory = historyData.history.map((item: any) => {
+            if (item.type === 'subscription' && item.currentPeriodEnd) {
+              const now = new Date()
+              const periodEnd = new Date(item.currentPeriodEnd)
+              const daysRemaining = Math.ceil((periodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+              
+              return {
+                ...item,
+                daysRemaining: Math.max(0, daysRemaining)
+              }
+            }
+            return item
+          })
+          
+          setHistory(enrichedHistory || [])
+        }
+
+        // 구독 상태 가져오기
+        const subscriptionRes = await fetch('/api/subscription/check')
+        const subscriptionData = await subscriptionRes.json()
+        
+        if (subscriptionRes.ok) {
+          setSubscriptionStatus(subscriptionData)
         }
       } catch (error) {
-        console.error('결제 내역 불러오기 실패:', error)
+        console.error('데이터 불러오기 실패:', error)
       } finally {
         setLoading(false)
       }
     }
 
-    fetchHistory()
+    fetchData()
   }, [])
   const getStatusBadge = (status: PaymentHistory['status']) => {
     const styles = {
@@ -166,6 +192,44 @@ export default function PaymentHistoryPage() {
           </p>
         </div>
 
+        {/* Subscription Status Card */}
+        {subscriptionStatus && subscriptionStatus.hasActiveSubscription && (
+          <div
+            className="p-4 rounded-xl mb-6"
+            style={{ 
+              background: 'linear-gradient(135deg, var(--color-accent), #10b981)', 
+              border: '1px solid var(--color-border)' 
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-white mb-1">
+                  🎯 현재 구독 중
+                </h2>
+                <p className="text-sm text-white/90 mb-2">
+                  {subscriptionStatus.subscription?.planName}
+                </p>
+                {subscriptionStatus.subscription?.currentPeriodEnd && (
+                  <div className="text-xs text-white/80">
+                    다음 결제일: {new Date(subscriptionStatus.subscription.currentPeriodEnd).toLocaleDateString('ko-KR')}
+                    {subscriptionStatus.subscription?.daysRemaining && (
+                      <span> (남은 {subscriptionStatus.subscription.daysRemaining}일)</span>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-white">
+                  {formatPrice(subscriptionStatus.subscription?.amount || 0)}
+                </div>
+                <div className="text-xs text-white/80">
+                  {subscriptionStatus.subscription?.billingCycle === 'monthly' ? '월간' : '연간'} 구독
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Payment History List */}
         {loading ? (
           <div
@@ -215,9 +279,29 @@ export default function PaymentHistoryPage() {
                           {payment.billingCycle === 'monthly' ? '월간' : '연간'} 자동결제
                         </div>
                       )}
+                      {payment.type === 'subscription' && payment.currentPeriodEnd && (
+                        <div className="text-xs mt-0.5 space-y-0.5">
+                          <div style={{ color: payment.daysRemaining && payment.daysRemaining <= 7 ? '#ef4444' : 'var(--color-text-secondary)' }}>
+                            📅 {payment.currentPeriodEnd}까지
+                          </div>
+                          {payment.daysRemaining !== undefined && (
+                            <div style={{ 
+                              color: payment.daysRemaining <= 7 ? '#ef4444' : 'var(--color-text-secondary)',
+                              fontWeight: payment.daysRemaining <= 7 ? 'bold' : 'normal'
+                            }}>
+                              {payment.daysRemaining > 0 
+                                ? `남은 기간: ${payment.daysRemaining}일` 
+                                : payment.daysRemaining === 0 
+                                  ? '오늘 만료' 
+                                  : '만료됨'
+                              }
+                            </div>
+                          )}
+                        </div>
+                      )}
                       {payment.cancelAtPeriodEnd && (
                         <div className="text-xs mt-0.5" style={{ color: '#ef4444' }}>
-                          {payment.currentPeriodEnd}까지 사용 가능
+                          🚫 취소 예정
                         </div>
                       )}
                     </div>

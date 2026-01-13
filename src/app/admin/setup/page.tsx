@@ -85,7 +85,7 @@ export default function SetupPage() {
         '  ✓ 결제 확인 API',
         '',
         '현재 상태: 데모 모드 (가짜 결제)',
-        '실제 결제를 받으려면 PortOne 가입 필요',
+        '실제 결제를 받으려면 Toss Payments 가입 필요',
         '',
         '',
         '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
@@ -137,7 +137,32 @@ export default function SetupPage() {
         '2. NEXT_PUBLIC_SITE_URL',
         '   → 실제 도메인으로 변경',
         '',
-        '3. 결제 관련 키 (PortOne 가입 후)',
+        '3. 결제 관련 키 (Toss Payments 가입 후)',
+        '',
+        '',
+        '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+        '🌐 도메인 설정이 필요한 서비스',
+        '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+        '',
+        '아래 서비스들은 실제 도메인을 등록한 후에 설정하세요:',
+        '',
+        '1. Google Analytics',
+        '   - 도메인: analytics.google.com',
+        '   - 도메인 등록 후 추적 ID 발급',
+        '   - NEXT_PUBLIC_GA_ID 환경변수에 추가',
+        '',
+        '2. Google Search Console',
+        '   - 도메인: search.google.com/search-console',
+        '   - 도메인 소유권 확인 후 등록',
+        '   - 검색 노출 및 SEO 분석',
+        '',
+        '3. Toss Payments',
+        '   - 도메인: toss.im/business',
+        '   - 도메인 등록 후 클라이언트 키 발급',
+        '   - TOSS_CLIENT_KEY, TOSS_SECRET_KEY 환경변수에 추가',
+        '',
+        '⚠️ 주의: localhost에서는 이 서비스들이 제대로 작동하지 않습니다!',
+        '실제 도메인(예: yourdomain.com)을 등록한 후 설정하세요.',
       ],
       envVars: [
         { key: 'NEXT_PUBLIC_ADMIN_EMAILS', example: 'your-email@example.com', description: '관리자 이메일 (본인 이메일로 변경)' },
@@ -171,7 +196,7 @@ export default function SetupPage() {
         '나중에 실제 서비스를 시작할 때:',
         '',
         '1. .env 파일에서 설정 변경',
-        '2. 실제 결제 연동 (PortOne 가입)',
+        '2. 실제 결제 연동 (Toss Payments 가입)',
         '3. 도메인 연결',
         '4. Vercel에 배포',
         '',
@@ -478,14 +503,14 @@ export default function SetupPage() {
             <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>DB/인증</p>
           </a>
           <a
-            href="https://portone.io/docs"
+            href="https://toss.io/docs"
             target="_blank"
             rel="noopener noreferrer"
             className="p-4 rounded-lg transition-all hover:scale-105"
             style={{ background: 'var(--color-bg-secondary)' }}
           >
             <span className="text-2xl">💳</span>
-            <p className="font-medium mt-2" style={{ color: 'var(--color-text)' }}>PortOne</p>
+            <p className="font-medium mt-2" style={{ color: 'var(--color-text)' }}>Toss Payments</p>
             <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>결제 연동</p>
           </a>
           <a

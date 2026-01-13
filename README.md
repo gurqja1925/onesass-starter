@@ -175,7 +175,7 @@ pnpm db:migrate             # 프로덕션용
 | 기능 | 설명 |
 |-----|------|
 | **인증** | 이메일, Google, 카카오, GitHub 로그인 |
-| **결제** | PortOne, TossPayments 연동 (한국형) |
+| **결제** | Toss Payments, TossPayments 연동 (한국형) |
 | **관리자** | 대시보드, 사용자 관리, 통계, Chart.js |
 | **AI 기능** | AI 글쓰기, 이미지 생성 샘플 |
 | **테마** | 11개 테마 + 다크/라이트 모드 |
@@ -216,7 +216,7 @@ QWEN_API_KEY=sk-...              # 가장 저렴
 DEEPSEEK_API_KEY=sk-...          # 코딩 특화
 
 # 결제 (선택)
-NEXT_PUBLIC_PORTONE_MERCHANT_ID=imp...
+NEXT_PUBLIC_TOSS_MERCHANT_ID=imp...
 NEXT_PUBLIC_TOSS_CLIENT_KEY=test_ck_...
 ```
 
@@ -282,7 +282,7 @@ pnpm build
 - **스타일**: Tailwind CSS
 - **데이터베이스**: Prisma + Supabase (PostgreSQL)
 - **인증**: Supabase Auth
-- **결제**: PortOne / TossPayments
+- **결제**: Toss Payments / TossPayments
 - **차트**: Chart.js
 - **AI 코딩**: K-Code (DeepSeek, OpenAI, Anthropic)
 - **AI SDK**: Vercel AI SDK
