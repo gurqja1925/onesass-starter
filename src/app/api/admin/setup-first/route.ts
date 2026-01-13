@@ -1,0 +1,130 @@
+/**
+ * 첫 번째 관리자 계정 자동 생성 API
+ *
+ * 배포 직후 첫 관리자 계정을 생성합니다.
+ * 이 엔드포인트는 DB에 사용자가 없을 때만 작동합니다.
+ */
+
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import prisma from '@/lib/prisma'
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const { email, password } = body
+
+    // 입력 검증
+    if (!email || !password) {
+      return NextResponse.json(
+        { error: '이메일과 비밀번호를 입력해주세요.' },
+        { status: 400 }
+      )
+    }
+
+    if (password.length < 8) {
+      return NextResponse.json(
+        { error: '비밀번호는 최소 8자 이상이어야 합니다.' },
+        { status: 400 }
+      )
+    }
+
+    // 이미 사용자가 존재하는지 확인
+    const userCount = await prisma.user.count()
+    if (userCount > 0) {
+      return NextResponse.json(
+        { error: '이미 사용자가 존재합니다. 첫 번째 관리자만 자동 생성할 수 있습니다.' },
+        { status: 403 }
+      )
+    }
+
+    // Supabase Admin 클라이언트 생성
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
+    const supabaseAdmin = createSupabaseClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    })
+
+    // Supabase Auth에 사용자 생성
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true, // 이메일 자동 확인
+      user_metadata: {
+        name: 'Admin',
+        created_by: 'setup-first-admin'
+      }
+    })
+
+    if (authError) {
+      console.error('Supabase Auth 사용자 생성 실패:', authError)
+      return NextResponse.json(
+        { error: `사용자 생성 실패: ${authError.message}` },
+        { status: 500 }
+      )
+    }
+
+    if (!authData.user) {
+      return NextResponse.json(
+        { error: '사용자 생성 실패: 사용자 데이터가 없습니다.' },
+        { status: 500 }
+      )
+    }
+
+    // Prisma DB에 관리자 사용자 생성
+    const dbUser = await prisma.user.create({
+      data: {
+        id: authData.user.id,
+        email: authData.user.email!,
+        name: 'Admin',
+        role: 'admin', // 관리자 역할 할당
+        emailVerified: new Date(), // 이메일 확인됨
+      }
+    })
+
+    console.log('✅ 첫 번째 관리자 계정 생성 완료:', dbUser.email)
+
+    return NextResponse.json({
+      success: true,
+      message: '관리자 계정이 생성되었습니다.',
+      user: {
+        id: dbUser.id,
+        email: dbUser.email,
+        name: dbUser.name,
+        role: dbUser.role,
+      }
+    })
+
+  } catch (error) {
+    console.error('관리자 계정 생성 오류:', error)
+    return NextResponse.json(
+      { error: '관리자 계정 생성 중 오류가 발생했습니다.' },
+      { status: 500 }
+    )
+  }
+}
+
+// GET 요청은 현재 상태 확인용
+export async function GET() {
+  try {
+    const userCount = await prisma.user.count()
+
+    return NextResponse.json({
+      canCreate: userCount === 0,
+      userCount,
+      message: userCount === 0
+        ? '첫 번째 관리자를 생성할 수 있습니다.'
+        : '이미 사용자가 존재합니다.'
+    })
+  } catch (error) {
+    console.error('상태 확인 오류:', error)
+    return NextResponse.json(
+      { error: '상태 확인 중 오류가 발생했습니다.' },
+      { status: 500 }
+    )
+  }
+}
