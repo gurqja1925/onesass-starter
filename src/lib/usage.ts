@@ -26,8 +26,7 @@ export function getPlanLimits(plan: string) {
 // 사용자의 현재 사용량 조회
 export async function getUserUsage(userId: string) {
   const period = getCurrentPeriod()
-  
-  // @ts-expect-error - Usage 모델은 prisma db push 후 사용 가능
+
   let usage = await prisma.usage.findUnique({
     where: {
       userId_period: {
@@ -39,8 +38,7 @@ export async function getUserUsage(userId: string) {
 
   // 없으면 생성
   if (!usage) {
-    // @ts-expect-error - Usage 모델은 prisma db push 후 사용 가능
-    usage = await prisma.usage.create({
+      usage = await prisma.usage.create({
       data: {
         userId,
         period,
@@ -130,7 +128,6 @@ export async function incrementUsage(
 ): Promise<{ success: boolean; newValue: number }> {
   const period = getCurrentPeriod()
 
-  // @ts-expect-error - Usage 모델은 prisma db push 후 사용 가능
   const usage = await prisma.usage.upsert({
     where: {
       userId_period: {
