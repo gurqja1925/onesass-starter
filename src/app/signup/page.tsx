@@ -7,7 +7,8 @@ export default function SignupPage() {
   const router = useRouter()
 
   useEffect(() => {
-    router.replace('/')
+    // /signup 접속 시 /auth/signup으로 리다이렉트
+    router.replace('/auth/signup')
   }, [router])
 
   return null

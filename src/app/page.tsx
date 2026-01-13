@@ -57,7 +57,12 @@ export default function Home() {
               비즈니스 성장을 가속화하세요
             </p>
             <button
-              onClick={() => setShowAuthModal(true)}
+              onClick={() => {
+                // 모달이 안 열리면 페이지로 이동
+                if (typeof window !== 'undefined') {
+                  window.location.href = '/auth/signup'
+                }
+              }}
               style={{
                 background: 'var(--color-accent)',
                 color: 'var(--color-bg)',
@@ -175,7 +180,12 @@ export default function Home() {
               몇 분 안에 설정을 완료하고 바로 사용을 시작할 수 있습니다
             </p>
             <button
-              onClick={() => setShowAuthModal(true)}
+              onClick={() => {
+                // 모달이 안 열리면 페이지로 이동
+                if (typeof window !== 'undefined') {
+                  window.location.href = '/auth/signup'
+                }
+              }}
               style={{
                 background: 'var(--color-accent)',
                 color: 'var(--color-bg)',
