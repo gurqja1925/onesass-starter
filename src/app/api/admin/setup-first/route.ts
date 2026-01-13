@@ -38,25 +38,26 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Supabase Admin 클라이언트 생성
+    // Supabase 클라이언트 생성 (일반 키 사용)
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-    const supabaseAdmin = createSupabaseClient(supabaseUrl, supabaseServiceKey, {
+    const supabase = createSupabaseClient(supabaseUrl, supabaseKey, {
       auth: {
         autoRefreshToken: false,
         persistSession: false
       }
     })
 
-    // Supabase Auth에 사용자 생성
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+    // Supabase Auth에 사용자 생성 (일반 signUp 사용)
+    const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
-      email_confirm: true, // 이메일 자동 확인
-      user_metadata: {
-        name: 'Admin',
-        created_by: 'setup-first-admin'
+      options: {
+        data: {
+          name: 'Admin',
+          created_by: 'setup-first-admin'
+        }
       }
     })
 
@@ -76,6 +77,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Prisma DB에 관리자 사용자 생성
+    // 첫 번째 사용자이므로 자동으로 admin 역할 부여
     const dbUser = await prisma.user.create({
       data: {
         id: authData.user.id,
