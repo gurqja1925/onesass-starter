@@ -16,19 +16,27 @@ export function useAdminAuth() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // 실제 인증 체크
-    if (!userLoading) {
-      if (user) {
-        // 관리자 이메일 확인 (하드코딩된 리스트 사용)
-        const ADMIN_EMAILS = ['johunsang@gmail.com']
-        const adminEmails = process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(',').map(e => e.trim().toLowerCase()) || ADMIN_EMAILS
-        const isAdminUser = adminEmails.includes(user.email?.toLowerCase() || '')
-        setIsAdmin(isAdminUser)
-      } else {
-        setIsAdmin(false)
+    // 실제 인증 체크 - API에서 역할 확인
+    const checkAdminStatus = async () => {
+      if (!userLoading) {
+        if (user) {
+          try {
+            // API에서 사용자 역할 확인 (DB role 또는 첫 번째 사용자 체크)
+            const response = await fetch('/api/auth/session')
+            const data = await response.json()
+            setIsAdmin(data.user?.isAdmin || false)
+          } catch (error) {
+            console.error('Failed to check admin status:', error)
+            setIsAdmin(false)
+          }
+        } else {
+          setIsAdmin(false)
+        }
+        setLoading(false)
       }
-      setLoading(false)
     }
+
+    checkAdminStatus()
   }, [user, userLoading])
 
   return { user, isAdmin, loading }
