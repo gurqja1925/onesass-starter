@@ -8,6 +8,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import prisma from '@/lib/prisma'
+import fs from 'fs'
+import path from 'path'
 
 export async function POST(request: NextRequest) {
   try {
@@ -114,26 +116,40 @@ export async function POST(request: NextRequest) {
       // OAuth 설정 실패해도 관리자 계정은 생성됨
     }
 
-    // Cloudflare R2 스토리지 자동 활성화 (빌더 배포 시 기본값)
+    // 파일 스토리지 자동 활성화 (빌더 배포 시 기본값)
     try {
-      const r2Config = {
+      // onesaas.json에서 storage provider 읽기
+      let storageProvider = 'cloudflare-r2' // 기본값
+      try {
+        const onesaasPath = path.join(process.cwd(), 'onesaas.json')
+        if (fs.existsSync(onesaasPath)) {
+          const onesaasConfig = JSON.parse(fs.readFileSync(onesaasPath, 'utf-8'))
+          if (onesaasConfig?.environment?.storage?.provider) {
+            storageProvider = onesaasConfig.environment.storage.provider
+          }
+        }
+      } catch (configError) {
+        console.log('⚠️ onesaas.json 읽기 실패, 기본값 사용:', configError)
+      }
+
+      const storageConfig = {
         enabled: true,
-        provider: 'cloudflare-r2'
+        provider: storageProvider
       }
 
       await prisma.setting.upsert({
         where: { key: 'file_storage' },
-        update: { value: JSON.stringify(r2Config) },
+        update: { value: JSON.stringify(storageConfig) },
         create: {
           key: 'file_storage',
-          value: JSON.stringify(r2Config),
+          value: JSON.stringify(storageConfig),
         },
       })
 
-      console.log('✅ Cloudflare R2 스토리지 자동 활성화 완료')
+      console.log(`✅ 파일 스토리지 자동 활성화 완료 (${storageProvider})`)
     } catch (error) {
-      console.error('⚠️ R2 스토리지 설정 실패:', error)
-      // R2 설정 실패해도 관리자 계정은 생성됨
+      console.error('⚠️ 파일 스토리지 설정 실패:', error)
+      // 스토리지 설정 실패해도 관리자 계정은 생성됨
     }
 
     return NextResponse.json({

@@ -27,7 +27,10 @@
         "github",
         "google",
         "kakao"
-      ]
+      ],
+      "note": "⚠️ OAuth 로그인 (Google, 카카오, GitHub)은 추가 설정 필요 - OAUTH-SETUP.md 참고",
+      "emailNote": "✅ 이메일 로그인은 별도 설정 없이 바로 사용 가능",
+      "setupGuide": "docs/OAUTH-SETUP.md"
     },
     "payment": {
       "enabled": true,
@@ -66,6 +69,24 @@
     },
     "hosting": {
       "provider": "vercel"
+    },
+    "storage": {
+      "provider": "cloudflare-r2",
+      "options": [
+        {
+          "id": "vercel-blob",
+          "name": "Vercel Blob Storage",
+          "description": "Vercel 통합 파일 스토리지 (간편, Vercel 계정 필요)",
+          "recommended": false
+        },
+        {
+          "id": "cloudflare-r2",
+          "name": "Cloudflare R2",
+          "description": "저렴한 오브젝트 스토리지 (무료 10GB, Cloudflare 계정 필요)",
+          "recommended": true
+        }
+      ],
+      "note": "파일 업로드(이미지, 영상 등) 저장소 선택"
     }
   }
 }
