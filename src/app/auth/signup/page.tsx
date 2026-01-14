@@ -12,7 +12,7 @@ function SignupPageContent() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [providers, setProviders] = useState<AuthProviderType[]>(['email'])
+  const [providers, setProviders] = useState<AuthProviderType[]>([])
   const [providersLoading, setProvidersLoading] = useState(true)
 
   const searchParams = useSearchParams()
@@ -35,10 +35,15 @@ function SignupPageContent() {
           const providerList = Array.isArray(data.providers)
             ? data.providers
             : Object.keys(data.providers || {}).filter((key) => data.providers[key])
-          setProviders(providerList.length > 0 ? providerList : ['email'])
+          setProviders(providerList.length > 0 ? providerList : [])
+        } else {
+          // API 응답이 올바르지 않으면 빈 배열 유지
+          setProviders([])
         }
       } catch (error) {
         console.error('프로바이더 목록 로드 실패:', error)
+        // 에러 시에도 빈 배열 유지
+        setProviders([])
       } finally {
         setProvidersLoading(false)
       }

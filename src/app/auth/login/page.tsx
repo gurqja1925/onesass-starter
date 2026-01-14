@@ -11,7 +11,7 @@ function LoginPageContent() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [providers, setProviders] = useState<AuthProviderType[]>(['email'])
+  const [providers, setProviders] = useState<AuthProviderType[]>([])
   const [providersLoading, setProvidersLoading] = useState(true)
 
   const searchParams = useSearchParams()
@@ -31,9 +31,14 @@ function LoginPageContent() {
         const data = await res.json()
         if (data.providers && Array.isArray(data.providers)) {
           setProviders(data.providers as AuthProviderType[])
+        } else {
+          // API 응답이 올바르지 않으면 빈 배열 유지
+          setProviders([])
         }
       } catch (error) {
         console.error('Failed to fetch auth providers:', error)
+        // 에러 시에도 빈 배열 유지
+        setProviders([])
       } finally {
         setProvidersLoading(false)
       }
