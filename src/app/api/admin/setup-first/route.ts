@@ -114,6 +114,28 @@ export async function POST(request: NextRequest) {
       // OAuth 설정 실패해도 관리자 계정은 생성됨
     }
 
+    // Cloudflare R2 스토리지 자동 활성화 (빌더 배포 시 기본값)
+    try {
+      const r2Config = {
+        enabled: true,
+        provider: 'cloudflare-r2'
+      }
+
+      await prisma.setting.upsert({
+        where: { key: 'file_storage' },
+        update: { value: JSON.stringify(r2Config) },
+        create: {
+          key: 'file_storage',
+          value: JSON.stringify(r2Config),
+        },
+      })
+
+      console.log('✅ Cloudflare R2 스토리지 자동 활성화 완료')
+    } catch (error) {
+      console.error('⚠️ R2 스토리지 설정 실패:', error)
+      // R2 설정 실패해도 관리자 계정은 생성됨
+    }
+
     return NextResponse.json({
       success: true,
       message: '관리자 계정이 생성되었습니다.',
