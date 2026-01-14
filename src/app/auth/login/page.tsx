@@ -32,12 +32,10 @@ function LoginPageContent() {
         if (data.providers && Array.isArray(data.providers)) {
           setProviders(data.providers as AuthProviderType[])
         } else {
-          // API 응답이 올바르지 않으면 빈 배열 유지
           setProviders([])
         }
       } catch (error) {
         console.error('Failed to fetch auth providers:', error)
-        // 에러 시에도 빈 배열 유지
         setProviders([])
       } finally {
         setProvidersLoading(false)
@@ -74,147 +72,146 @@ function LoginPageContent() {
   return (
     <div style={{
       background: 'var(--color-bg)',
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '2rem'
+      color: 'var(--color-text)',
+      minHeight: '100vh'
     }}>
-      <div style={{
-        width: '100%',
-        maxWidth: '480px',
-        margin: '0 auto'
+      <section style={{
+        padding: '8rem 2rem 6rem',
+        textAlign: 'center'
       }}>
-        {/* 헤더 */}
-        <div style={{
-          textAlign: 'center',
-          marginBottom: '3rem'
-        }}>
+        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
           <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>{appIcon}</div>
           <h1 style={{
-            fontSize: '2.5rem',
+            fontSize: 'clamp(2.5rem, 5vw, 4rem)',
             fontWeight: 'bold',
-            color: 'var(--color-text)',
-            marginBottom: '0.5rem'
+            marginBottom: '1.5rem',
+            lineHeight: '1.2',
+            color: 'var(--color-text)'
           }}>
             {appName}에 <span style={{ color: 'var(--color-accent)' }}>로그인</span>
           </h1>
           <p style={{
-            fontSize: '1.125rem',
-            color: 'var(--color-text-secondary)'
+            fontSize: '1.25rem',
+            lineHeight: '1.75',
+            color: 'var(--color-text-secondary)',
+            marginBottom: '3rem'
           }}>
             계속하려면 로그인하세요
           </p>
-        </div>
 
-        {/* 로그인 카드 */}
-        <div style={{
-          background: 'var(--color-bg-secondary)',
-          border: '1px solid var(--color-border)',
-          borderRadius: '1.5rem',
-          padding: '2.5rem',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
-        }}>
+          {/* 로딩 중 */}
           {providersLoading ? (
-            <div style={{ textAlign: 'center', padding: '2rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem' }}>
               <div
                 style={{
-                  width: '3rem',
-                  height: '3rem',
+                  width: '2rem',
+                  height: '2rem',
                   border: '4px solid var(--color-border)',
                   borderTop: '4px solid var(--color-accent)',
                   borderRadius: '50%',
-                  animation: 'spin 1s linear infinite',
-                  margin: '0 auto'
+                  animation: 'spin 1s linear infinite'
                 }}
               />
+              <p style={{ color: 'var(--color-text-secondary)' }}>로딩 중...</p>
             </div>
           ) : (
-            <>
-              {/* 소셜 로그인 */}
-              {socialProviders.length > 0 && (
-                <div style={{ marginBottom: hasEmail ? '2rem' : '0' }}>
-                  {socialProviders.map((provider) => {
-                    const meta = PROVIDER_META[provider]
-                    return (
-                      <button
-                        key={provider}
-                        onClick={() => handleSocialLogin(provider)}
-                        style={{
-                          width: '100%',
-                          backgroundColor: meta.bgColor,
-                          color: meta.color,
-                          padding: '1rem 2rem',
-                          fontSize: '1.125rem',
-                          fontWeight: 'bold',
-                          borderRadius: '0.75rem',
-                          border: 'none',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '0.75rem',
-                          marginBottom: '0.75rem',
-                          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
-                        }}
-                        onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-                        onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-                      >
-                        <span style={{ fontSize: '1.5rem' }}>{meta.icon}</span>
-                        <span>{meta.name}로 로그인</span>
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
-
-              {/* 구분선 */}
-              {hasEmail && socialProviders.length > 0 && (
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '1rem',
-                  margin: '2rem 0'
-                }}>
-                  <div style={{ flex: 1, height: '1px', background: 'var(--color-border)' }} />
-                  <span style={{
-                    fontSize: '0.875rem',
-                    color: 'var(--color-text-secondary)'
-                  }}>
-                    또는 이메일로 로그인
-                  </span>
-                  <div style={{ flex: 1, height: '1px', background: 'var(--color-border)' }} />
-                </div>
-              )}
-
-              {/* 이메일 로그인 폼 */}
-              {hasEmail && (
-                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  {error && (
-                    <div style={{
-                      padding: '0.75rem',
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1rem',
+              maxWidth: '400px',
+              margin: '0 auto'
+            }}>
+              {/* OAuth 프로바이더 버튼들 */}
+              {socialProviders.map((provider) => {
+                const meta = PROVIDER_META[provider]
+                return (
+                  <button
+                    key={provider}
+                    onClick={() => handleSocialLogin(provider)}
+                    style={{
+                      backgroundColor: meta.bgColor,
+                      color: meta.color,
+                      padding: '1rem 2rem',
+                      fontSize: '1.125rem',
+                      fontWeight: 'bold',
                       borderRadius: '0.75rem',
-                      fontSize: '0.875rem',
-                      textAlign: 'center',
-                      background: 'rgba(239, 68, 68, 0.1)',
-                      color: '#ef4444',
-                      border: '1px solid rgba(239, 68, 68, 0.2)'
-                    }}>
-                      {error}
-                    </div>
-                  )}
+                      border: 'none',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.75rem',
+                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                    onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                  >
+                    <span style={{ fontSize: '1.5rem' }}>{meta.icon}</span>
+                    <span>{meta.name}로 로그인</span>
+                  </button>
+                )
+              })}
 
-                  <div>
-                    <label style={{
-                      display: 'block',
-                      fontSize: '0.875rem',
-                      fontWeight: '600',
-                      color: 'var(--color-text)',
-                      marginBottom: '0.5rem'
-                    }}>
-                      이메일
-                    </label>
+              {/* 이메일 로그인 버튼 */}
+              {hasEmail && (
+                <>
+                  <button
+                    onClick={() => {
+                      const emailForm = document.getElementById('email-form')
+                      if (emailForm) {
+                        emailForm.style.display = emailForm.style.display === 'none' ? 'flex' : 'none'
+                      }
+                    }}
+                    style={{
+                      background: 'var(--color-accent)',
+                      color: 'var(--color-bg)',
+                      padding: '1rem 2rem',
+                      fontSize: '1.125rem',
+                      fontWeight: 'bold',
+                      borderRadius: '0.75rem',
+                      border: 'none',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.75rem',
+                      boxShadow: '0 4px 12px rgba(0, 255, 136, 0.3)'
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                    onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                  >
+                    <span style={{ fontSize: '1.5rem' }}>✉️</span>
+                    <span>이메일로 로그인</span>
+                  </button>
+
+                  {/* 이메일 폼 (숨김) */}
+                  <form
+                    id="email-form"
+                    onSubmit={handleSubmit}
+                    style={{
+                      display: 'none',
+                      flexDirection: 'column',
+                      gap: '1rem',
+                      marginTop: '1rem'
+                    }}
+                  >
+                    {error && (
+                      <div style={{
+                        padding: '0.75rem',
+                        borderRadius: '0.75rem',
+                        fontSize: '0.875rem',
+                        textAlign: 'center',
+                        background: 'rgba(239, 68, 68, 0.1)',
+                        color: '#ef4444',
+                        border: '1px solid rgba(239, 68, 68, 0.2)'
+                      }}>
+                        {error}
+                      </div>
+                    )}
+
                     <input
                       type="email"
                       value={email}
@@ -226,24 +223,12 @@ function LoginPageContent() {
                         border: '2px solid var(--color-border)',
                         background: 'var(--color-bg)',
                         color: 'var(--color-text)',
-                        fontSize: '1rem',
-                        transition: 'all 0.2s'
+                        fontSize: '1rem'
                       }}
-                      placeholder="your@email.com"
+                      placeholder="이메일"
                       required
                     />
-                  </div>
 
-                  <div>
-                    <label style={{
-                      display: 'block',
-                      fontSize: '0.875rem',
-                      fontWeight: '600',
-                      color: 'var(--color-text)',
-                      marginBottom: '0.5rem'
-                    }}>
-                      비밀번호
-                    </label>
                     <input
                       type="password"
                       value={password}
@@ -255,106 +240,75 @@ function LoginPageContent() {
                         border: '2px solid var(--color-border)',
                         background: 'var(--color-bg)',
                         color: 'var(--color-text)',
-                        fontSize: '1rem',
-                        transition: 'all 0.2s'
+                        fontSize: '1rem'
                       }}
-                      placeholder="••••••••"
+                      placeholder="비밀번호"
                       required
                       minLength={6}
                     />
-                  </div>
 
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    style={{
-                      width: '100%',
-                      padding: '1rem',
-                      background: 'var(--color-accent)',
-                      color: 'var(--color-bg)',
-                      fontSize: '1.125rem',
-                      fontWeight: 'bold',
-                      borderRadius: '0.75rem',
-                      border: 'none',
-                      cursor: loading ? 'not-allowed' : 'pointer',
-                      transition: 'all 0.2s',
-                      opacity: loading ? 0.6 : 1,
-                      marginTop: '0.5rem',
-                      boxShadow: '0 4px 12px rgba(0, 255, 136, 0.3)'
-                    }}
-                    onMouseOver={(e) => !loading && (e.currentTarget.style.transform = 'translateY(-2px)')}
-                    onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-                  >
-                    {loading ? '로그인 중...' : '로그인'}
-                  </button>
-
-                  {/* 회원가입 링크 */}
-                  <div style={{
-                    textAlign: 'center',
-                    marginTop: '1rem',
-                    paddingTop: '1.5rem',
-                    borderTop: '1px solid var(--color-border)'
-                  }}>
-                    <p style={{
-                      color: 'var(--color-text-secondary)',
-                      marginBottom: '1rem'
-                    }}>
-                      계정이 없으신가요?
-                    </p>
                     <button
-                      type="button"
-                      onClick={() => router.push('/auth/signup')}
+                      type="submit"
+                      disabled={loading}
                       style={{
                         width: '100%',
                         padding: '1rem',
-                        background: 'transparent',
-                        color: 'var(--color-accent)',
+                        background: 'var(--color-accent)',
+                        color: 'var(--color-bg)',
                         fontSize: '1.125rem',
                         fontWeight: 'bold',
                         borderRadius: '0.75rem',
-                        border: '2px solid var(--color-accent)',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s'
-                      }}
-                      onMouseOver={(e) => {
-                        e.currentTarget.style.background = 'var(--color-accent)'
-                        e.currentTarget.style.color = 'var(--color-bg)'
-                      }}
-                      onMouseOut={(e) => {
-                        e.currentTarget.style.background = 'transparent'
-                        e.currentTarget.style.color = 'var(--color-accent)'
+                        border: 'none',
+                        cursor: loading ? 'not-allowed' : 'pointer',
+                        opacity: loading ? 0.6 : 1,
+                        boxShadow: '0 4px 12px rgba(0, 255, 136, 0.3)'
                       }}
                     >
-                      회원가입
+                      {loading ? '로그인 중...' : '로그인'}
                     </button>
-                  </div>
-                </form>
+                  </form>
+                </>
               )}
-            </>
+
+              {/* 회원가입 링크 */}
+              <p style={{
+                textAlign: 'center',
+                color: 'var(--color-text-secondary)',
+                marginTop: '1rem',
+                fontSize: '0.95rem'
+              }}>
+                계정이 없으신가요?{' '}
+                <a
+                  href="/auth/signup"
+                  style={{
+                    color: 'var(--color-accent)',
+                    textDecoration: 'none',
+                    fontWeight: '600'
+                  }}
+                >
+                  회원가입
+                </a>
+              </p>
+
+              {/* 홈으로 돌아가기 */}
+              <button
+                onClick={() => router.push('/')}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--color-text-secondary)',
+                  fontSize: '0.875rem',
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                  marginTop: '1rem'
+                }}
+              >
+                ← 홈으로 돌아가기
+              </button>
+            </div>
           )}
         </div>
-
-        {/* 홈으로 돌아가기 */}
-        <div style={{
-          textAlign: 'center',
-          marginTop: '2rem'
-        }}>
-          <button
-            onClick={() => router.push('/')}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--color-text-secondary)',
-              fontSize: '0.95rem',
-              cursor: 'pointer',
-              textDecoration: 'underline',
-              padding: '0.5rem 1rem'
-            }}
-          >
-            ← 홈으로 돌아가기
-          </button>
-        </div>
-      </div>
+      </section>
     </div>
   )
 }
@@ -372,8 +326,8 @@ export default function LoginPage() {
         <div style={{ textAlign: 'center' }}>
           <div
             style={{
-              width: '3rem',
-              height: '3rem',
+              width: '2rem',
+              height: '2rem',
               border: '4px solid var(--color-border)',
               borderTop: '4px solid var(--color-accent)',
               borderRadius: '50%',
