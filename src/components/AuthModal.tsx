@@ -70,17 +70,13 @@ export default function AuthModal({ isOpen, onClose, redirectUrl = '/service' }:
     setLoading(true)
     setError('')
 
-    // 먼저 로그인 시도
+    // 로그인 시도
     const { error: signInError } = await signIn(email, password)
 
     if (signInError) {
-      // 로그인 실패하면 자동으로 회원가입 시도
-      const { error: signUpError } = await signUp(email, password)
-      if (signUpError) {
-        setError('로그인/회원가입에 실패했습니다. 다시 시도해주세요.')
-        setLoading(false)
-        return
-      }
+      setError('로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.')
+      setLoading(false)
+      return
     }
 
     // 이메일 저장 처리
@@ -256,10 +252,24 @@ export default function AuthModal({ isOpen, onClose, redirectUrl = '/service' }:
                 color: 'var(--color-bg)',
               }}
             >
-              {loading ? '처리 중...' : '시작하기'}
+              {loading ? '처리 중...' : '로그인'}
             </button>
           </form>
         )}
+
+        {/* 회원가입 링크 */}
+        <div className="mt-6 text-center">
+          <p style={{ color: 'var(--color-text-secondary)' }}>
+            아직 계정이 없으신가요?{' '}
+            <a
+              href="/auth/signup"
+              className="font-medium transition-colors hover:underline"
+              style={{ color: 'var(--color-accent)' }}
+            >
+              회원가입
+            </a>
+          </p>
+        </div>
       </div>
     </div>
   )

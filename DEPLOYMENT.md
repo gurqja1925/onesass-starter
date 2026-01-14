@@ -64,6 +64,12 @@ DIRECT_URL=postgresql://...
 NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=xxx
 
+# 소셜 로그인 (선택)
+# ✅ 이메일 로그인: 별도 설정 없이 바로 사용 가능
+# ⚠️ OAuth (Google, 카카오, GitHub): Supabase에서 추가 설정 필요
+# 상세 가이드: OAUTH-SETUP.md 참고
+NEXT_PUBLIC_AUTH_PROVIDERS=email,google,kakao,github
+
 # 결제 (선택)
 TOSS_API_KEY=xxx
 TOSS_API_SECRET=xxx
@@ -80,6 +86,41 @@ NEXT_PUBLIC_ADMIN_EMAILS=admin@example.com
 - **Production**: 운영 환경 전용
 - **Preview**: PR 배포 전용
 - **Development**: 로컬 개발 전용
+
+---
+
+## 2.3 배포 전 체크리스트
+
+배포하기 전에 다음 항목을 확인하세요:
+
+### 환경변수 확인
+- [ ] `DATABASE_URL` 설정됨
+- [ ] `NEXT_PUBLIC_SUPABASE_URL` 설정됨
+- [ ] `NEXT_PUBLIC_SUPABASE_ANON_KEY` 설정됨
+
+### 소셜 로그인 (OAuth) 확인
+- [ ] 이메일 로그인 테스트 완료 (기본 제공)
+- [ ] Google 로그인 사용 시:
+  - [ ] Google Cloud Console에서 OAuth 클라이언트 생성
+  - [ ] Supabase에 Client ID/Secret 등록
+  - [ ] 프로덕션 도메인을 승인된 자바스크립트 원본에 추가
+- [ ] 카카오 로그인 사용 시:
+  - [ ] 카카오 Developers에서 앱 생성
+  - [ ] Supabase에 REST API 키 등록
+  - [ ] 프로덕션 도메인을 플랫폼 설정에 추가
+- [ ] GitHub 로그인 사용 시:
+  - [ ] GitHub OAuth App 생성
+  - [ ] Supabase에 Client ID/Secret 등록
+  - [ ] Homepage URL을 프로덕션 도메인으로 변경
+
+**상세 가이드:** [OAUTH-SETUP.md](./OAUTH-SETUP.md) 참고
+
+### 기타 설정 확인
+- [ ] `NEXT_PUBLIC_SITE_URL`을 프로덕션 도메인으로 변경
+- [ ] `NEXT_PUBLIC_ADMIN_EMAILS` 설정
+- [ ] 결제 API 키 설정 (사용 시)
+- [ ] SEO 메타데이터 설정
+- [ ] 사업자 정보 설정 (전자상거래 시)
 
 ---
 
@@ -203,6 +244,8 @@ pnpm add next@latest react@latest react-dom@latest
 - [ ] 데이터베이스 백업 확인
 - [ ] 에러 로그 검토
 - [ ] 성능 지표 확인
+- [ ] OAuth 제공자 설정 확인 (Google, 카카오, GitHub)
+- [ ] 사용자 로그인 테스트 (이메일, OAuth)
 
 ---
 
@@ -270,7 +313,13 @@ npx prisma generate        # 클라이언트 생성
 
 ## 10. 연락처 및 지원
 
+### 공식 문서
 - **Vercel 문서**: https://vercel.com/docs
 - **Supabase 문서**: https://supabase.com/docs
 - **Next.js 문서**: https://nextjs.org/docs
 - **Prisma 문서**: https://prisma.io/docs
+
+### OneSaaS 가이드
+- **OAuth 설정 가이드**: [OAUTH-SETUP.md](./OAUTH-SETUP.md)
+- **개발 가이드**: [CLAUDE.md](./CLAUDE.md)
+- **유지보수 가이드**: [MAINTENANCE.md](./MAINTENANCE.md)

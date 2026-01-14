@@ -295,6 +295,59 @@ TOSS_SECRET_KEY=...
 
 ---
 
+## 소셜 로그인 설정 (OAuth)
+
+OneSaaS는 이메일, Google, 카카오, GitHub 로그인을 지원합니다.
+
+### 기본 제공되는 로그인
+
+**이메일 로그인**은 별도 설정 없이 바로 사용 가능합니다.
+
+```bash
+# 이메일 로그인은 Supabase 설정만 있으면 작동
+NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+```
+
+### 소셜 로그인 (OAuth) 설정
+
+Google, 카카오, GitHub 로그인을 사용하려면 각 서비스에서 OAuth 설정이 필요합니다.
+
+**상세 가이드는 [OAUTH-SETUP.md](./OAUTH-SETUP.md) 문서를 참고하세요.**
+
+간단 요약:
+
+1. **Google 로그인**
+   - Google Cloud Console에서 OAuth 클라이언트 생성
+   - Supabase에 Client ID/Secret 등록
+
+2. **카카오 로그인**
+   - 카카오 Developers에서 앱 생성
+   - Supabase에 REST API 키 등록
+
+3. **GitHub 로그인**
+   - GitHub에서 OAuth App 생성
+   - Supabase에 Client ID/Secret 등록
+
+### 로그인 제공자 활성화/비활성화
+
+`onesaas.json` 파일에서 사용할 로그인 제공자를 선택:
+
+```json
+{
+  "features": {
+    "auth": {
+      "enabled": true,
+      "providers": ["email", "google", "kakao", "github"]
+    }
+  }
+}
+```
+
+원하지 않는 제공자는 배열에서 제거하면 됩니다.
+
+---
+
 ## 문제 해결
 
 ### 빌드 에러
@@ -312,6 +365,12 @@ pnpm build
 
 ## 참고 링크
 
+### 주요 가이드 문서
+- **OAuth 설정 가이드**: [OAUTH-SETUP.md](./OAUTH-SETUP.md) - Google, 카카오, GitHub 로그인 설정 방법
+- **배포 가이드**: [DEPLOYMENT.md](./DEPLOYMENT.md) - Vercel 배포 가이드
+- **유지보수 가이드**: [MAINTENANCE.md](./MAINTENANCE.md) - 프로젝트 유지보수 방법
+
+### 공식 문서
 - **OneSaaS 빌더**: https://onesaas.kr
 - **K-Code 문서**: https://onesaas.kr/docs/kcode
 - **Next.js 문서**: https://nextjs.org/docs

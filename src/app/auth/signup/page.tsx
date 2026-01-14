@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import AuthModal from '@/components/AuthModal'
+import SignupModal from '@/components/SignupModal'
 
 function SignupPageContent() {
   const [showModal, setShowModal] = useState(false)
@@ -23,7 +23,7 @@ function SignupPageContent() {
 
   return (
     <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--color-bg)' }}>
-      <AuthModal
+      <SignupModal
         isOpen={showModal}
         onClose={handleClose}
         redirectUrl={plan ? `/service?plan=${plan}` : '/service'}

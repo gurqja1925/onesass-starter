@@ -104,6 +104,17 @@ if (!envExists) {
     console.log(`  3. K-Code AI 코딩 (선택)`)
     console.log(`     ${c.cyan}pnpm kcode "버그 수정해줘"${c.reset}`)
     console.log('')
+    console.log(`${c.yellow}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${c.reset}`)
+    console.log(`${c.yellow}  💡 소셜 로그인 (OAuth) 설정${c.reset}`)
+    console.log(`${c.yellow}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${c.reset}`)
+    console.log('')
+    console.log(`  ${c.green}✓ 이메일 로그인${c.reset} - 별도 설정 없이 바로 사용 가능`)
+    console.log('')
+    console.log(`  ${c.yellow}⚠ Google, 카카오, GitHub 로그인${c.reset}`)
+    console.log(`    추가 OAuth 설정이 필요합니다.`)
+    console.log('')
+    console.log(`    ${c.cyan}OAUTH-SETUP.md${c.reset} 문서를 참고하세요!`)
+    console.log('')
   }
 }
 

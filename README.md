@@ -92,6 +92,45 @@ pnpm dev
 
 ---
 
+## 소셜 로그인 설정
+
+OneSaaS는 이메일, Google, 카카오, GitHub 로그인을 지원합니다.
+
+### 이메일 로그인 (기본 제공)
+
+**이메일 로그인은 별도 설정 없이 바로 사용 가능합니다.**
+
+`pnpm setup` 완료 후 바로 이메일로 회원가입/로그인할 수 있습니다.
+
+### 소셜 로그인 (OAuth)
+
+Google, 카카오, GitHub 로그인을 사용하려면 추가 설정이 필요합니다.
+
+**상세 가이드:** [OAUTH-SETUP.md](./OAUTH-SETUP.md) 문서를 참고하세요.
+
+간단 요약:
+1. Google: Google Cloud Console에서 OAuth 클라이언트 생성
+2. 카카오: 카카오 Developers에서 앱 생성
+3. GitHub: GitHub에서 OAuth App 생성
+4. Supabase에 각 OAuth 정보 등록
+
+### 로그인 제공자 선택
+
+`onesaas.json` 파일에서 사용할 로그인 방법을 선택할 수 있습니다:
+
+```json
+{
+  "features": {
+    "auth": {
+      "enabled": true,
+      "providers": ["email", "google", "kakao", "github"]
+    }
+  }
+}
+```
+
+---
+
 ## K-Code: AI 코딩 어시스턴트
 
 이 템플릿에는 **K-Code**가 내장되어 있습니다. 한국어로 코딩 작업을 요청하세요!
@@ -287,8 +326,15 @@ pnpm build
 - **AI 코딩**: K-Code (DeepSeek, OpenAI, Anthropic)
 - **AI SDK**: Vercel AI SDK
 
-## 링크
+## 문서
 
+### 주요 가이드
+- **OAuth 설정 가이드**: [OAUTH-SETUP.md](./OAUTH-SETUP.md) - Google, 카카오, GitHub 소셜 로그인 설정 방법
+- **개발 가이드**: [CLAUDE.md](./CLAUDE.md) - 프로젝트 개발 가이드
+- **배포 가이드**: [DEPLOYMENT.md](./DEPLOYMENT.md) - Vercel 배포 가이드
+- **유지보수 가이드**: [MAINTENANCE.md](./MAINTENANCE.md) - 프로젝트 유지보수 방법
+
+### 링크
 - **OneSaaS 빌더**: https://onesaas.kr
 - **GitHub**: https://github.com/johunsang/onesass-starter
 - **K-Code 문서**: https://onesaas.kr/docs/kcode
