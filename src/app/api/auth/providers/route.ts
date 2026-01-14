@@ -18,12 +18,23 @@ const DEFAULT_AUTH_PROVIDERS: Record<AuthProviderType, boolean> = {
 
 export async function GET() {
   try {
+    // 1. 먼저 환경변수 확인 (빌더에서 설정한 값)
+    const envProviders = process.env.NEXT_PUBLIC_AUTH_PROVIDERS
+    if (envProviders) {
+      const enabledProviders = envProviders.split(',').map(p => p.trim())
+      return NextResponse.json({
+        providers: enabledProviders,
+        all: enabledProviders.reduce((acc, p) => ({ ...acc, [p]: true }), {} as Record<string, boolean>)
+      })
+    }
+
+    // 2. 환경변수가 없으면 데이터베이스 확인
     const setting = await prisma.setting.findUnique({
       where: { key: 'auth_providers' }
     })
 
     let providers = { ...DEFAULT_AUTH_PROVIDERS }
-    
+
     if (setting?.value) {
       try {
         providers = JSON.parse(setting.value)
@@ -37,14 +48,14 @@ export async function GET() {
       .filter(([_, enabled]) => enabled)
       .map(([provider]) => provider)
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       providers: enabledProviders,
       all: providers
     })
   } catch (error) {
     console.error('Failed to fetch auth providers:', error)
     // 에러 시 기본값 반환
-    return NextResponse.json({ 
+    return NextResponse.json({
       providers: ['email'],
       all: DEFAULT_AUTH_PROVIDERS
     })
