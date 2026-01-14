@@ -90,6 +90,30 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ 첫 번째 관리자 계정 생성 완료:', dbUser.email)
 
+    // OAuth 프로바이더 자동 활성화 (빌더 배포 시 기본값)
+    try {
+      const authProvidersConfig = {
+        email: true,
+        google: true,
+        kakao: true,
+        github: true,
+      }
+
+      await prisma.setting.upsert({
+        where: { key: 'auth_providers' },
+        update: { value: JSON.stringify(authProvidersConfig) },
+        create: {
+          key: 'auth_providers',
+          value: JSON.stringify(authProvidersConfig),
+        },
+      })
+
+      console.log('✅ OAuth 프로바이더 자동 활성화 완료')
+    } catch (error) {
+      console.error('⚠️ OAuth 프로바이더 설정 실패:', error)
+      // OAuth 설정 실패해도 관리자 계정은 생성됨
+    }
+
     return NextResponse.json({
       success: true,
       message: '관리자 계정이 생성되었습니다.',
