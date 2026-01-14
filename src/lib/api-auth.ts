@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/route'
+import prisma from '@/lib/prisma'
 
 /**
  * 인증 결과 타입
@@ -70,19 +71,35 @@ export async function verifyAuth(request: NextRequest): Promise<AuthResult> {
       }
     }
 
-    // 관리자 여부 확인
-    const adminEmails = getAdminEmails()
-    const userEmail = user.email?.toLowerCase() || ''
-    const isAdmin = adminEmails.length === 0
-      ? false  // 관리자 이메일이 설정되지 않으면 관리자 없음
-      : adminEmails.includes(userEmail)
+    // 데이터베이스에서 사용자 역할 조회
+    let userRole = 'user'
+    let isAdmin = false
+
+    try {
+      const dbUser = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: { role: true },
+      })
+
+      if (dbUser?.role) {
+        userRole = dbUser.role
+        isAdmin = dbUser.role === 'admin'
+      }
+    } catch (dbError) {
+      console.warn('Failed to fetch user role from database:', dbError)
+      // DB 조회 실패 시 환경변수 기반 체크로 폴백
+      const adminEmails = getAdminEmails()
+      const userEmail = user.email?.toLowerCase() || ''
+      isAdmin = adminEmails.length > 0 && adminEmails.includes(userEmail)
+      userRole = isAdmin ? 'admin' : 'user'
+    }
 
     return {
       authenticated: true,
       user: {
         id: user.id,
         email: user.email || '',
-        role: isAdmin ? 'admin' : 'user',
+        role: userRole,
       },
       isAdmin,
     }
