@@ -120,7 +120,9 @@ vercel env pull .env.local
 pnpm dev
 ```
 
-### Windows PowerShell 사용자 주의사항
+### Windows 사용자 주의사항
+
+**PowerShell에서 `vercel` 명령어 에러:**
 
 `vercel` 명령어를 찾을 수 없다는 에러가 나면:
 
@@ -129,6 +131,13 @@ pnpm dev
 ```bash
 npx vercel link
 npx vercel env pull .env.local
+```
+
+**Windows ARM64 (Surface Pro X 등) SWC 에러:**
+
+"Failed to load SWC binary" 에러가 나면 `.env.local` 파일에 추가:
+```bash
+NEXT_DISABLE_SWC=1
 ```
 
 ### 왜 이게 필요한가요?

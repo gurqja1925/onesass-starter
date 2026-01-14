@@ -68,10 +68,14 @@ vercel env pull .env.local
 # Windows에서 에러 시: npx vercel env pull .env.local
 ```
 
-**Windows PowerShell 사용자 주의**
-- `vercel` 명령어를 찾을 수 없다는 에러가 나면:
-  1. PowerShell 재시작 (가장 쉬움)
-  2. 또는 `npx vercel link` 사용
+**Windows 사용자 주의**
+
+PowerShell에서 `vercel` 명령어를 찾을 수 없다면:
+1. PowerShell 재시작 (가장 쉬움)
+2. 또는 `npx vercel link` 사용
+
+Windows ARM64 (Surface Pro X 등)에서 SWC 에러가 나면:
+- `.env.local` 파일에 `NEXT_DISABLE_SWC=1` 추가
 
 ### 3단계: 개발 서버 실행
 
