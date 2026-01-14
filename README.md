@@ -60,26 +60,80 @@ http://localhost:3000 에서 확인
 OneSaaS로 배포한 프로젝트를 로컬에서 개발하려면 환경변수가 필요합니다.
 **Vercel CLI** 명령어 하나로 모든 환경변수를 가져올 수 있습니다.
 
+### 사전 준비사항
+
+**1. Node.js 20.9.0 이상 필요**
 ```bash
-# 1. 프로젝트 클론
+# 버전 확인
+node -v
+
+# 20.9.0 미만이면 업데이트 필요
+# Windows: https://nodejs.org 에서 LTS 버전 다운로드
+# Mac: nvm install 20 && nvm use 20
+```
+
+**2. pnpm 설치** (선택사항, npm도 가능)
+```bash
+npm install -g pnpm
+```
+
+**3. Private 리포지토리 접근을 위한 GitHub 인증**
+
+방법 1: GitHub CLI 사용 (권장)
+```bash
+# Windows
+winget install --id GitHub.cli
+
+# Mac
+brew install gh
+
+# 로그인
+gh auth login
+```
+
+방법 2: ZIP 파일 다운로드
+- OneSaaS 배포 완료 페이지에서 "📦 ZIP 파일로 다운로드" 버튼 클릭
+
+### 설치 단계
+
+```bash
+# 1. 프로젝트 클론 (또는 ZIP 다운로드 후 압축 해제)
 git clone https://github.com/내계정/내프로젝트.git
 cd 내프로젝트
-pnpm install
 
-# 2. Vercel CLI 설치 (처음 한 번만)
+# 2. 의존성 설치
+pnpm install
+# 또는 npm install
+
+# 3. Vercel CLI 설치 (처음 한 번만)
 npm install -g vercel
 
-# 3. Vercel 프로젝트 연결 (처음 한 번만)
+# 4. Vercel 프로젝트 연결 (처음 한 번만)
 vercel link
+# 또는 Windows에서 에러 시: npx vercel link
 
-# 4. 환경변수 가져오기 (.env.local 자동 생성!)
+# 5. 환경변수 가져오기 (.env.local 자동 생성!)
 vercel env pull .env.local
+# 또는 Windows에서 에러 시: npx vercel env pull .env.local
 
-# 5. 개발 서버 실행
+# 6. 개발 서버 실행
 pnpm dev
 ```
 
-**왜 이게 필요한가요?**
+### Windows PowerShell 사용자 주의사항
+
+`vercel` 명령어를 찾을 수 없다는 에러가 나면:
+
+**해결 방법 1**: PowerShell 재시작 (가장 쉬움)
+**해결 방법 2**: `npx` 사용 (권장)
+```bash
+npx vercel link
+npx vercel env pull .env.local
+```
+
+### 왜 이게 필요한가요?
+
+배포 시 자동 생성된 중요한 설정값들:
 - **DATABASE_URL** - 24자리 랜덤 비밀번호가 포함된 DB 연결 주소
 - **SUPABASE_URL/KEY** - 인증 시스템 연결 정보
 - **결제 API 키** - 결제 시스템 연결 정보

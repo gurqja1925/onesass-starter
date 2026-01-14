@@ -18,12 +18,39 @@
 OneSaaS로 배포한 후 로컬에서 개발하려면 환경변수가 필요합니다.
 Vercel CLI를 사용하면 **한 번에** 모든 환경변수를 가져올 수 있습니다.
 
+### 0단계: 사전 준비사항
+
+**필수: Node.js 20.9.0 이상**
+```bash
+# 버전 확인
+node -v
+
+# 업데이트 필요 시
+# Windows: https://nodejs.org 에서 LTS 버전 다운로드
+# Mac: nvm install 20 && nvm use 20
+```
+
+**선택: pnpm 설치** (npm도 가능)
+```bash
+npm install -g pnpm
+```
+
+**Private 리포지토리용: GitHub 인증**
+```bash
+# GitHub CLI 설치 및 로그인
+# Windows: winget install --id GitHub.cli
+# Mac: brew install gh
+gh auth login
+
+# 또는 OneSaaS 배포 페이지에서 ZIP 다운로드
+```
+
 ### 1단계: 프로젝트 클론
 
 ```bash
 git clone https://github.com/내계정/내프로젝트.git
 cd 내프로젝트
-pnpm install
+pnpm install  # 또는 npm install
 ```
 
 ### 2단계: 환경변수 가져오기 (핵심!)
@@ -34,10 +61,17 @@ npm install -g vercel
 
 # Vercel 계정 연결 (처음 한 번만)
 vercel link
+# Windows에서 에러 시: npx vercel link
 
 # 환경변수 다운로드 (.env.local 자동 생성!)
 vercel env pull .env.local
+# Windows에서 에러 시: npx vercel env pull .env.local
 ```
+
+**Windows PowerShell 사용자 주의**
+- `vercel` 명령어를 찾을 수 없다는 에러가 나면:
+  1. PowerShell 재시작 (가장 쉬움)
+  2. 또는 `npx vercel link` 사용
 
 ### 3단계: 개발 서버 실행
 
@@ -48,6 +82,7 @@ pnpm dev
 
 ### 💡 왜 이게 필요한가요?
 
+배포 시 자동 생성된 중요한 설정값들:
 - **DATABASE_URL** - 데이터베이스 연결 주소 (24자리 랜덤 비밀번호 포함)
 - **SUPABASE_URL/KEY** - 인증 시스템 연결 정보
 - **결제 API 키** - 결제 시스템 연결 정보
