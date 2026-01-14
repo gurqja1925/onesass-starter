@@ -40,6 +40,10 @@ export async function POST(request: NextRequest) {
     // 회원가입 이벤트일 경우 사용자 생성/동기화 (DB 에러 무시)
     if (event === 'signup' && supabaseUser) {
       try {
+        // 첫 번째 사용자인지 확인
+        const userCount = await prisma.user.count()
+        const isFirstUser = userCount === 0
+
         await prisma.user.upsert({
           where: { email: supabaseUser.email! },
           update: {
@@ -51,6 +55,7 @@ export async function POST(request: NextRequest) {
             email: supabaseUser.email!,
             name: supabaseUser.user_metadata?.full_name || supabaseUser.user_metadata?.name || null,
             image: supabaseUser.user_metadata?.avatar_url || null,
+            role: isFirstUser ? 'admin' : 'user', // 첫 번째 사용자는 자동으로 관리자
           },
         })
 
