@@ -48,39 +48,13 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="ko" style={{
-      colorScheme: 'dark',
-    }}>
-      <body style={{
-        background: '#09090b',
-        color: '#fafafa',
-        fontFamily: "'Space Grotesk', 'Pretendard', sans-serif"
-      }}>
-        <style dangerouslySetInnerHTML={{
-          __html: `
-            :root {
-              --color-bg: #09090b !important;
-              --color-bg-secondary: #18181b !important;
-              --color-text: #fafafa !important;
-              --color-text-secondary: #a1a1aa !important;
-              --color-accent: #00ff88 !important;
-              --color-accent-hover: #00cc6a !important;
-              --color-border: #27272a !important;
-              --color-success: #22c55e !important;
-              --color-warning: #f59e0b !important;
-              --color-error: #ef4444 !important;
-              --color-info: #3b82f6 !important;
-              --font-display: 'Space Grotesk', 'Pretendard', sans-serif !important;
-              --font-body: 'Pretendard', -apple-system, sans-serif !important;
-              --font-mono: 'JetBrains Mono', monospace !important;
-              --radius: 8px !important;
-              --radius-sm: 4px !important;
-              --radius-lg: 16px !important;
-              --radius-full: 9999px !important;
-            }
-          `
-        }} />
-        <ThemeProvider defaultTheme="neon" defaultMode="dark" persistSettings={false}>
+    <html lang="ko">
+      <body>
+        <ThemeProvider
+          defaultTheme={(process.env.NEXT_PUBLIC_THEME as any) || "neon"}
+          defaultMode={(process.env.NEXT_PUBLIC_THEME_MODE as any) || "dark"}
+          persistSettings={true}
+        >
           <AuthProvider>
             <TemplateProvider>
               <ConditionalLayout>
