@@ -1,10 +1,46 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useAuth } from '@/onesaas-core/auth/provider'
+import { PROVIDER_META, type AuthProviderType } from '@/onesaas-core/auth/config'
 import AuthModal from '@/components/AuthModal'
 
 export default function Home() {
   const [showAuthModal, setShowAuthModal] = useState(false)
+  const [providers, setProviders] = useState<AuthProviderType[]>(['email'])
+  const [providersLoading, setProvidersLoading] = useState(true)
+  const { signInWithProvider } = useAuth()
+
+  useEffect(() => {
+    // DB에서 활성화된 프로바이더 목록 가져오기
+    const fetchProviders = async () => {
+      try {
+        const response = await fetch('/api/auth/providers')
+        if (response.ok) {
+          const data = await response.json()
+          const providerList = Array.isArray(data.providers)
+            ? data.providers
+            : Object.keys(data.providers || {}).filter((key) => data.providers[key])
+          setProviders(providerList.length > 0 ? providerList : ['email'])
+        }
+      } catch (error) {
+        console.error('프로바이더 목록 로드 실패:', error)
+      } finally {
+        setProvidersLoading(false)
+      }
+    }
+
+    fetchProviders()
+  }, [])
+
+  const handleProviderLogin = async (provider: 'google' | 'kakao' | 'github') => {
+    try {
+      await signInWithProvider(provider)
+      // OAuth는 자동으로 리다이렉트됨
+    } catch (error) {
+      console.error(`${provider} 로그인 실패:`, error)
+    }
+  }
 
   const features = [
     {
@@ -23,6 +59,9 @@ export default function Home() {
       description: '안전하고 신뢰할 수 있는 보안 시스템을 제공합니다'
     }
   ]
+
+  const hasEmail = providers.includes('email')
+  const socialProviders = providers.filter((p) => p !== 'email') as ('google' | 'kakao' | 'github')[]
 
   return (
     <>
@@ -56,30 +95,115 @@ export default function Home() {
               혁신적인 기술과 뛰어난 사용자 경험으로<br />
               비즈니스 성장을 가속화하세요
             </p>
-            <button
-              onClick={() => {
-                // 모달이 안 열리면 페이지로 이동
-                if (typeof window !== 'undefined') {
-                  window.location.href = '/auth/signup'
-                }
-              }}
-              style={{
-                background: 'var(--color-accent)',
-                color: 'var(--color-bg)',
-                padding: '1rem 3rem',
-                fontSize: '1.125rem',
-                fontWeight: 'bold',
-                borderRadius: '0.75rem',
-                border: 'none',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                boxShadow: '0 4px 12px rgba(0, 255, 136, 0.3)'
-              }}
-              onMouseOver={(e) => e.currentTarget.style.opacity = '0.9'}
-              onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
-            >
-              무료로 시작하기
-            </button>
+
+            {/* 로딩 중 */}
+            {providersLoading ? (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem' }}>
+                <div
+                  style={{
+                    width: '2rem',
+                    height: '2rem',
+                    border: '4px solid var(--color-border)',
+                    borderTop: '4px solid var(--color-accent)',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite'
+                  }}
+                />
+                <p style={{ color: 'var(--color-text-secondary)' }}>로딩 중...</p>
+              </div>
+            ) : (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1rem',
+                maxWidth: '400px',
+                margin: '0 auto'
+              }}>
+                {/* OAuth 프로바이더 버튼들 */}
+                {socialProviders.map((provider) => {
+                  const meta = PROVIDER_META[provider]
+                  return (
+                    <button
+                      key={provider}
+                      onClick={() => handleProviderLogin(provider)}
+                      style={{
+                        backgroundColor: meta.bgColor,
+                        color: meta.color,
+                        padding: '1rem 2rem',
+                        fontSize: '1.125rem',
+                        fontWeight: 'bold',
+                        borderRadius: '0.75rem',
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.75rem',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+                      }}
+                      onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                      onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                    >
+                      <span style={{ fontSize: '1.5rem' }}>{meta.icon}</span>
+                      <span>{meta.name}로 시작하기</span>
+                    </button>
+                  )
+                })}
+
+                {/* 이메일 시작하기 버튼 */}
+                {hasEmail && (
+                  <button
+                    onClick={() => {
+                      if (typeof window !== 'undefined') {
+                        window.location.href = '/auth/signup'
+                      }
+                    }}
+                    style={{
+                      background: 'var(--color-accent)',
+                      color: 'var(--color-bg)',
+                      padding: '1rem 2rem',
+                      fontSize: '1.125rem',
+                      fontWeight: 'bold',
+                      borderRadius: '0.75rem',
+                      border: 'none',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.75rem',
+                      boxShadow: '0 4px 12px rgba(0, 255, 136, 0.3)'
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                    onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                  >
+                    <span style={{ fontSize: '1.5rem' }}>✉️</span>
+                    <span>이메일로 시작하기</span>
+                  </button>
+                )}
+
+                {/* 이미 계정이 있는 경우 */}
+                <p style={{
+                  textAlign: 'center',
+                  color: 'var(--color-text-secondary)',
+                  marginTop: '1rem',
+                  fontSize: '0.95rem'
+                }}>
+                  이미 계정이 있으신가요?{' '}
+                  <a
+                    href="/auth/login"
+                    style={{
+                      color: 'var(--color-accent)',
+                      textDecoration: 'none',
+                      fontWeight: '600'
+                    }}
+                  >
+                    로그인
+                  </a>
+                </p>
+              </div>
+            )}
           </div>
         </section>
 
@@ -179,29 +303,80 @@ export default function Home() {
             }}>
               몇 분 안에 설정을 완료하고 바로 사용을 시작할 수 있습니다
             </p>
-            <button
-              onClick={() => {
-                // 모달이 안 열리면 페이지로 이동
-                if (typeof window !== 'undefined') {
-                  window.location.href = '/auth/signup'
-                }
-              }}
-              style={{
-                background: 'var(--color-accent)',
-                color: 'var(--color-bg)',
-                padding: '1rem 2.5rem',
-                fontSize: '1.125rem',
-                fontWeight: 'bold',
-                borderRadius: '0.75rem',
-                border: 'none',
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-              }}
-              onMouseOver={(e) => e.currentTarget.style.opacity = '0.9'}
-              onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
-            >
-              시작하기
-            </button>
+
+            {!providersLoading && (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1rem',
+                maxWidth: '400px',
+                margin: '0 auto'
+              }}>
+                {/* OAuth 프로바이더 버튼들 */}
+                {socialProviders.map((provider) => {
+                  const meta = PROVIDER_META[provider]
+                  return (
+                    <button
+                      key={provider}
+                      onClick={() => handleProviderLogin(provider)}
+                      style={{
+                        backgroundColor: meta.bgColor,
+                        color: meta.color,
+                        padding: '1rem 2rem',
+                        fontSize: '1.125rem',
+                        fontWeight: 'bold',
+                        borderRadius: '0.75rem',
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.75rem',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+                      }}
+                      onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                      onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                    >
+                      <span style={{ fontSize: '1.5rem' }}>{meta.icon}</span>
+                      <span>{meta.name}로 시작하기</span>
+                    </button>
+                  )
+                })}
+
+                {/* 이메일 시작하기 버튼 */}
+                {hasEmail && (
+                  <button
+                    onClick={() => {
+                      if (typeof window !== 'undefined') {
+                        window.location.href = '/auth/signup'
+                      }
+                    }}
+                    style={{
+                      background: 'var(--color-accent)',
+                      color: 'var(--color-bg)',
+                      padding: '1rem 2rem',
+                      fontSize: '1.125rem',
+                      fontWeight: 'bold',
+                      borderRadius: '0.75rem',
+                      border: 'none',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.75rem',
+                      boxShadow: '0 4px 12px rgba(0, 255, 136, 0.3)'
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                    onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                  >
+                    <span style={{ fontSize: '1.5rem' }}>✉️</span>
+                    <span>이메일로 시작하기</span>
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </section>
       </div>
