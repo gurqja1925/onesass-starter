@@ -340,15 +340,28 @@ OneSaaS는 이메일, Google, 카카오, GitHub 로그인을 지원합니다.
 
 ### 🎉 OneSaaS 빌더 사용자라면?
 
-**OAuth가 자동으로 설정됩니다!** 수동 설정이 필요 없습니다.
+**Supabase OAuth가 자동으로 설정됩니다!**
 
 빌더 설정 화면에서 각 OAuth 앱의 인증 정보만 입력하면:
 - ✅ Supabase OAuth 프로바이더 자동 활성화
 - ✅ Client ID/Secret 자동 입력
-- ✅ Callback URL 자동 설정
-- ✅ 환경 변수 자동 구성
+- ✅ Site URL 자동 설정
+- ✅ Redirect URL 허용 목록 자동 구성
 
-배포 후 바로 OAuth 로그인을 사용할 수 있습니다!
+### ⚠️ 중요: Callback URL 등록 필요
+
+**Supabase 설정은 자동이지만**, 각 OAuth 프로바이더에는 **Callback URL을 직접 등록**해야 합니다.
+
+```
+https://{SUPABASE_PROJECT_REF}.supabase.co/auth/v1/callback
+```
+
+**등록 위치:**
+- **Google**: Google Cloud Console → OAuth 2.0 클라이언트 → 승인된 리디렉션 URI
+- **Kakao**: 카카오 Developers → 카카오 로그인 → Redirect URI
+- **GitHub**: GitHub Settings → OAuth Apps → Authorization callback URL
+
+> 💡 Supabase Project Ref는 배포 완료 화면 또는 Supabase 대시보드에서 확인할 수 있습니다.
 
 ### 기본 제공되는 로그인
 

@@ -4,25 +4,49 @@
 
 ## 🎉 OneSaaS 빌더 사용자라면?
 
-**이 문서를 읽을 필요가 없습니다!** OneSaaS 빌더를 사용하면 OAuth 설정이 **자동으로** 완료됩니다.
+OneSaaS 빌더를 사용하면 **Supabase OAuth 설정이 자동**으로 완료됩니다!
 
-### 자동으로 설정되는 것들
+### ✅ 자동으로 설정되는 것들
 
-✅ **Supabase OAuth 프로바이더 활성화**
-- Google, Kakao, GitHub 로그인 자동 활성화
-- Client ID/Secret 자동 입력
-- Callback URL 자동 설정
+| 항목 | 자동 | 설명 |
+|------|:----:|------|
+| Supabase OAuth 프로바이더 활성화 | ✅ | Google, Kakao, GitHub |
+| Client ID/Secret 입력 | ✅ | 빌더에서 입력한 값 적용 |
+| Site URL 설정 | ✅ | 배포된 Vercel URL |
+| Redirect URL 허용 목록 | ✅ | `*.vercel.app/**` 패턴 |
 
-✅ **환경 변수 자동 구성**
-- `NEXT_PUBLIC_AUTH_PROVIDERS` 자동 설정
-- 선택한 OAuth 제공자만 활성화
+### ⚠️ 직접 해야 하는 것 (중요!)
+
+**Supabase 설정은 자동이지만**, 각 OAuth 프로바이더 콘솔에는 **Callback URL을 직접 등록**해야 합니다.
+
+| 프로바이더 | 등록 위치 | Callback URL |
+|------------|----------|--------------|
+| Google | Google Cloud Console → OAuth 2.0 클라이언트 | `https://{PROJECT_REF}.supabase.co/auth/v1/callback` |
+| Kakao | 카카오 Developers → 카카오 로그인 | `https://{PROJECT_REF}.supabase.co/auth/v1/callback` |
+| GitHub | GitHub Settings → OAuth Apps | `https://{PROJECT_REF}.supabase.co/auth/v1/callback` |
+
+> 💡 `{PROJECT_REF}`는 배포 완료 화면의 "Supabase 대시보드" 링크에서 확인할 수 있습니다.
+
+### 🚨 redirect_uri_mismatch 에러가 발생하면?
+
+Google 로그인 시 "redirect_uri_mismatch" 에러는 **Callback URL이 등록되지 않아서** 발생합니다.
+
+**해결 방법:**
+1. Google Cloud Console 접속
+2. API 및 서비스 → 사용자 인증 정보
+3. OAuth 2.0 클라이언트 선택
+4. **승인된 리디렉션 URI**에 Supabase Callback URL 추가:
+   ```
+   https://YOUR_PROJECT_REF.supabase.co/auth/v1/callback
+   ```
+5. 저장 후 5분 정도 대기 (Google 캐시 갱신)
 
 ### 필요한 것
 
-빌더 설정 화면에서 각 OAuth 앱의 인증 정보만 입력하면 됩니다:
+빌더 설정 화면에서 각 OAuth 앱의 인증 정보를 입력하세요:
 
 - 🔵 **Google**: Client ID + Client Secret
-- 💛 **Kakao**: REST API 키
+- 💛 **Kakao**: REST API 키 (Client Secret은 선택)
 - ⚫ **GitHub**: Client ID + Client Secret
 
 ### 빌더 없이 수동 설정하려면?
@@ -629,4 +653,4 @@ Vercel 배포 시에도 마찬가지로 추가 환경 변수는 **필요 없습�
 
 ---
 
-**마지막 업데이트:** 2026-01-13
+**마지막 업데이트:** 2026-01-16
