@@ -19,9 +19,14 @@ export async function POST(request: NextRequest) {
 
     // Prisma에서 사용자 찾기 또는 생성
     try {
-      // 첫 번째 사용자인지 확인
+      // 기존 사용자 확인
+      const existingUser = await prisma.user.findUnique({
+        where: { email: supabaseUser.email! }
+      })
+
+      // 첫 번째 사용자인지 확인 (아무도 없을 때)
       const userCount = await prisma.user.count()
-      const isFirstUser = userCount === 0
+      const willBeFirstUser = userCount === 0 && !existingUser
 
       const user = await prisma.user.upsert({
         where: { email: supabaseUser.email! },
@@ -36,9 +41,16 @@ export async function POST(request: NextRequest) {
           name: supabaseUser.user_metadata?.full_name || supabaseUser.user_metadata?.name || null,
           image: supabaseUser.user_metadata?.avatar_url || null,
           emailVerified: supabaseUser.email_confirmed_at ? new Date(supabaseUser.email_confirmed_at) : null,
-          role: isFirstUser ? 'admin' : 'user', // 첫 번째 사용자는 자동으로 관리자
+          role: willBeFirstUser ? 'admin' : 'user', // 첫 번째 사용자는 자동으로 관리자
         },
       })
+
+      // 첫 번째 가입자 확인 (가장 먼저 생성된 사용자)
+      const firstUser = await prisma.user.findFirst({
+        orderBy: { createdAt: 'asc' },
+        select: { id: true }
+      })
+      const isFirstUser = firstUser?.id === user.id
 
       // 첫 번째 사용자이고 관리자가 아니면 관리자로 업데이트
       if (isFirstUser && user.role !== 'admin') {
@@ -49,7 +61,7 @@ export async function POST(request: NextRequest) {
         user.role = 'admin'
       }
 
-      return NextResponse.json({ user })
+      return NextResponse.json({ user, isFirstUser })
     } catch (dbError) {
       console.warn('User sync skipped (DB not configured):', dbError)
       // DB 없이도 작동하도록 Supabase 사용자 정보만 반환

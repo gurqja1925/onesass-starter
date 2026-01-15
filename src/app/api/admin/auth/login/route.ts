@@ -49,12 +49,23 @@ export async function POST(request: NextRequest) {
       }, { status: 404 })
     }
 
-    // 첫 번째 가입자인지 확인
-    const userCount = await prisma.user.count()
-    const isFirstUser = userCount === 1
+    // 첫 번째 가입자인지 확인 (가장 먼저 생성된 사용자)
+    const firstUser = await prisma.user.findFirst({
+      orderBy: { createdAt: 'asc' },
+      select: { id: true }
+    })
+    const isFirstUser = firstUser?.id === user.id
 
     // 관리자 권한 확인
     const isAdmin = user.role === 'admin' || isFirstUser
+
+    // 첫 번째 사용자이고 관리자가 아니면 관리자로 업데이트
+    if (isFirstUser && user.role !== 'admin') {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { role: 'admin' }
+      })
+    }
 
     if (!isAdmin) {
       return NextResponse.json({

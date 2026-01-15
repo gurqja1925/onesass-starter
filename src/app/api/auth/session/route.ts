@@ -74,9 +74,12 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // 첫 번째 가입자인지 확인
-    const userCount = await prisma.user.count()
-    const isFirstUser = userCount === 1
+    // 첫 번째 가입자인지 확인 (가장 먼저 생성된 사용자)
+    const firstUser = await prisma.user.findFirst({
+      orderBy: { createdAt: 'asc' },
+      select: { id: true }
+    })
+    const isFirstUser = firstUser?.id === user.id
 
     const shouldBeAdmin = isFirstUser || user.role === 'admin' || isConfiguredAdmin
 
