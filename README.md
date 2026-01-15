@@ -276,6 +276,7 @@ pnpm db:migrate             # 프로덕션용
 
 | 기능 | 설명 |
 |-----|------|
+| **OAuth 자동 설정** 🆕 | OneSaaS 빌더 사용 시 Google/Kakao/GitHub 로그인 자동 연동 |
 | **인증** | 이메일, Google, 카카오, GitHub 로그인 |
 | **결제** | Toss Payments, TossPayments 연동 (한국형) |
 | **관리자** | 대시보드, 사용자 관리, 통계, Chart.js |

@@ -472,6 +472,21 @@ pnpm build
 
 에러 메시지의 파일명과 줄 번호 확인 → 해당 위치 수정
 
+### OAuth 로그인이 안 될 때
+
+**증상**: Google/카카오/GitHub 로그인 버튼 클릭 시 "provider is not enabled" 오류
+
+**OneSaaS 빌더 사용자**:
+- 배포 과정에서 OAuth가 자동 설정되므로 문제가 없어야 합니다
+- 문제 발생 시: 각 OAuth 플랫폼에서 Callback URL 확인
+  - Google Cloud Console: 승인된 리디렉션 URI
+  - Kakao Developers: Redirect URI
+  - GitHub OAuth App: Authorization callback URL
+- Callback URL 형식: `https://YOUR_SUPABASE_URL/auth/v1/callback`
+
+**수동 배포 사용자**:
+- `OAUTH-SETUP.md` 파일의 가이드를 따라 Supabase에서 OAuth 설정 필요
+
 ---
 
 ## 빠른 명령어 모음

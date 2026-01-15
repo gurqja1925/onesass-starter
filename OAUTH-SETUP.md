@@ -2,8 +2,38 @@
 
 > OneSaaS에서 Google, 카카오, GitHub 소셜 로그인을 설정하는 방법
 
+## 🎉 OneSaaS 빌더 사용자라면?
+
+**이 문서를 읽을 필요가 없습니다!** OneSaaS 빌더를 사용하면 OAuth 설정이 **자동으로** 완료됩니다.
+
+### 자동으로 설정되는 것들
+
+✅ **Supabase OAuth 프로바이더 활성화**
+- Google, Kakao, GitHub 로그인 자동 활성화
+- Client ID/Secret 자동 입력
+- Callback URL 자동 설정
+
+✅ **환경 변수 자동 구성**
+- `NEXT_PUBLIC_AUTH_PROVIDERS` 자동 설정
+- 선택한 OAuth 제공자만 활성화
+
+### 필요한 것
+
+빌더 설정 화면에서 각 OAuth 앱의 인증 정보만 입력하면 됩니다:
+
+- 🔵 **Google**: Client ID + Client Secret
+- 💛 **Kakao**: REST API 키
+- ⚫ **GitHub**: Client ID + Client Secret
+
+### 빌더 없이 수동 설정하려면?
+
+아래 가이드를 따라주세요. 모든 과정을 직접 해야 합니다.
+
+---
+
 ## 목차
 
+- [🎉 OneSaaS 빌더 사용자라면?](#-onesaas-빌더-사용자라면)
 - [시작하기 전에](#시작하기-전에)
 - [1. Google OAuth 설정](#1-google-oauth-설정)
 - [2. 카카오 OAuth 설정](#2-카카오-oauth-설정)

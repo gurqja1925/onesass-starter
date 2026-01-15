@@ -66,8 +66,8 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=xxx
 
 # 소셜 로그인 (선택)
 # ✅ 이메일 로그인: 별도 설정 없이 바로 사용 가능
-# ⚠️ OAuth (Google, 카카오, GitHub): Supabase에서 추가 설정 필요
-# 상세 가이드: OAUTH-SETUP.md 참고
+# 🎉 OneSaaS 빌더 사용 시: OAuth 자동 설정 (Google, 카카오, GitHub)
+# ⚠️ 수동 배포 시: Supabase에서 OAuth 설정 필요 (OAUTH-SETUP.md 참고)
 NEXT_PUBLIC_AUTH_PROVIDERS=email,google,kakao,github
 
 # 결제 (선택)
